@@ -1,0 +1,2320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>119 응급실 안내 — EMRIS</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --surface: #f8f9fa;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --accent: #dc2626;
+    --accent-light: #fef2f2;
+    --user-bg: #111827;
+    --user-text: #ffffff;
+    --bot-bg: #f3f4f6;
+    --bot-text: #111827;
+    --available: #16a34a;
+    --conditional: #d97706;
+    --unavailable: #dc2626;
+    --unsupported: #9ca3af;
+    --blocked: #7c3aed;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+    background: #e8eaed;
+    color: var(--text);
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  #app {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    background: var(--bg);
+    box-shadow: 0 0 48px rgba(0,0,0,0.12);
+  }
+
+  @media (max-width: 640px) {
+    body { background: var(--bg); }
+    #app { box-shadow: none; max-width: 100%; }
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    flex-shrink: 0;
+    gap: 8px;
+  }
+  header .logo { font-size: 15px; font-weight: 800; color: var(--accent); letter-spacing: -0.5px; }
+  #ai-toggle {
+    padding: 3px 9px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  #ai-toggle:hover { border-color: #9ca3af; color: var(--text); }
+  #ai-toggle.active {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #f59e0b;
+  }
+  header .header-right {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.4;
+  }
+  header .live-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #16a34a;
+    animation: pulse 2s infinite;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scroll-behavior: smooth;
+  }
+
+  .msg { display: flex; gap: 8px; max-width: 100%; }
+  .msg.user { flex-direction: row-reverse; }
+  .msg.user .bubble {
+    background: var(--user-bg);
+    color: var(--user-text);
+    border-radius: 18px 18px 4px 18px;
+    max-width: 72%;
+  }
+  .msg.bot .bubble {
+    background: var(--bot-bg);
+    color: var(--bot-text);
+    border-radius: 18px 18px 18px 4px;
+    max-width: 90%;
+  }
+  .bubble {
+    padding: 10px 14px;
+    font-size: 15px;
+    line-height: 1.55;
+    word-break: keep-all;
+  }
+
+  .chip {
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.15s, border-color 0.15s;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.4;
+    width: 100%;
+  }
+  .chip:hover { background: var(--surface); border-color: #9ca3af; }
+
+  .result-wrap { display: flex; flex-direction: column; gap: 10px; }
+  .result-header { font-size: 14px; color: var(--muted); }
+  .result-header strong { color: var(--text); font-size: 16px; }
+  .hospital-section { margin-bottom: 6px; }
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hospital-card {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 6px;
+    background: var(--bg);
+  }
+  .hospital-card.available { border-left: 3px solid var(--available); }
+  .hospital-card.conditional { border-left: 3px solid var(--conditional); }
+  .hospital-card.unavailable { border-left: 3px solid var(--unavailable); }
+  .hospital-card.unsupported { border-left: 3px solid var(--unsupported); opacity: 0.7; }
+  .hospital-card.blocked { border-left: 3px solid var(--blocked); opacity: 0.7; }
+
+  .hcard-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .hcard-name { font-size: 15px; font-weight: 600; }
+  .badge {
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    background: var(--surface);
+    color: var(--muted);
+  }
+  .badge.A { background: #fef3c7; color: #92400e; }
+  .badge.C { background: #dbeafe; color: #1e40af; }
+  .verdict-icon { margin-left: auto; font-size: 16px; }
+  .hcard-tel { font-size: 13px; color: var(--accent); text-decoration: none; font-weight: 600; display: block; margin-bottom: 3px; }
+  .hcard-beds { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .hcard-beds .beds-ok { color: var(--available); }
+  .hcard-beds .beds-low { color: var(--conditional); }
+  .hcard-beds .beds-none { color: var(--unavailable); }
+  .hcard-conditions { font-size: 13px; color: var(--conditional); margin-top: 4px; line-height: 1.5; }
+  .hcard-unavail { font-size: 13px; color: var(--unavailable); margin-top: 4px; }
+  .hcard-disease { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .unsupported-list { font-size: 13px; color: var(--muted); line-height: 1.8; }
+  .disclaimer {
+    font-size: 12px;
+    color: var(--muted);
+    padding: 8px 10px;
+    background: var(--surface);
+    border-radius: 8px;
+    line-height: 1.6;
+  }
+
+  #ribbon { flex-shrink: 0; background: var(--bg); border-bottom: 1px solid var(--border); }
+  .ribbon-row {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    padding: 6px 8px;
+    scrollbar-width: none;
+  }
+  .ribbon-row::-webkit-scrollbar { display: none; }
+  .ribbon-btn {
+    flex-shrink: 0;
+    padding: 5px 12px;
+    font-size: 13px;
+    border: none;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 6px;
+    white-space: nowrap;
+    transition: background 0.1s, color 0.1s;
+  }
+  .ribbon-btn:hover { background: var(--surface); color: var(--text); }
+  .ribbon-btn.selected { background: var(--accent-light); color: var(--accent); font-weight: 600; }
+
+  #input-bar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+  #user-input {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 9px 16px;
+    font-size: 15px;
+    outline: none;
+    background: var(--surface);
+    color: var(--text);
+    resize: none;
+    max-height: 100px;
+    font-family: inherit;
+    line-height: 1.4;
+  }
+  #user-input:focus { border-color: #9ca3af; background: var(--bg); }
+  #send-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+    transition: opacity 0.15s;
+  }
+  #send-btn:hover { opacity: 0.85; }
+  #send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal {
+    background: var(--bg);
+    border-radius: 16px;
+    padding: 32px 28px;
+    width: min(380px, 90vw);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    text-align: center;
+  }
+  .modal .modal-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+  }
+  .modal h2 { font-size: 20px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; }
+  .modal .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+  .modal input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 16px;
+    outline: none;
+    margin-bottom: 10px;
+    text-align: center;
+    letter-spacing: 4px;
+    font-weight: 600;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-error { font-size: 12px; color: var(--unavailable); margin-bottom: 8px; min-height: 16px; }
+  .modal-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: -0.2px;
+  }
+  .modal-btn:hover { opacity: 0.9; }
+
+  /* HARNESS UI */
+  .alert-banner { padding:8px 12px; border-radius:8px; font-size:13px; font-weight:600; line-height:1.55; margin-bottom:8px; }
+  .alert-banner.critical { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
+  .alert-banner.warning { background:#fffbeb; color:#92400e; border:1px solid #fde68a; }
+  .linkage-box { padding:10px 12px; border:1px dashed var(--conditional); border-radius:10px; background:#fffbeb; margin-bottom:8px; }
+  .cv-note { font-size:11px; color:var(--conditional); margin-top:3px; }
+  .grade-filter-note { font-size:11px; color:var(--muted); font-style:italic; margin-top:4px; }
+  .clarify-bubble { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 14px; }
+  .clarify-bubble .q { font-size:14px; font-weight:600; margin-bottom:8px; }
+  .clarify-bubble .opts { display:flex; flex-direction:column; gap:6px; }
+  .clarify-bubble .opt-btn {
+    padding:8px 14px; border:1px solid var(--border); border-radius:20px; background:var(--bg);
+    font-size:13px; cursor:pointer; text-align:left; transition:background 0.15s;
+  }
+  .clarify-bubble .opt-btn:hover { background:var(--accent-light); border-color:var(--accent); }
+  .rec-alert { font-size:12px; font-weight:600; color:#991b1b; background:#fef2f2; padding:4px 8px; border-radius:6px; margin:4px 0; }
+  .rec-hospitals { margin:6px 0; }
+  .rec-hospital-row { font-size:12px; padding:2px 0; border-bottom:1px solid var(--border); }
+
+  /* 적응형 테이블 (LLM 출력) */
+  .adaptive-table { width:100%; border-collapse:collapse; font-size:12px; margin:8px 0; table-layout:fixed; }
+  .adaptive-table th { text-align:left; padding:5px 6px; background:#f5f5f5; font-weight:700; border-bottom:1.5px solid #ddd; font-size:11px; white-space:nowrap; overflow:hidden; }
+  .adaptive-table td { padding:4px 6px; border-bottom:1px solid #eee; vertical-align:top; line-height:1.5; word-break:break-word; }
+  .adaptive-table .v-o { color:#16a34a; font-weight:700; }
+  .adaptive-table .v-t { color:#d97706; font-weight:700; }
+  .adaptive-table .v-x { color:#dc2626; font-weight:700; }
+  .adaptive-table .v-n { color:#94a3b8; font-size:11px; }
+  .result-box { padding:10px 12px; font-size:13px; margin:8px 0; border-radius:8px; line-height:1.6; }
+  .result-good { background:#f0fdf4; border-left:3px solid #16a34a; }
+  .result-warn { background:#fffbeb; border-left:3px solid #f59e0b; }
+  .result-bad { background:#fef2f2; border-left:3px solid #dc2626; }
+  .implication { font-size:12px; color:#555; padding-left:14px; line-height:1.7; list-style:disc; }
+  .implication li { margin-bottom:3px; }
+  .insights-section { margin-top:8px; }
+
+  .typing { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
+  .typing span {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #9ca3af;
+    animation: bounce 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
+
+  #chips-bar {
+    flex-shrink: 0;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
+
+  #chips-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 12px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 12px;
+    color: var(--muted);
+    border-bottom: 1px solid transparent;
+    transition: color 0.15s;
+  }
+  #chips-toggle:hover { color: var(--text); }
+  #chips-toggle .toggle-label { display: flex; align-items: center; gap: 4px; }
+  #chips-toggle .toggle-arrow { font-size: 9px; transition: transform 0.2s; display: inline-block; }
+  #chips-bar.chips-collapsed #chips-toggle .toggle-arrow { transform: rotate(180deg); }
+
+  #chips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 4px 12px 8px;
+    max-height: 150px;
+    overflow: hidden;
+    transition: max-height 0.25s ease, opacity 0.2s, padding 0.25s;
+    opacity: 1;
+  }
+  #chips-bar.chips-collapsed #chips-list {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    pointer-events: none;
+  }
+
+  .rec-bubble {
+    background: var(--bot-bg);
+    border-radius: 18px 18px 18px 4px;
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 90%;
+    word-break: keep-all;
+  }
+  .rec-summary { font-weight: 600; color: var(--text); margin-bottom: 5px; }
+  .rec-recommendation { color: var(--text); }
+  .rec-insight {
+    margin-top: 8px;
+    padding: 7px 10px;
+    background: var(--surface);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    border-left: 3px solid var(--border);
+  }
+
+  @media (max-width: 640px) {
+    .msg.user .bubble, .msg.bot .bubble { max-width: 95%; }
+    .bubble { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-badge">119구급대원 전용</div>
+    <h2>응급실 안내 시스템</h2>
+    <div class="modal-sub">EMRIS 실시간 병상 현황 조회 서비스입니다.<br>접근 코드를 입력하세요.</div>
+    <input type="password" id="pw-input" placeholder="접근 코드" autocomplete="off" maxlength="20">
+    <div class="modal-error" id="pw-error"></div>
+    <button class="modal-btn" id="modal-save-btn">입장</button>
+  </div>
+</div>
+
+<div id="app">
+
+<header>
+  <span class="logo">EMRIS</span>
+  <button id="ai-toggle" title="AI 꺼짐 — 켜면 자연어 파싱 + 추천 생성 (느림)">✨ AI</button>
+  <div class="header-right">
+    <span class="live-dot"></span>중앙응급의료센터 병상정보<br>응급실 안내
+  </div>
+</header>
+
+<div id="ribbon">
+  <div class="ribbon-row" id="region-ribbon"></div>
+  <div class="ribbon-row" id="disease-ribbon"></div>
+</div>
+
+<div id="chat"></div>
+
+<div id="chips-bar">
+  <div id="chips-toggle">
+    <span class="toggle-label">💡 <span id="chips-label">추천 쿼리</span></span>
+    <span class="toggle-arrow">▲</span>
+  </div>
+  <div id="chips-list"></div>
+</div>
+
+<div id="input-bar">
+  <textarea id="user-input" rows="1" placeholder="어디서, 어떤 응급 상황인지 알려주세요..." maxlength="200"></textarea>
+  <button id="send-btn" title="전송">&#x2191;</button>
+</div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const API_BASE = 'https://emris-crawler.pandoll-ai.workers.dev';
+  const EMRIS_API_KEY = 'emris_c6cafe1e05002a01ad8c6c3d';
+  const LLM_PROXY = '/api/llm';
+  const ACCESS_PW = 'nemc';
+  const AUTH_KEY = 'emris_auth_expires';
+  const AUTH_TTL_MS = 24 * 60 * 60 * 1000; // 24시간
+
+  const REGIONS = [
+    { code: '11', name: '서울' }, { code: '12', name: '부산' },
+    { code: '13', name: '대구' }, { code: '14', name: '인천' },
+    { code: '15', name: '광주' }, { code: '16', name: '대전' },
+    { code: '17', name: '울산' }, { code: '18', name: '세종' },
+    { code: '21', name: '경기' }, { code: '22', name: '강원' },
+    { code: '23', name: '충북' }, { code: '24', name: '충남' },
+    { code: '25', name: '전북' }, { code: '26', name: '전남' },
+    { code: '27', name: '경북' }, { code: '28', name: '경남' },
+    { code: '29', name: '제주' },
+  ];
+
+  const DISEASE_CATEGORIES = [
+    { name: '심근경색',     codes: 'Y0010' },
+    { name: '뇌졸중·뇌출혈', codes: 'Y0020,Y0031,Y0032' },
+    { name: '대동맥응급',   codes: 'Y0041,Y0042' },
+    { name: '산부인과·출산', codes: 'Y0100,Y0111,Y0112,Y0113' },
+    { name: '소아응급',     codes: 'Y0070,Y0082,Y0092' },
+    { name: '담낭·복부수술', codes: 'Y0051,Y0052,Y0060' },
+    { name: '위장관출혈',   codes: 'Y0081' },
+    { name: '화상',         codes: 'Y0120' },
+    { name: '사지접합',     codes: 'Y0131,Y0132' },
+    { name: '투석',         codes: 'Y0141,Y0142' },
+    { name: '정신과응급',   codes: 'Y0150' },
+    { name: '안과·혈관중재', codes: 'Y0160,Y0171,Y0172' },
+  ];
+
+  const CASES = [
+    { text: '서울에서 할아버지가 갑자기 가슴을 잡으셨어요', region: '11', diseases: 'Y0010' },
+    { text: '부산에서 50대 남성이 운동 중 쓰러졌어요, 심장 같아요', region: '12', diseases: 'Y0010' },
+    { text: '경기 수원에서 새벽에 가슴 통증으로 쓰러졌어요', region: '21', diseases: 'Y0010' },
+    { text: '대전에서 급성 심근경색 의심 환자입니다', region: '16', diseases: 'Y0010' },
+    { text: '인천에서 어머니가 한쪽 팔다리에 힘이 없어요', region: '14', diseases: 'Y0020' },
+    { text: '대구에서 뇌졸중 의심 환자 이송해야 해요', region: '13', diseases: 'Y0020' },
+    { text: '광주에서 할머니가 갑자기 말을 못 하세요', region: '15', diseases: 'Y0020' },
+    { text: '서울에서 뇌출혈 환자입니다, 수술 가능한 곳이요', region: '11', diseases: 'Y0031,Y0032' },
+    { text: '경남에서 거미막하출혈 의심이에요', region: '28', diseases: 'Y0031' },
+    { text: '충북에서 머리를 심하게 부딪혔는데 의식이 없어요', region: '23', diseases: 'Y0032' },
+    { text: '서울에서 대동맥 파열 의심이에요', region: '11', diseases: 'Y0041,Y0042' },
+    { text: '경기에서 흉부 대동맥 응급 환자입니다', region: '21', diseases: 'Y0041' },
+    { text: '부산에서 복부대동맥류가 터진 것 같아요', region: '12', diseases: 'Y0042' },
+    { text: '대구에서 산모가 진통이 시작됐어요', region: '13', diseases: 'Y0111' },
+    { text: '서울에서 임산부가 출혈이 심해요', region: '11', diseases: 'Y0112' },
+    { text: '경기에서 자궁외임신 의심이에요', region: '21', diseases: 'Y0113' },
+    { text: '전북에서 조산 위험이 있는 산모예요', region: '25', diseases: 'Y0100,Y0111' },
+    { text: '인천에서 분만 가능한 응급실 어디예요?', region: '14', diseases: 'Y0111' },
+    { text: '충남에서 응급 제왕절개가 필요해요', region: '24', diseases: 'Y0112' },
+    { text: '울산에서 전치태반 진단받은 산모입니다', region: '17', diseases: 'Y0112' },
+    { text: '제주에서 임신 32주인데 배가 아파요', region: '29', diseases: 'Y0100,Y0111,Y0112' },
+    { text: '부산에서 아이가 동전을 삼켰어요', region: '12', diseases: 'Y0082' },
+    { text: '서울에서 아기가 뭔가 삼켜서 기도가 막힌 것 같아요', region: '11', diseases: 'Y0092' },
+    { text: '대전에서 아기가 울다 멈추다를 반복해요, 장중첩 같아요', region: '16', diseases: 'Y0070' },
+    { text: '경기에서 미숙아가 태어났어요, NICU 필요해요', region: '21', diseases: 'Y0100' },
+    { text: '광주에서 5살 아이가 피를 토했어요', region: '15', diseases: 'Y0082' },
+    { text: '강원에서 아이가 장난감 부품을 삼켰어요', region: '22', diseases: 'Y0092' },
+    { text: '인천에서 8개월 아기가 혈변을 봐요', region: '14', diseases: 'Y0070' },
+    { text: '서울에서 피를 토하고 있어요', region: '11', diseases: 'Y0081' },
+    { text: '경남에서 혈변이 심한 환자입니다', region: '28', diseases: 'Y0081' },
+    { text: '제주에서 위장관 출혈로 내시경이 급해요', region: '29', diseases: 'Y0081' },
+    { text: '대구에서 담석 때문에 너무 아파요', region: '13', diseases: 'Y0051' },
+    { text: '서울에서 복막염 의심 환자입니다', region: '11', diseases: 'Y0060' },
+    { text: '경기에서 맹장이 터진 것 같아요', region: '21', diseases: 'Y0060' },
+    { text: '충남에서 담도 폐쇄로 응급수술이 필요합니다', region: '24', diseases: 'Y0052' },
+    { text: '인천에서 화재로 전신 화상을 입었어요', region: '14', diseases: 'Y0120' },
+    { text: '서울에서 끓는 물에 심한 화상을 입었어요', region: '11', diseases: 'Y0120' },
+    { text: '경북에서 공장 폭발로 중증 화상이에요', region: '27', diseases: 'Y0120' },
+    { text: '부산에서 손가락이 절단됐어요', region: '12', diseases: 'Y0131' },
+    { text: '경기에서 기계에 손이 끼어서 절단됐어요', region: '21', diseases: 'Y0131,Y0132' },
+    { text: '서울에서 투석 환자인데 응급 투석이 필요해요', region: '11', diseases: 'Y0141' },
+    { text: '대전에서 신부전 환자가 CRRT 필요합니다', region: '16', diseases: 'Y0142' },
+    { text: '전남에서 투석 환자가 쇼크 상태예요', region: '26', diseases: 'Y0141,Y0142' },
+    { text: '서울에서 자해 시도가 있었어요', region: '11', diseases: 'Y0150' },
+    { text: '경기에서 정신과 응급입원이 필요한 환자예요', region: '21', diseases: 'Y0150' },
+    { text: '부산에서 급성 정신병적 증상이에요', region: '12', diseases: 'Y0150' },
+    { text: '서울에서 눈에 쇠 파편이 박혔어요', region: '11', diseases: 'Y0160' },
+    { text: '대구에서 안구 파열 환자입니다', region: '13', diseases: 'Y0160' },
+    { text: '인천에서 색전술이 급한 환자입니다', region: '14', diseases: 'Y0171' },
+    { text: '세종에서 객혈이 심한 환자예요', region: '18', diseases: 'Y0091' },
+  ];
+
+  const DISEASE_NAMES = {
+    Y0010: '심근경색', Y0020: '뇌경색', Y0031: '거미막하출혈', Y0032: '뇌내출혈',
+    Y0041: '흉부대동맥', Y0042: '복부대동맥', Y0051: '담낭', Y0052: '담도',
+    Y0060: '복부수술', Y0070: '장중첩', Y0081: '위장관출혈', Y0082: '위장관(소아)',
+    Y0091: '기관지(성인)', Y0092: '기관지(소아)', Y0100: '저체중출생아', Y0111: '분만',
+    Y0112: '산과수술', Y0113: '부인과수술', Y0120: '화상', Y0131: '수지접합',
+    Y0132: '사지접합', Y0141: '혈액투석', Y0142: 'CRRT', Y0150: '정신과응급',
+    Y0160: '안과응급', Y0171: '혈관중재(성인)', Y0172: '혈관중재(소아)',
+  };
+
+  const REGION_NAMES = {
+    '11':'서울','12':'부산','13':'대구','14':'인천','15':'광주','16':'대전',
+    '17':'울산','18':'세종','21':'경기','22':'강원','23':'충북','24':'충남',
+    '25':'전북','26':'전남','27':'경북','28':'경남','29':'제주',
+  };
+
+  const VERDICT_ICON = { available: '✅', conditional: '⚠️', unavailable: '❌', unsupported: '—', blocked: '?' };
+
+  // State
+  const apiKey = EMRIS_API_KEY;
+  let selectedRegion = null;
+  let selectedDisease = null;
+  let isLoading = false;
+  let welcomeShown = false;
+  let searchGenId = 0;       // 추천 bubble 순서 보장: 새 검색마다 증가
+  let userCollapsedChips = false; // 사용자가 수동으로 chips를 접었는지
+  let aiEnabled = localStorage.getItem('emris_ai') === '1'; // AI 기본 OFF, 명시적 켜기만
+
+  // ── DOM 헬퍼 ──────────────────────────────────
+  function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str || '');
+    return d.innerHTML;
+  }
+
+  function el(tag, props, children) {
+    const node = document.createElement(tag);
+    if (props) Object.assign(node, props);
+    if (children) {
+      (Array.isArray(children) ? children : [children]).forEach(c => {
+        if (c == null) return;
+        node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+      });
+    }
+    return node;
+  }
+
+  function setAttr(node, attrs) {
+    Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, v));
+    return node;
+  }
+
+  // ── 초기화 ──────────────────────────────────
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('modal-save-btn').addEventListener('click', checkPassword);
+    document.getElementById('pw-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') checkPassword();
+      document.getElementById('pw-error').textContent = '';
+    });
+    document.getElementById('send-btn').addEventListener('click', sendMessage);
+
+    const input = document.getElementById('user-input');
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+    input.addEventListener('input', () => {
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+    });
+
+    const expires = parseInt(localStorage.getItem(AUTH_KEY) || '0', 10);
+    if (expires > Date.now()) {
+      document.getElementById('modal').classList.add('hidden');
+      init();
+    } else {
+      document.getElementById('modal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('pw-input').focus(), 100);
+    }
+  });
+
+  function checkPassword() {
+    const val = document.getElementById('pw-input').value.trim();
+    if (val !== ACCESS_PW) {
+      document.getElementById('pw-error').textContent = '접근 코드가 올바르지 않습니다.';
+      document.getElementById('pw-input').value = '';
+      document.getElementById('pw-input').focus();
+      return;
+    }
+    localStorage.setItem(AUTH_KEY, String(Date.now() + AUTH_TTL_MS));
+    document.getElementById('modal').classList.add('hidden');
+    init();
+  }
+
+  function init() {
+    buildRibbons();
+    showWelcome();
+
+    document.getElementById('chips-toggle').addEventListener('click', () => {
+      const bar = document.getElementById('chips-bar');
+      const nowCollapsed = bar.classList.toggle('chips-collapsed');
+      userCollapsedChips = nowCollapsed; // 사용자 의도 기억
+    });
+
+    // AI 버튼 초기 상태 + 토글
+    const aiBtn = document.getElementById('ai-toggle');
+    if (aiEnabled) aiBtn.classList.add('active');
+    aiBtn.addEventListener('click', () => {
+      aiEnabled = !aiEnabled;
+      localStorage.setItem('emris_ai', aiEnabled ? '1' : '0');
+      aiBtn.classList.toggle('active', aiEnabled);
+      aiBtn.title = aiEnabled ? 'AI 추천 켜짐 — 클릭하면 끔' : 'AI 추천 꺼짐 — 클릭하면 켬';
+    });
+  }
+
+  // ── 리본 ──────────────────────────────────
+
+  function buildRibbons() {
+    const regionRibbon = document.getElementById('region-ribbon');
+    const diseaseRibbon = document.getElementById('disease-ribbon');
+
+    REGIONS.forEach(r => {
+      const btn = el('button', { className: 'ribbon-btn', textContent: r.name });
+      btn.addEventListener('click', () => selectRegion(r.code, btn));
+      regionRibbon.appendChild(btn);
+    });
+
+    DISEASE_CATEGORIES.forEach(d => {
+      const btn = el('button', { className: 'ribbon-btn', textContent: d.name });
+      btn.addEventListener('click', () => selectDisease(d.codes, btn));
+      diseaseRibbon.appendChild(btn);
+    });
+  }
+
+  function selectRegion(code, btn) {
+    document.querySelectorAll('#region-ribbon .ribbon-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedRegion = code;
+    tryRibbonSearch();
+  }
+
+  function selectDisease(codes, btn) {
+    document.querySelectorAll('#disease-ribbon .ribbon-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedDisease = codes;
+    tryRibbonSearch();
+  }
+
+  function tryRibbonSearch() {
+    if (!selectedRegion || !selectedDisease) return;
+    if (isLoading) return;
+    const regionName = REGION_NAMES[selectedRegion];
+    const diseaseName = DISEASE_CATEGORIES.find(d => d.codes === selectedDisease)?.name || '';
+    const text = regionName + ' ' + diseaseName;
+    appendUserBubble(text);
+    searchAndShow(text, selectedRegion, selectedDisease);
+    setTimeout(() => {
+      document.querySelectorAll('.ribbon-btn').forEach(b => b.classList.remove('selected'));
+      selectedRegion = null;
+      selectedDisease = null;
+    }, 500);
+  }
+
+  // ── 웰컴 ──────────────────────────────────
+
+  function showWelcome() {
+    if (welcomeShown) return;
+    welcomeShown = true;
+    const wrap = el('div', { style: 'text-align:center;padding:32px 16px 16px' });
+    const title = el('div', { style: 'font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.5px' });
+    title.textContent = '중증응급질환 병원 찾기';
+    wrap.appendChild(title);
+    const sub = el('div', { style: 'font-size:13px;color:var(--muted);margin-top:8px' });
+    sub.textContent = '지역 → 질환 선택 또는 직접 입력';
+    wrap.appendChild(sub);
+    const chat = document.getElementById('chat');
+    chat.appendChild(wrap);
+    buildChips();
+  }
+
+  function buildChips() {
+    const chipsList = document.getElementById('chips-list');
+    chipsList.innerHTML = '';
+    const shuffled = [...CASES].sort(() => Math.random() - 0.5).slice(0, 3);
+    shuffled.forEach(c => {
+      const btn = el('button', { className: 'chip', textContent: c.text });
+      btn.addEventListener('click', () => {
+        if (isLoading) return;
+        appendUserBubble(c.text);
+        searchAndShow(c.text, c.region, c.diseases);
+      });
+      chipsList.appendChild(btn);
+    });
+  }
+
+  function expandChips() {
+    // 사용자가 수동으로 접은 경우 강제 펼침 안 함
+    if (userCollapsedChips) return;
+    document.getElementById('chips-bar').classList.remove('chips-collapsed');
+  }
+
+  function collapseChips() {
+    document.getElementById('chips-bar').classList.add('chips-collapsed');
+  }
+
+  // ── 메시지 전송 ──────────────────────────────────
+
+  async function sendMessage() {
+    if (isLoading) return;
+    const input = document.getElementById('user-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+    appendUserBubble(text);
+    setLoading(true);
+
+    try {
+      // 1단계: 키워드 매칭 시도 (즉시, LLM 불필요)
+      let parsed = keywordFallback(text);
+
+      // 2단계: 키워드 실패 + AI on → LLM 파싱
+      const kwFailed = !parsed.region || !parsed.diseases || !parsed.diseases.length;
+      if (kwFailed && aiEnabled) {
+        parsed = await parseWithLLM(text);
+      }
+
+      const hasRegion = parsed && parsed.region;
+      const hasDiseases = parsed && parsed.diseases && parsed.diseases.length;
+
+      if (hasRegion && hasDiseases) {
+        // 완전 매칭 → 검색
+        const clarify = checkSeverityClarification(parsed.diseases, text);
+        if (clarify) {
+          renderClarification(clarify, parsed.region, text);
+        } else {
+          await searchAndShow(text, parsed.region, parsed.diseases.join(','));
+        }
+      } else if (hasRegion && !hasDiseases) {
+        // 지역만 매칭 → 질환 코드 없이 병상 조회
+        await searchAndShow(text, parsed.region, '');
+      } else {
+        // 매칭 실패 → 안내
+        renderParseGuide(hasRegion, hasDiseases, parsed);
+      }
+    } catch (e) {
+      const wrap = el('div', { className: 'bubble' });
+      wrap.textContent = '죄송합니다, 요청을 처리하는 중 오류가 발생했어요. 다시 시도해주세요.';
+      appendBotNode(wrap);
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderParseGuide(hasRegion, hasDiseases, parsed) {
+    const wrap = el('div', { className: 'bubble' });
+    if (!hasRegion && hasDiseases) {
+      wrap.appendChild(document.createTextNode('어느 지역인가요? 위 지역 리본에서 선택하거나, 지역명을 포함해서 다시 입력해주세요.'));
+    } else if (hasRegion && !hasDiseases) {
+      wrap.appendChild(document.createTextNode('어떤 응급 상황인가요? 질환 리본에서 선택하거나, 증상을 포함해서 다시 입력해주세요.'));
+    } else {
+      const intro = el('div', { style: 'line-height:1.8' });
+      intro.appendChild(document.createTextNode('지역과 증상을 함께 말씀해주세요.'));
+      intro.appendChild(el('br'));
+      const hint = el('small', { style: 'color:var(--muted)' });
+      hint.textContent = '예: "대구 심근경색", "서울 분만" 또는 위 리본에서 선택';
+      intro.appendChild(hint);
+      wrap.appendChild(intro);
+    }
+    appendBotNode(wrap);
+  }
+
+  // ── HARNESS 시스템 프롬프트 ──────────────────────────────────
+
+  const HARNESS_PARSE_PROMPT = `당신은 119 구급대원을 위한 응급의료 AI입니다. 사용자 요청에서 지역코드와 질환코드를 추출하세요.
+
+## 지역코드
+11=서울, 12=부산, 13=대구, 14=인천, 15=광주, 16=대전, 17=울산, 18=세종, 21=경기(수원,성남,고양,용인,안산,부천,의정부,남양주,화성,평택), 22=강원(춘천,원주,강릉), 23=충북(청주,충주), 24=충남(천안,아산,서산), 25=전북(전주,익산), 26=전남(목포,여수,순천), 27=경북(포항,경주,구미,안동), 28=경남(창원,김해,진주,양산), 29=제주(서귀포)
+
+## 질환코드 + 스마트 매핑 규칙
+Y0010=심근경색/심장마비/가슴통증, Y0020=뇌경색/뇌졸중/중풍/혈전제거, Y0031=거미막하출혈, Y0032=뇌내출혈, Y0041=흉부대동맥, Y0042=복부대동맥, Y0051=담낭/담석, Y0052=담도/담관, Y0060=복부수술/복막염/장천공, Y0070=장중첩/장폐색, Y0081=위장관출혈/토혈/혈변(성인), Y0082=소아위장관내시경, Y0091=기관지내시경/객혈(성인), Y0092=소아기관지/이물흡인, Y0100=저체중출생아/미숙아/NICU, Y0111=분만/출산/진통, Y0112=산과수술/제왕절개/전치태반, Y0113=부인과수술/자궁외임신, Y0120=화상, Y0131=수지접합/손가락절단, Y0132=사지접합, Y0141=혈액투석, Y0142=CRRT/지속적신대체요법, Y0150=정신과응급/자해/자살, Y0160=안과응급/안구파열, Y0171=혈관중재/색전술(성인), Y0172=소아혈관중재
+
+## 핵심: 진단 불확실 시 복수 코드 동시 조회
+- "뇌출혈" (유형 불명) → Y0031,Y0032 둘 다
+- "대동맥" (부위 불명) → Y0041,Y0042 둘 다
+- "삼켰어요/이물" (위치 불명) → Y0082,Y0092 둘 다 (소아)
+- "산모/임산부" (상태 불명) → Y0100,Y0111,Y0112,Y0113 전부
+- "투석" (중증도 불명) → Y0141,Y0142 둘 다
+- "절단" (부위 불명) → Y0131,Y0132 둘 다
+- "담낭+담도" 동반 의심 → Y0051,Y0052 둘 다
+
+## 연령 분기
+"아이/아기/유아/영아/소아" + 내시경 → Y0082,Y0092 (소아 코드)
+"아이/아기" + 혈변/울다멈추다 → Y0070 (장중첩)
+연령 언급 없으면 → 성인 코드
+
+JSON만 반환: {"region":"13","diseases":["Y0111","Y0112"]}
+지역 불명이면 region:null, 질환 불명이면 diseases:null`;
+
+  const HARNESS_INTERPRET_PROMPT = `당신은 119 구급대원을 위한 응급의료 AI입니다. API 조회 결과를 분석하여 구급대원이 즉시 행동할 수 있는 판단을 제공하세요.
+
+## 13가지 의사결정 패턴 (반드시 모두 적용)
+
+### 1. 교차검증
+verdict가 available이어도 conditions에 "f/u 외 불가", "본원 환자만", "사전문의 필요" 등이 있으면 실질적으로 conditional. "가용이라고 다 같은 가용이 아님"을 명시.
+
+### 2. 복수 질환 매트릭스
+여러 코드 조회 시 병원마다 가능한 시술이 다름. "전부 가능한 곳" > "일부만 가능한 곳" 순서로 추천. 어떤 시술이 가능/불가인지 명시.
+
+### 3. 등급 기반 필터링
+심근경색(PCI), 뇌수술, CRRT, 화상 등은 D등급(지역응급의료기관)에 장비가 없을 가능성 높음. A(권역)>C(센터) 우선 추천.
+
+### 4. 중증도 구분
+일반 투석(Y0141)과 CRRT(Y0142)는 다른 장비. 환자 상태에 맞는 코드로 조회되었는지 확인.
+
+### 5. 가용 0곳 에스컬레이션
+가용 병원이 0이면 세 유형 판별:
+- 진짜 0곳: "이 지역에 대응 기관 없음. 헬기 이송/광역 이송 즉시 결정"
+- 미보고 0곳: A/C 등급이 null이면 "미보고일 수 있음. 직접 전화 확인" + 전화번호
+- 혼합: "현재 수용불가. 인접 지역 이송 검토"
+
+### 6. null≠없음
+EP-08에서 null은 "미보유"가 아닌 "미보고". A/C 등급은 역량 보유 가능성 높음 → "직접 확인 권고" + 전화번호.
+
+### 7. 시간대 조건
+conditions에 "21시~5시 불가", "야간불가" 등 → 현재 시각과 비교하여 해당 시간대면 제외.
+
+### 8. 병상 기반 판단
+질환 코드 없이 조회된 경우 → 일반 병상/소아 병상/음압격리실 가용 수로 판단. 만석이면 "만석" 명시.
+
+### 9. 두 기관 연계
+한 병원이 모든 조건을 못 충족할 때 (예: A병원=분만, B병원=NICU) → "연계 이송: A에서 수술 → B로 전원" 시나리오 제시.
+
+### 10. 골든타임
+심근경색(90분), 뇌졸중(4.5h), 뇌출혈/대동맥(분 단위), 사지접합(6h) → "즉시 이송" 강조 + 이동 중 준비 요청.
+
+### 11. 단일 기관 리스크
+가용 1곳뿐이면 "유일 기관" 경고 + "수용 불가 시 [인접 지역] 전환" 백업 경로.
+
+### 12. 데이터 품질
+저체중출생아(Y0100), 소아내시경(Y0082,Y0092), 화상(Y0120), 안과(Y0160), 사지접합(Y0131,Y0132)는 등록률이 낮음 → "실제 대응 가능 기관이 더 많을 수 있음" 부기.
+
+### 13. 인접 지역
+서울↔경기, 부산↔경남↔울산, 대구↔경북↔경남, 인천↔경기↔서울, 광주↔전남↔전북, 대전↔충남↔충북↔세종, 강원↔경기, 전북↔전남↔광주, 경북↔대구↔경남, 제주(항공/해상만)
+
+## 출력 형식 (JSON) — 적응형 표 구조
+{
+  "title": "지역 — 질환명",
+  "summary": "N개 병원 중 가용 X곳, 조건부 Y곳",
+  "alerts": ["⏱ 골든타임: 90분 — PCI 준비 요청", "🚁 에스컬레이션 등 — 해당 시만"],
+  "table": {
+    "headers": ["병원","등급","판정","...질환에 맞는 컬럼"],
+    "rows": [{"cells":["영남대","권역","O","Y","Y",""],"verdict":"available"}],
+    "collapsed": "나머지 N곳 — 미대응 (D등급)"
+  },
+  "recommendation": {"level":"good|warn|bad","text":"구급대원 명령형 2~3문장"},
+  "linkage": "연계이송 시나리오 — 해당 시만, null",
+  "insights": ["시사점1","시사점2 — 해당 시만"]
+}
+
+## table.headers 규칙 (질환마다 다르게)
+- 분만 조회: ["병원","판정","분만","산과수술"]
+- 뇌출혈(복수코드): ["병원","판정","거미막하","뇌내출혈"]
+- 소아내시경(복수코드): ["병원","위장관","기관지","비고"]
+- 병상만 조회(질환없음): ["병원","일반병상","소아병상","음압격리"]
+- 단일 질환(가용 많음): ["병원","판정","비고"]
+- 가용 0곳: table은 null, alerts+recommendation만
+
+## 병원 컬럼 규칙 (중요)
+- "등급" 별도 컬럼 없음. 병원명 앞에 등급 태그를 붙여라:
+  - A등급: "[권역] 영남대학교병원"
+  - C등급: "[센터] 계명대동산병원"
+  - D등급: "[기관] 대구의료원"
+- 제한사항은 별도 컬럼 없음. 병원명 셀 안에서 줄바꿈(\\n)으로 아래에 표기:
+  - "[권역] 영남대학교병원\\n⚠ 산과 f/u 외 수용 불가"
+  - "[센터] 대구파티마병원\\n⚠ 본원 f/u 이외 산모진료 불가"
+  - 제한사항 없으면 병원명만.
+
+## 헤더 작성 규칙
+- 코드번호/괄호 제거: "부인과수술(Y0113)" → "부인과". 2~4글자로.
+
+## table.rows 규칙
+- 상위 5~8곳만 (가용→조건부→불가 순, A>C>D)
+- 판정 셀: O=가용, △=조건부, X=불가, 미보고
+- 질환별 셀: Y=가능, N=불가, 미보고
+- collapsed로 나머지 요약
+
+## recommendation.level
+- good: 가용 충분 (초록)
+- warn: 조건부만/선택지 제한 (노란)
+- bad: 0곳/에스컬레이션 (빨간)
+
+JSON만 반환. 마크다운/설명 금지.`;
+
+  // ── LLM 파싱 ──────────────────────────────────
+
+  async function parseWithLLM(userText) {
+    const systemPrompt = HARNESS_PARSE_PROMPT;
+
+    try {
+      const resp = await fetch(LLM_PROXY, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-emris-token': EMRIS_API_KEY },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: userText }],
+          system: systemPrompt,
+        }),
+      });
+
+      if (!resp.ok) return keywordFallback(userText);
+
+      const data = await resp.json();
+      const raw = (data.content?.[0]?.text || '').trim().replace(/```json?|```/g, '').trim();
+      return JSON.parse(raw);
+    } catch {
+      return keywordFallback(userText);
+    }
+  }
+
+  function keywordFallback(text) {
+    let region = null;
+    const regionMap = [
+      ['서울','11'],['부산','12'],['대구','13'],['인천','14'],['광주','15'],
+      ['대전','16'],['울산','17'],['세종','18'],
+      ['수원','21'],['성남','21'],['고양','21'],['용인','21'],['경기','21'],
+      ['춘천','22'],['원주','22'],['강릉','22'],['강원','22'],
+      ['청주','23'],['충주','23'],['충북','23'],
+      ['천안','24'],['아산','24'],['충남','24'],
+      ['전주','25'],['익산','25'],['군산','25'],['전북','25'],
+      ['목포','26'],['여수','26'],['순천','26'],['전남','26'],
+      ['포항','27'],['경주','27'],['구미','27'],['경북','27'],
+      ['창원','28'],['김해','28'],['진주','28'],['경남','28'],
+      ['제주','29'],['서귀포','29'],
+    ];
+    for (const [kw, code] of regionMap) {
+      if (text.includes(kw)) { region = code; break; }
+    }
+
+    const diseaseMap = [
+      [['심근경색','심장마비','심장','가슴통증','가슴 통증','흉통','AMI','쓰러졌','쓰러진'], ['Y0010']],
+      [['뇌경색','뇌졸중','중풍','혈전제거','마비','어눌'], ['Y0020']],
+      [['거미막하출혈','SAH'], ['Y0031']],
+      [['뇌내출혈','ICH'], ['Y0032']],
+      [['뇌출혈','머리 출혈'], ['Y0031','Y0032']],
+      [['흉부대동맥'], ['Y0041']],
+      [['복부대동맥'], ['Y0042']],
+      [['대동맥'], ['Y0041','Y0042']],
+      [['담낭','담석','쓸개'], ['Y0051']],
+      [['담도','담관','총담관'], ['Y0052']],
+      [['복막염','장천공','맹장','복부수술'], ['Y0060']],
+      [['장중첩','장폐색','혈변'], ['Y0070']],
+      [['토혈','피를 토','위장관출혈','내시경'], ['Y0081']],
+      [['소아 내시경','영유아 내시경'], ['Y0082']],
+      [['삼켰','삼킨','이물','동전'], ['Y0082','Y0092']],
+      [['미숙아','NICU','저체중','조산'], ['Y0100']],
+      [['분만','출산','진통','제왕절개','양수'], ['Y0111']],
+      [['전치태반','자궁파열','산과','태반'], ['Y0112']],
+      [['자궁외임신','난소','부인과'], ['Y0113']],
+      [['산모','임산부','임신'], ['Y0100','Y0111','Y0112','Y0113']],
+      [['화상','불에'], ['Y0120']],
+      [['손가락','수지접합'], ['Y0131']],
+      [['사지접합','절단','잘렸','잘린'], ['Y0131','Y0132']],
+      [['혈액투석','투석'], ['Y0141']],
+      [['CRRT','중환자투석'], ['Y0142']],
+      [['자해','자살','정신과','정신'], ['Y0150']],
+      [['눈','안구','안과','파편'], ['Y0160']],
+      [['색전술','혈관중재'], ['Y0171']],
+      [['객혈','기관지','흡인'], ['Y0091']],
+    ];
+
+    const diseaseSet = new Set();
+    for (const [keywords, codes] of diseaseMap) {
+      if (keywords.some(k => text.includes(k))) {
+        codes.forEach(c => diseaseSet.add(c));
+      }
+    }
+    const diseases = [...diseaseSet];
+    return { region, diseases: diseases.length ? diseases : null };
+  }
+
+  // ── HARNESS 데이터 상수 ──────────────────────────────────
+
+  const GOLDEN_TIME = {
+    Y0010: { label: 'Door-to-balloon 90분', action: '이동 중 PCI 준비 요청' },
+    Y0020: { label: '발증 4.5시간(tPA)', action: '이동 중 혈전제거팀 준비 요청' },
+    Y0031: { label: '분 단위', action: '이동 중 신경외과 수술 준비 요청' },
+    Y0032: { label: '분 단위', action: '이동 중 신경외과 수술 준비 요청' },
+    Y0041: { label: '분 단위', action: '이동 중 혈관외과팀 준비 요청. 지체 금물' },
+    Y0042: { label: '분 단위', action: '이동 중 혈관외과팀 준비 요청. 지체 금물' },
+    Y0131: { label: '수지접합 6시간', action: '절단부 거즈+얼음물 보관 유지' },
+    Y0132: { label: '사지접합 4시간', action: '절단부 거즈+얼음물 보관 유지' },
+  };
+
+  const GRADE_REQ = {
+    Y0010:'C', Y0020:'C', Y0031:'C', Y0032:'C',
+    Y0041:'C', Y0042:'C', Y0120:'A',
+    Y0131:'C', Y0132:'C', Y0142:'C', Y0111:'C', Y0112:'C',
+  };
+
+  const LOW_REG = new Set(['Y0100','Y0082','Y0092','Y0120','Y0160','Y0131','Y0132']);
+
+  const ADJ_REGIONS = {
+    '11':['21'], '12':['28','17'], '13':['27','28'], '14':['21','11'],
+    '15':['26','25'], '16':['24','23','18'], '17':['12','28'],
+    '18':['16','24'], '21':['11','14','22'], '22':['21','23'],
+    '23':['16','24'], '24':['16','23'], '25':['26','15'],
+    '26':['15','25','28'], '27':['13','28'], '28':['12','17','13'], '29':[],
+  };
+
+  const ADJ_NAMES = {
+    '11':'서울','12':'부산','13':'대구','14':'인천','15':'광주','16':'대전','17':'울산',
+    '18':'세종','21':'경기','22':'강원','23':'충북','24':'충남','25':'전북','26':'전남',
+    '27':'경북','28':'경남','29':'제주',
+  };
+
+  const SEVERITY_PAIRS = [
+    { base:'Y0141', upgrade:'Y0142', keywords:['CRRT','중환자','호흡곤란','저혈압','폐부종'],
+      question:'환자 상태가 어떠신가요?',
+      options:[
+        { label:'의식 있고 안정적 → 일반 투석', diseases:['Y0141'] },
+        { label:'저혈압/호흡곤란 → CRRT(중환자 투석)', diseases:['Y0142'] },
+        { label:'잘 모르겠음 → 둘 다 조회', diseases:['Y0141','Y0142'] },
+      ]},
+  ];
+
+  // ── HARNESS 분석 엔진 ──────────────────────────────────
+
+  function analyzeResults(data, diseaseCodes, userText, now) {
+    const diseases = diseaseCodes ? diseaseCodes.split(',').filter(Boolean) : [];
+    const hospitals = data.hospitals || [];
+    const region = data.meta?.region || '';
+
+    // 1. 교차검증: effectiveVerdict 계산
+    const refined = hospitals.map(h => ({
+      ...h,
+      ...crossValidateOne(h, diseases, now),
+    }));
+
+    // 2. 등급 필터링
+    const { qualified, gradeFiltered } = filterByGrade(refined, diseases);
+
+    // 3. 복수 질환 매트릭스 정렬
+    const sorted = buildPriorityMatrix(qualified, diseases);
+
+    // 4. 경고 수집
+    const alerts = [];
+    const gt = checkGoldenTime(diseases);
+    if (gt) alerts.push(gt);
+
+    const effectiveAvailable = sorted.filter(h =>
+      h.effectiveVerdict === 'available' || h.effectiveVerdict === 'conditional'
+    );
+
+    const esc = checkEscalation(effectiveAvailable, sorted, region);
+    if (esc) alerts.push(esc);
+
+    const sf = checkSingleFacility(effectiveAvailable, region);
+    if (sf) alerts.push(sf);
+
+    // 5. 미보고 A/C 분리
+    const unsupportedAC = handleUnsupportedAC(sorted);
+
+    // 6. 연계이송
+    const linkage = detectLinkage(sorted, diseases);
+
+    // 7. 데이터 품질
+    const dataQuality = getDataQuality(diseases);
+
+    return { refinedHospitals: sorted, alerts, unsupportedAC, linkage, dataQuality, gradeFiltered };
+  }
+
+  function crossValidateOne(h, diseases, now) {
+    if (h.verdict === 'unsupported' || h.verdict === 'blocked') {
+      return { effectiveVerdict: h.verdict, cvNote: null };
+    }
+
+    let effectiveVerdict = h.verdict;
+    const notes = [];
+
+    // conditions만 스캔 (서버가 해당 질환 관련 조건만 필터링하여 제공)
+    // erMessages 전체를 스캔하면 무관한 과(영상의학과 등)의 제한이 오적용됨
+    const conditions = (h.conditions || []).join(' ');
+    const allText = conditions;
+
+    if (/f\/u|본원|follow.?up/i.test(allText)) {
+      if (effectiveVerdict === 'available') effectiveVerdict = 'conditional';
+      notes.push('본원 f/u 환자 전용');
+    }
+    if (/부족|사전문의|사전 문의/i.test(allText)) {
+      notes.push('사전문의 필요');
+    }
+    if (/신환.*불가|불가.*신환/i.test(allText)) {
+      if (effectiveVerdict === 'available') effectiveVerdict = 'conditional';
+      notes.push('신환 진료 불가');
+    }
+
+    // 시간대 제한 파싱
+    const timeRes = parseTimeRestriction(allText, now);
+    if (timeRes) {
+      if (timeRes.restricted) {
+        if (effectiveVerdict === 'available') effectiveVerdict = 'conditional';
+        notes.push(timeRes.reason);
+      }
+    }
+
+    return {
+      effectiveVerdict,
+      cvNote: notes.length ? notes.join(' / ') : null,
+    };
+  }
+
+  function parseTimeRestriction(text, now) {
+    // "21시~익일 5시 불가" 패턴
+    const m = text.match(/(\d{1,2})시\s*~\s*(익일\s*)?(\d{1,2})시\s*(불가|제한)/);
+    if (m) {
+      const start = parseInt(m[1]);
+      const end = parseInt(m[3]);
+      const isOvernight = !!m[2] || end < start;
+      const hour = now.getHours();
+      let restricted;
+      if (isOvernight) {
+        restricted = hour >= start || hour < end;
+      } else {
+        restricted = hour >= start && hour < end;
+      }
+      return { restricted, reason: `${m[1]}시~${m[2]||''}${m[3]}시 ${m[4]}` };
+    }
+
+    // "야간/주말 불가" 패턴
+    if (/야간.*(불가|제한)|주말.*(불가|제한)/.test(text)) {
+      const hour = now.getHours();
+      const day = now.getDay();
+      const isNight = hour >= 18 || hour < 9;
+      const isWeekend = day === 0 || day === 6;
+      if (/야간/.test(text) && isNight) return { restricted: true, reason: '야간 진료 불가 (현재 야간)' };
+      if (/주말/.test(text) && isWeekend) return { restricted: true, reason: '주말 진료 불가 (현재 주말)' };
+      return { restricted: false, reason: null };
+    }
+
+    return null;
+  }
+
+  function filterByGrade(hospitals, diseases) {
+    if (!diseases.length) return { qualified: hospitals, gradeFiltered: 0 };
+    const minGrade = diseases.reduce((min, d) => {
+      const req = GRADE_REQ[d];
+      if (!req) return min;
+      const rank = { A: 3, C: 2, D: 1 };
+      return rank[req] > rank[min] ? req : min;
+    }, 'D');
+
+    if (minGrade === 'D') return { qualified: hospitals, gradeFiltered: 0 };
+
+    const rank = { A: 3, C: 2, D: 1 };
+    const minRank = rank[minGrade] || 1;
+    const qualified = [];
+    let filtered = 0;
+    for (const h of hospitals) {
+      const hRank = rank[h.grade] || 1;
+      // 데이터 우선: 해당 질환에 Y를 보고한 D등급은 포함
+      if (hRank >= minRank) {
+        qualified.push(h);
+      } else if (diseases.some(d => h.diseaseAvailability?.[d] === 'Y')) {
+        qualified.push(h);
+      } else {
+        filtered++;
+      }
+    }
+    return { qualified, gradeFiltered: filtered };
+  }
+
+  function buildPriorityMatrix(hospitals, diseases) {
+    if (diseases.length < 2) return hospitals;
+    return [...hospitals].sort((a, b) => {
+      const scoreA = matrixScore(a, diseases);
+      const scoreB = matrixScore(b, diseases);
+      if (scoreA !== scoreB) return scoreA - scoreB;
+      const gradeRank = { A: 0, C: 1, D: 2 };
+      return (gradeRank[a.grade] || 2) - (gradeRank[b.grade] || 2);
+    });
+  }
+
+  function matrixScore(h, diseases) {
+    if (!h.diseaseAvailability) return 3;
+    let yCount = 0, nullCount = 0;
+    for (const d of diseases) {
+      const v = h.diseaseAvailability[d];
+      if (v === 'Y') yCount++;
+      else if (v == null) nullCount++;
+    }
+    if (yCount === diseases.length) return 0; // 전체 Y
+    if (yCount > 0) return 1; // 일부 Y
+    if (nullCount === diseases.length) return 3; // 전체 null
+    return 2; // 일부 N
+  }
+
+  function checkGoldenTime(diseases) {
+    for (const d of diseases) {
+      const gt = GOLDEN_TIME[d];
+      if (gt) return { type: 'goldenTime', severity: 'critical', label: gt.label, action: gt.action };
+    }
+    return null;
+  }
+
+  function checkEscalation(effectiveAvail, allHospitals, region) {
+    if (effectiveAvail.length > 0) return null;
+    if (!allHospitals.length) return null;
+
+    const unsupported = allHospitals.filter(h => h.effectiveVerdict === 'unsupported');
+    const unavailable = allHospitals.filter(h => h.effectiveVerdict === 'unavailable');
+    const acUnsupported = unsupported.filter(h => h.grade === 'A' || h.grade === 'C');
+
+    let escType, message;
+    if (unsupported.length === allHospitals.length) {
+      if (acUnsupported.length > 0) {
+        escType = 'unreported';
+        message = '시스템상 0곳이나, A/C 등급 기관의 미보고일 수 있습니다. 직접 확인하세요.';
+      } else {
+        escType = 'true_zero';
+        message = '이 지역에서 대응 가능 기관이 확인되지 않습니다. 광역 이송/헬기를 검토하세요.';
+      }
+    } else {
+      escType = 'mixed';
+      message = '현재 수용 가능 기관이 없습니다. 인접 지역 이송을 검토하세요.';
+    }
+
+    const adj = (ADJ_REGIONS[region] || []).map(r => ADJ_NAMES[r]).filter(Boolean);
+    return {
+      type: 'escalation', severity: 'critical', escType, message,
+      adjacentRegions: adj.length ? adj : null,
+    };
+  }
+
+  function checkSingleFacility(effectiveAvail, region) {
+    if (effectiveAvail.length !== 1) return null;
+    const h = effectiveAvail[0];
+    const adj = (ADJ_REGIONS[region] || []).map(r => ADJ_NAMES[r]).filter(Boolean);
+    return {
+      type: 'singleFacility', severity: 'warning',
+      message: `${h.nickname || h.name} — 이 지역 유일 대응 기관`,
+      backup: adj.length ? `수용 불가 시 ${adj[0]} 지역으로 전환` : '수용 불가 시 광역 이송 검토',
+    };
+  }
+
+  function handleUnsupportedAC(hospitals) {
+    return hospitals
+      .filter(h => h.effectiveVerdict === 'unsupported' && (h.grade === 'A' || h.grade === 'C'))
+      .map(h => ({ name: h.nickname || h.name, grade: h.grade, tel: h.tel }));
+  }
+
+  function detectLinkage(hospitals, diseases) {
+    if (diseases.length < 2) return null;
+    // 전체 Y 병원이 있으면 연계 불필요
+    const hasAllY = hospitals.some(h => {
+      if (!h.diseaseAvailability) return false;
+      return diseases.every(d => h.diseaseAvailability[d] === 'Y');
+    });
+    if (hasAllY) return null;
+
+    // 코드별 최적 병원 찾기
+    const bestPerCode = {};
+    for (const d of diseases) {
+      const best = hospitals.find(h => h.diseaseAvailability?.[d] === 'Y' &&
+        (h.effectiveVerdict === 'available' || h.effectiveVerdict === 'conditional'));
+      if (best) bestPerCode[d] = best.nickname || best.name;
+    }
+
+    const uniqueHospitals = [...new Set(Object.values(bestPerCode))];
+    if (uniqueHospitals.length < 2) return null;
+
+    const roles = Object.entries(bestPerCode).map(([code, name]) => ({
+      hospital: name,
+      role: DISEASE_NAMES[code] || code,
+    }));
+
+    return { hospitals: roles, explanation: '단일 병원이 모든 시술을 충족하지 못합니다. 두 기관 연계 이송을 검토하세요.' };
+  }
+
+  function checkSeverityClarification(diseases, userText) {
+    if (!diseases || !diseases.length) return null;
+    for (const pair of SEVERITY_PAIRS) {
+      if (diseases.includes(pair.base) && !diseases.includes(pair.upgrade)) {
+        const hasKeyword = pair.keywords.some(k => userText.includes(k));
+        if (!hasKeyword) return pair;
+      }
+    }
+    return null;
+  }
+
+  function getDataQuality(diseases) {
+    const low = diseases.filter(d => LOW_REG.has(d));
+    if (!low.length) return null;
+    return '이 질환은 EP-08 등록률이 낮아, 실제 대응 가능 기관이 표시보다 많을 수 있습니다. A/C 등급 병원에 직접 확인을 권장합니다.';
+  }
+
+  // ── API 호출 ──────────────────────────────────
+
+  async function searchAndShow(queryText, region, diseases) {
+    collapseChips();
+    userCollapsedChips = false;
+    const myGenId = ++searchGenId;
+    setLoading(true);
+    const loadingEl = appendLoadingBubble();
+
+    try {
+      const params = new URLSearchParams({ region });
+      if (diseases) params.set('disease', diseases);
+      const url = API_BASE + '/query?' + params.toString();
+
+      const resp = await fetch(url, { headers: { 'x-api-key': apiKey } });
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        loadingEl.remove();
+        const wrap = el('div', { className: 'bubble' });
+        wrap.textContent = resp.status === 401 ? 'API 인증 오류입니다.' : '오류: ' + (data.error || '알 수 없는 오류');
+        appendBotNode(wrap);
+        return;
+      }
+
+      // AI ON: LLM HARNESS 해석이 메인 출력
+      if (aiEnabled && data.hospitals && data.hospitals.length > 0) {
+        loadingEl.remove();
+        const aiLoading = appendLoadingBubble();
+        const llmResult = await interpretWithHarness(data, queryText);
+        aiLoading.remove();
+
+        if (myGenId !== searchGenId) return; // stale
+
+        if (llmResult && llmResult._rateLimit) {
+          // 429 rate limit → 사용자 선택
+          renderRateLimitChoice(data, diseases || '', queryText);
+        } else if (llmResult) {
+          appendBotNode(renderAdaptiveResult(llmResult));
+        } else {
+          // LLM 실패 → 클라이언트 HARNESS fallback
+          const analysis = analyzeResults(data, diseases || '', queryText, new Date());
+          appendBotNode(renderSmartResult(data, analysis));
+        }
+      }
+      // AI OFF: 클라이언트 HARNESS (기존)
+      else {
+        loadingEl.remove();
+        const analysis = analyzeResults(data, diseases || '', queryText, new Date());
+        appendBotNode(renderSmartResult(data, analysis));
+      }
+    } catch (e) {
+      loadingEl.remove();
+      const wrap = el('div', { className: 'bubble' });
+      wrap.textContent = '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.';
+      appendBotNode(wrap);
+      console.error(e);
+    } finally {
+      setLoading(false);
+      // 검색 완료 후 chips 새로 섞어 표시
+      buildChips();
+      expandChips();
+    }
+  }
+
+  // ── 스마트 결과 렌더링 (HARNESS 분석 기반) ──────────────────────────────────
+
+  function renderSmartResult(data, analysis) {
+    const { meta, hospitals } = data;
+    const regionName = meta.regionName || '';
+    const diseaseNames = (meta.diseaseNames || []).join(', ');
+    const updateTime = meta.serverUpdateDate ? formatTime(meta.serverUpdateDate) : '—';
+    const total = meta.totalHospitals || 0;
+    const diseases = meta.diseases || [];
+
+    const wrap = el('div', { className: 'result-wrap bubble' });
+
+    const header = el('div', { className: 'result-header' });
+    header.appendChild(document.createTextNode('📍 '));
+    header.appendChild(el('strong', {}, [regionName]));
+    header.appendChild(document.createTextNode(' ' + (diseaseNames || '병원 현황') + ' — 서버 ' + updateTime + ' 기준'));
+    wrap.appendChild(header);
+
+    if (total === 0) {
+      const disc = el('div', { className: 'disclaimer' });
+      disc.textContent = '해당 조건의 데이터를 찾을 수 없습니다.';
+      wrap.appendChild(disc);
+      return wrap;
+    }
+
+    // 경고 배너 (골든타임, 에스컬레이션, 단일기관)
+    for (const alert of analysis.alerts) {
+      const banner = el('div', { className: 'alert-banner ' + alert.severity });
+      if (alert.type === 'goldenTime') {
+        banner.textContent = '⏱ 골든타임: ' + alert.label + ' — ' + alert.action;
+      } else if (alert.type === 'escalation') {
+        banner.textContent = '🚁 ' + alert.message;
+        if (alert.adjacentRegions && alert.adjacentRegions.length) {
+          banner.appendChild(el('br'));
+          const adj = el('span', { style: 'font-weight:400' });
+          adj.textContent = '인접 지역: ' + alert.adjacentRegions.join(', ');
+          banner.appendChild(adj);
+        }
+      } else if (alert.type === 'singleFacility') {
+        banner.textContent = '⚠ ' + alert.message + ' — ' + alert.backup;
+      }
+      wrap.appendChild(banner);
+    }
+
+    // 연계이송 시나리오
+    if (analysis.linkage) {
+      const box = el('div', { className: 'linkage-box' });
+      const title = el('div', { style: 'font-weight:700;font-size:13px;margin-bottom:4px' });
+      title.textContent = '🔗 연계 이송 시나리오';
+      box.appendChild(title);
+      for (const r of analysis.linkage.hospitals) {
+        const line = el('div', { style: 'font-size:12px' });
+        line.textContent = '• ' + r.hospital + ' → ' + r.role;
+        box.appendChild(line);
+      }
+      const exp = el('div', { style: 'font-size:11px;color:var(--muted);margin-top:4px' });
+      exp.textContent = analysis.linkage.explanation;
+      box.appendChild(exp);
+      wrap.appendChild(box);
+    }
+
+    // effectiveVerdict 기준 그룹핑
+    const refined = analysis.refinedHospitals;
+    const available = refined.filter(h => h.effectiveVerdict === 'available');
+    const conditional = refined.filter(h => h.effectiveVerdict === 'conditional');
+    const unavailable = refined.filter(h => h.effectiveVerdict === 'unavailable');
+    const unsupported = refined.filter(h => h.effectiveVerdict === 'unsupported');
+    const blocked = refined.filter(h => h.effectiveVerdict === 'blocked');
+
+    if (available.length) {
+      wrap.appendChild(makeSmartSection('✅ 즉시 이송 가능 (' + available.length + ')', 'var(--available)', available, diseases));
+    }
+    if (conditional.length) {
+      wrap.appendChild(makeSmartSection('⚠️ 이동 중 확인 필요 (' + conditional.length + ')', 'var(--conditional)', conditional, diseases));
+    }
+    if (unavailable.length) {
+      wrap.appendChild(makeSmartSection('❌ 수용 불가 (' + unavailable.length + ')', 'var(--unavailable)', unavailable, diseases));
+    }
+
+    // 미보고: A/C 등급 분리 (전화번호 포함)
+    const unsupportedAC = analysis.unsupportedAC || [];
+    const unsupportedD = unsupported.filter(h => h.grade !== 'A' && h.grade !== 'C');
+
+    if (unsupportedAC.length) {
+      const sec = el('div', { className: 'hospital-section' });
+      const title = el('div', { className: 'section-title', style: 'color:#6366f1' });
+      title.textContent = '📞 미보고 — 확인 권고 (' + unsupportedAC.length + ')';
+      sec.appendChild(title);
+      for (const h of unsupportedAC) {
+        const card = el('div', { className: 'hospital-card unsupported', style: 'border-left-color:#6366f1' });
+        const top = el('div', { className: 'hcard-top' });
+        const name = el('span', { className: 'hcard-name' });
+        name.textContent = h.name;
+        top.appendChild(name);
+        const badge = el('span', { className: h.grade === 'A' ? 'badge A' : 'badge C' });
+        badge.textContent = h.grade === 'A' ? '권역' : '센터';
+        top.appendChild(badge);
+        card.appendChild(top);
+        if (h.tel) {
+          const telEl = el('a', { className: 'hcard-tel', href: 'tel:' + h.tel });
+          telEl.textContent = '📞 ' + h.tel;
+          card.appendChild(telEl);
+        }
+        const note = el('div', { className: 'cv-note' });
+        note.textContent = '역량 보유 가능성 높음 — 직접 전화하여 확인하세요';
+        card.appendChild(note);
+        sec.appendChild(card);
+      }
+      wrap.appendChild(sec);
+    }
+
+    if (unsupportedD.length) {
+      const sec = el('div', { className: 'hospital-section' });
+      const title = el('div', { className: 'section-title' });
+      title.textContent = '— 미대응 기관 (' + unsupportedD.length + ')';
+      sec.appendChild(title);
+      const list = el('div', { className: 'unsupported-list' });
+      list.textContent = unsupportedD.map(h => h.nickname || h.name).join(', ');
+      sec.appendChild(list);
+      wrap.appendChild(sec);
+    }
+
+    if (blocked.length) {
+      const sec = el('div', { className: 'hospital-section' });
+      const title = el('div', { className: 'section-title' });
+      title.textContent = '? 갱신 지연 (' + blocked.length + ')';
+      sec.appendChild(title);
+      const list = el('div', { className: 'unsupported-list' });
+      list.textContent = blocked.map(h => h.nickname || h.name).join(', ');
+      sec.appendChild(list);
+      wrap.appendChild(sec);
+    }
+
+    // 등급 필터 부기
+    if (analysis.gradeFiltered > 0) {
+      const note = el('div', { className: 'grade-filter-note' });
+      note.textContent = 'D등급 ' + analysis.gradeFiltered + '곳 미포함 (장비 미보유 추정)';
+      wrap.appendChild(note);
+    }
+
+    // 데이터 품질 부기
+    if (analysis.dataQuality) {
+      const dq = el('div', { className: 'disclaimer', style: 'background:#eff6ff;color:#1e40af' });
+      dq.textContent = 'ℹ️ ' + analysis.dataQuality;
+      wrap.appendChild(dq);
+    }
+
+    const disc = el('div', { className: 'disclaimer' });
+    disc.textContent = '이동 중 병원 측에 실제 수용 가능 여부를 확인하세요. 데이터는 5분 주기로 갱신됩니다.';
+    wrap.appendChild(disc);
+
+    return wrap;
+  }
+
+  function makeSmartSection(titleText, titleColor, list, diseases) {
+    const sec = el('div', { className: 'hospital-section' });
+    const title = el('div', { className: 'section-title' });
+    title.style.color = titleColor;
+    title.textContent = titleText;
+    sec.appendChild(title);
+    list.forEach(h => sec.appendChild(makeSmartCard(h, diseases)));
+    return sec;
+  }
+
+  function makeSmartCard(h, diseases) {
+    const card = el('div', { className: 'hospital-card ' + h.effectiveVerdict });
+
+    const top = el('div', { className: 'hcard-top' });
+    const name = el('span', { className: 'hcard-name' });
+    name.textContent = h.nickname || h.name;
+    top.appendChild(name);
+
+    const badgeCls = h.grade === 'A' ? 'badge A' : h.grade === 'C' ? 'badge C' : 'badge';
+    const badgeText = h.grade === 'A' ? '권역' : h.grade === 'C' ? '센터' : '기관';
+    top.appendChild(el('span', { className: badgeCls, textContent: badgeText }));
+
+    const icon = el('span', { className: 'verdict-icon' });
+    icon.textContent = VERDICT_ICON[h.effectiveVerdict] || '?';
+    top.appendChild(icon);
+    card.appendChild(top);
+
+    if (h.tel) {
+      const tel = el('a', { className: 'hcard-tel', href: 'tel:' + h.tel });
+      tel.textContent = '📞 ' + h.tel;
+      card.appendChild(tel);
+    }
+
+    if (h.beds) {
+      const bedParts = buildBedsSummary(h.beds, diseases);
+      if (bedParts.length) {
+        const bedsEl = el('div', { className: 'hcard-beds' });
+        bedParts.forEach((part, i) => {
+          if (i > 0) bedsEl.appendChild(document.createTextNode(' · '));
+          const span = el('span', { className: part.cls });
+          span.textContent = part.text;
+          bedsEl.appendChild(span);
+        });
+        card.appendChild(bedsEl);
+      }
+    }
+
+    if (diseases.length && h.diseaseAvailability) {
+      const dInfo = el('div', { className: 'hcard-disease' });
+      const parts = diseases.map(d => {
+        const val = h.diseaseAvailability[d];
+        const nm = DISEASE_NAMES[d] || d;
+        const mark = val === 'Y' ? '✓' : (val === 'N' || val === 'N1') ? '✗' : '?';
+        return nm + ':' + mark;
+      });
+      dInfo.textContent = parts.join(' · ');
+      card.appendChild(dInfo);
+    }
+
+    // 교차검증 부기
+    if (h.cvNote) {
+      const cv = el('div', { className: 'cv-note' });
+      cv.textContent = '⚠ ' + h.cvNote;
+      card.appendChild(cv);
+    }
+
+    if (h.conditions && h.conditions.length && !h.cvNote) {
+      const cond = el('div', { className: 'hcard-conditions' });
+      h.conditions.forEach((c, i) => {
+        if (i > 0) cond.appendChild(el('br'));
+        cond.appendChild(document.createTextNode('⚠ ' + c));
+      });
+      card.appendChild(cond);
+    }
+
+    if (h.effectiveVerdict === 'unavailable' && h.unavailableMessages && h.unavailableMessages.length) {
+      const msg = h.unavailableMessages[0];
+      const unav = el('div', { className: 'hcard-unavail' });
+      unav.textContent = '✗ ' + (msg.reason || '') + (msg.detail ? ' — ' + msg.detail : '');
+      card.appendChild(unav);
+    }
+
+    const ACTION_TEXT = {
+      available: '이동 중 병원에 수용 대기를 요청하세요.',
+      conditional: '이동 중 실제 수용 가능 여부를 반드시 확인하세요.',
+    };
+    const actionText = ACTION_TEXT[h.effectiveVerdict];
+    if (actionText) {
+      const action = el('div', { style: 'font-size:12px;color:var(--muted);margin-top:5px;font-style:italic' });
+      action.textContent = actionText;
+      card.appendChild(action);
+    }
+
+    return card;
+  }
+
+  // ── 기존 결과 렌더링 (fallback) ──────────────────────────────────
+
+  function renderResult(data) {
+    const { meta, hospitals } = data;
+    const regionName = meta.regionName || '';
+    const diseaseNames = (meta.diseaseNames || []).join(', ');
+    const updateTime = meta.serverUpdateDate ? formatTime(meta.serverUpdateDate) : '—';
+    const total = meta.totalHospitals || 0;
+
+    const wrap = el('div', { className: 'result-wrap bubble' });
+
+    const header = el('div', { className: 'result-header' });
+    header.appendChild(document.createTextNode('📍 '));
+    const strong = el('strong', {}, [regionName]);
+    header.appendChild(strong);
+    header.appendChild(document.createTextNode(' ' + (diseaseNames || '병원 현황') + ' — 서버 ' + updateTime + ' 기준'));
+    wrap.appendChild(header);
+
+    if (total === 0) {
+      const disc = el('div', { className: 'disclaimer' });
+      disc.textContent = '해당 조건의 데이터를 찾을 수 없습니다. 지역코드나 질환코드를 확인해주세요.';
+      wrap.appendChild(disc);
+      return wrap;
+    }
+
+    const available = hospitals.filter(h => h.verdict === 'available');
+    const conditional = hospitals.filter(h => h.verdict === 'conditional');
+    const unavailable = hospitals.filter(h => h.verdict === 'unavailable');
+    const unsupported = hospitals.filter(h => h.verdict === 'unsupported');
+    const blocked = hospitals.filter(h => h.verdict === 'blocked');
+
+    if (available.length) {
+      wrap.appendChild(makeSection('✅ 즉시 이송 가능 (' + available.length + ')', 'var(--available)', available, meta.diseases || []));
+    }
+    if (conditional.length) {
+      wrap.appendChild(makeSection('⚠️ 이동 중 확인 필요 (' + conditional.length + ')', 'var(--conditional)', conditional, meta.diseases || []));
+    }
+    if (unavailable.length) {
+      wrap.appendChild(makeSection('❌ 수용 불가 (' + unavailable.length + ')', 'var(--unavailable)', unavailable, meta.diseases || []));
+    }
+
+    if (unsupported.length) {
+      const sec = el('div', { className: 'hospital-section' });
+      const title = el('div', { className: 'section-title' });
+      title.textContent = '— 현황 미보고 기관 (' + unsupported.length + ')';
+      sec.appendChild(title);
+      const list = el('div', { className: 'unsupported-list' });
+      list.appendChild(document.createTextNode(unsupported.map(h => h.nickname || h.name).join(', ')));
+      list.appendChild(el('br'));
+      const note = el('small');
+      note.textContent = '시스템 미보고 상태 — 직접 연락하여 수용 가능 여부 확인 필요';
+      list.appendChild(note);
+      sec.appendChild(list);
+      wrap.appendChild(sec);
+    }
+
+    if (blocked.length) {
+      const sec = el('div', { className: 'hospital-section' });
+      const title = el('div', { className: 'section-title' });
+      title.textContent = '? 갱신 지연 (' + blocked.length + ')';
+      sec.appendChild(title);
+      const list = el('div', { className: 'unsupported-list' });
+      list.textContent = blocked.map(h => h.nickname || h.name).join(', ');
+      sec.appendChild(list);
+      wrap.appendChild(sec);
+    }
+
+    if (!available.length && !conditional.length) {
+      const warn = el('div', { className: 'disclaimer' });
+      warn.style.cssText = 'background:#fff3cd;color:#92400e';
+      warn.textContent = '이 지역에서 해당 질환 수용 가능 기관이 확인되지 않습니다. 인근 광역권 이송을 검토하세요.';
+      wrap.appendChild(warn);
+    }
+
+    const disc = el('div', { className: 'disclaimer' });
+    disc.textContent = '이동 중 병원 측에 실제 수용 가능 여부를 확인하세요. 데이터는 5분 주기로 갱신됩니다.';
+    wrap.appendChild(disc);
+
+    return wrap;
+  }
+
+  function makeSection(titleText, titleColor, list, diseases) {
+    const sec = el('div', { className: 'hospital-section' });
+    const title = el('div', { className: 'section-title' });
+    title.style.color = titleColor;
+    title.textContent = titleText;
+    sec.appendChild(title);
+    list.forEach(h => sec.appendChild(makeCard(h, diseases)));
+    return sec;
+  }
+
+  function buildBedsSummary(beds, diseases) {
+    const parts = [];
+    function bedItem(label, avail, total) {
+      if (total == null || total <= 0) return;
+      const a = avail == null ? 0 : avail; // null/undefined → 0
+      const cls = a > 3 ? 'beds-ok' : a > 0 ? 'beds-low' : 'beds-none';
+      parts.push({ text: `${label} ${a}/${total}`, cls });
+    }
+
+    // 응급 병상: 항상 표시
+    bedItem('응급', beds.generalEmergencyAvailable, beds.generalEmergencyTotal);
+
+    // 질환별 관련 병상 추가 — 배열 직접 검사 (join 오탐 방지)
+    const hasCode = (rx) => diseases.some(d => rx.test(d));
+    if (hasCode(/^Y011[012]$|^Y0100$/)) {
+      bedItem('분만실', beds.deliveryRoomAvailable, beds.deliveryRoomTotal);
+    }
+    if (hasCode(/^Y007[02]$|^Y008[02]$|^Y009[02]$|^Y0100$/)) {
+      bedItem('소아', beds.childEmergencyAvailable, beds.childEmergencyTotal);
+    }
+    if (hasCode(/^Y014[12]$/)) {
+      bedItem('중환자', beds.npirAvailable, beds.npirTotal);
+    }
+
+    return parts;
+  }
+
+  function makeCard(h, diseases) {
+    const card = el('div', { className: 'hospital-card ' + h.verdict });
+
+    const top = el('div', { className: 'hcard-top' });
+    const name = el('span', { className: 'hcard-name' });
+    name.textContent = h.nickname || h.name;
+    top.appendChild(name);
+
+    const badgeCls = h.grade === 'A' ? 'badge A' : h.grade === 'C' ? 'badge C' : 'badge';
+    const badgeText = h.grade === 'A' ? '권역' : h.grade === 'C' ? '센터' : '기관';
+    const badge = el('span', { className: badgeCls });
+    badge.textContent = badgeText;
+    top.appendChild(badge);
+
+    const icon = el('span', { className: 'verdict-icon' });
+    icon.textContent = VERDICT_ICON[h.verdict] || '?';
+    top.appendChild(icon);
+    card.appendChild(top);
+
+    if (h.tel) {
+      const tel = el('a', { className: 'hcard-tel' });
+      tel.href = 'tel:' + h.tel;
+      tel.textContent = '📞 ' + h.tel;
+      card.appendChild(tel);
+    }
+
+    // 병상/처치실 정보 표시
+    if (h.beds) {
+      const bedParts = buildBedsSummary(h.beds, diseases);
+      if (bedParts.length) {
+        const bedsEl = el('div', { className: 'hcard-beds' });
+        bedParts.forEach((part, i) => {
+          if (i > 0) bedsEl.appendChild(document.createTextNode(' · '));
+          const span = el('span', { className: part.cls });
+          span.textContent = part.text;
+          bedsEl.appendChild(span);
+        });
+        card.appendChild(bedsEl);
+      }
+    }
+
+    if (diseases.length && h.diseaseAvailability) {
+      const dInfo = el('div', { className: 'hcard-disease' });
+      const parts = diseases.map(d => {
+        const val = h.diseaseAvailability[d];
+        const nm = DISEASE_NAMES[d] || d;
+        const mark = val === 'Y' ? '✓' : (val === 'N' || val === 'N1') ? '✗' : '?';
+        return nm + ':' + mark;
+      });
+      dInfo.textContent = parts.join(' · ');
+      card.appendChild(dInfo);
+    }
+
+    if (h.conditions && h.conditions.length) {
+      const cond = el('div', { className: 'hcard-conditions' });
+      h.conditions.forEach((c, i) => {
+        if (i > 0) cond.appendChild(el('br'));
+        cond.appendChild(document.createTextNode('⚠ ' + c));
+      });
+      card.appendChild(cond);
+    }
+
+    if (h.verdict === 'unavailable' && h.unavailableMessages && h.unavailableMessages.length) {
+      const msg = h.unavailableMessages[0];
+      const unav = el('div', { className: 'hcard-unavail' });
+      unav.textContent = '✗ ' + (msg.reason || '') + (msg.detail ? ' — ' + msg.detail : '');
+      card.appendChild(unav);
+    }
+
+    // verdict별 액션 안내 (구급대원용)
+    const ACTION_TEXT = {
+      available: '이동 중 병원에 수용 대기를 요청하세요.',
+      conditional: '이동 중 실제 수용 가능 여부를 반드시 확인하세요.',
+      unavailable: '다른 기관으로 이송을 검토하세요.',
+      unsupported: '직접 연락하여 수용 가능 여부를 확인하세요.',
+      blocked: '갱신 지연 — 직접 확인 후 판단하세요.',
+    };
+    const actionText = ACTION_TEXT[h.verdict];
+    if (actionText && h.verdict !== 'unavailable') {
+      const action = el('div', { style: 'font-size:12px;color:var(--muted);margin-top:5px;font-style:italic;' });
+      action.textContent = actionText;
+      card.appendChild(action);
+    }
+
+    return card;
+  }
+
+  // ── 채팅 UI ──────────────────────────────────
+
+  function appendUserBubble(text) {
+    const chat = document.getElementById('chat');
+    const msgDiv = el('div', { className: 'msg user' });
+    const bubble = el('div', { className: 'bubble' });
+    bubble.textContent = text;
+    msgDiv.appendChild(bubble);
+    chat.appendChild(msgDiv);
+    scrollChat();
+  }
+
+  function appendBotNode(contentNode) {
+    const chat = document.getElementById('chat');
+    const msgDiv = el('div', { className: 'msg bot' });
+    msgDiv.appendChild(contentNode);
+    chat.appendChild(msgDiv);
+    scrollChat();
+  }
+
+  function appendLoadingBubble() {
+    const chat = document.getElementById('chat');
+    const msgDiv = el('div', { className: 'msg bot' });
+    const bubble = el('div', { className: 'bubble' });
+    const typing = el('div', { className: 'typing' });
+    typing.appendChild(el('span')); typing.appendChild(el('span')); typing.appendChild(el('span'));
+    bubble.appendChild(typing);
+    msgDiv.appendChild(bubble);
+    chat.appendChild(msgDiv);
+    scrollChat();
+    return msgDiv;
+  }
+
+  function setLoading(val) {
+    isLoading = val;
+    document.getElementById('send-btn').disabled = val;
+  }
+
+  // ── LLM HARNESS 해석 (AI ON 메인 출력) ──────────────────────────────────
+
+  async function interpretWithHarness(apiData, userText) {
+    const { meta, hospitals } = apiData;
+    const topHospitals = hospitals.slice(0, 12).map(h => ({
+      name: h.nickname || h.name,
+      grade: h.grade,
+      verdict: h.verdict,
+      tel: h.tel || null,
+      diseaseAvailability: h.diseaseAvailability || {},
+      conditions: (h.conditions || []).slice(0, 3).map(c =>
+        String(c).replace(/[^\w가-힣\s.,!?\-/():;_~]/g, '').slice(0, 150)
+      ),
+      beds: h.beds ? {
+        er: h.beds.generalEmergencyAvailable, erTotal: h.beds.generalEmergencyTotal,
+        child: h.beds.childEmergencyAvailable, childTotal: h.beds.childEmergencyTotal,
+        npir: h.beds.npirAvailable, npirTotal: h.beds.npirTotal,
+      } : null,
+    }));
+
+    const available = hospitals.filter(h => h.verdict === 'available').length;
+    const conditional = hospitals.filter(h => h.verdict === 'conditional').length;
+    const unsupported = hospitals.filter(h => h.verdict === 'unsupported').length;
+
+    const prompt = JSON.stringify({
+      userQuery: userText,
+      currentTime: new Date().toLocaleTimeString('ko-KR', { hour12: false }),
+      query: { region: meta.regionName, diseases: meta.diseaseNames, diseaseCodes: meta.diseases },
+      counts: { total: meta.totalHospitals, available, conditional, unsupported },
+      hospitals: topHospitals,
+    });
+
+    try {
+      const resp = await fetch(LLM_PROXY, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-emris-token': EMRIS_API_KEY },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          system: HARNESS_INTERPRET_PROMPT,
+          type: 'recommend',
+        }),
+      });
+      if (resp.status === 429) return { _rateLimit: true };
+      if (resp.status === 401 || resp.status === 403) return null;
+      if (!resp.ok) return null;
+      const respData = await resp.json();
+      const raw = (respData.content?.[0]?.text || '').trim().replace(/^```json?\s*/,'').replace(/\s*```$/,'').trim();
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch { return null; }
+  }
+
+  function renderRateLimitChoice(apiData, diseases, queryText) {
+    const wrap = el('div', { className: 'clarify-bubble' });
+    const q = el('div', { className: 'q' });
+    q.textContent = 'LLM 사용 리밋입니다. 1분 안에 복구될 가능성이 높습니다.';
+    wrap.appendChild(q);
+    const opts = el('div', { className: 'opts' });
+
+    const btnNonAi = el('button', { className: 'opt-btn' });
+    btnNonAi.textContent = 'AI 미사용 답변';
+    btnNonAi.addEventListener('click', () => {
+      wrap.parentElement.remove();
+      const analysis = analyzeResults(apiData, diseases, queryText, new Date());
+      appendBotNode(renderSmartResult(apiData, analysis));
+    });
+    opts.appendChild(btnNonAi);
+
+    const btnRetry = el('button', { className: 'opt-btn' });
+    btnRetry.textContent = 'AI 재시도';
+    btnRetry.addEventListener('click', async () => {
+      wrap.parentElement.remove();
+      const loading = appendLoadingBubble();
+      const llmResult = await interpretWithHarness(apiData, queryText);
+      loading.remove();
+      if (llmResult && llmResult._rateLimit) {
+        renderRateLimitChoice(apiData, diseases, queryText);
+      } else if (llmResult) {
+        appendBotNode(renderAdaptiveResult(llmResult));
+      } else {
+        const analysis = analyzeResults(apiData, diseases, queryText, new Date());
+        appendBotNode(renderSmartResult(apiData, analysis));
+      }
+    });
+    opts.appendChild(btnRetry);
+
+    wrap.appendChild(opts);
+    appendBotNode(wrap);
+  }
+
+  function renderAdaptiveResult(result) {
+    const wrap = el('div', { className: 'result-wrap bubble' });
+
+    // 제목
+    if (result.title) {
+      const header = el('div', { className: 'result-header' });
+      header.textContent = '📍 ' + result.title;
+      wrap.appendChild(header);
+    }
+    // 요약
+    if (result.summary) {
+      const sub = el('div', { style: 'font-size:12px;color:var(--muted);margin-bottom:6px' });
+      sub.textContent = result.summary;
+      wrap.appendChild(sub);
+    }
+
+    // 경고 배너
+    if (result.alerts && result.alerts.length) {
+      for (const alert of result.alerts) {
+        const banner = el('div', { className: 'alert-banner critical' });
+        banner.textContent = alert;
+        wrap.appendChild(banner);
+      }
+    }
+
+    // 적응형 테이블
+    if (result.table && result.table.headers && result.table.rows) {
+      const table = el('table', { className: 'adaptive-table' });
+      const thead = el('tr');
+      for (const h of result.table.headers) {
+        const th = el('th');
+        th.textContent = h;
+        thead.appendChild(th);
+      }
+      table.appendChild(thead);
+
+      const colCount = result.table.headers.length;
+      for (const row of result.table.rows) {
+        const cells = row.cells || row;
+        const tr = el('tr');
+        let subLines = [];
+        for (const cell of cells) {
+          const td = el('td');
+          const txt = String(cell);
+          if (txt.includes('\n')) {
+            const lines = txt.split('\n');
+            td.textContent = lines[0];
+            subLines.push(...lines.slice(1));
+          } else {
+            td.textContent = txt;
+            if (/^O$|^O\s/.test(txt)) td.className = 'v-o';
+            else if (/^△/.test(txt)) td.className = 'v-t';
+            else if (/^X$|^N\d?$/.test(txt)) td.className = 'v-x';
+            else if (/미보고/.test(txt)) td.className = 'v-n';
+            else if (/^Y$/.test(txt)) td.className = 'v-o';
+          }
+          tr.appendChild(td);
+        }
+        table.appendChild(tr);
+        // 제한사항: 별도 행, colspan 전체
+        if (subLines.length) {
+          const subTr = el('tr');
+          const subTd = el('td', { style: 'font-size:11px;color:var(--conditional);padding:2px 6px 4px;border-bottom:1px solid #eee' });
+          subTd.setAttribute('colspan', String(colCount));
+          subTd.textContent = subLines.join(' / ');
+          subTr.appendChild(subTd);
+          table.appendChild(subTr);
+        }
+      }
+
+      if (result.table.collapsed) {
+        const tr = el('tr');
+        const td = el('td', { className: 'v-n' });
+        td.setAttribute('colspan', String(result.table.headers.length));
+        td.textContent = result.table.collapsed;
+        tr.appendChild(td);
+        table.appendChild(tr);
+      }
+      wrap.appendChild(table);
+    }
+
+    // 추천
+    if (result.recommendation) {
+      const levelClass = { good: 'result-good', warn: 'result-warn', bad: 'result-bad' };
+      const cls = levelClass[result.recommendation.level] || 'result-warn';
+      const rec = el('div', { className: 'result-box ' + cls });
+      const strong = el('strong');
+      strong.textContent = '추천: ';
+      rec.appendChild(strong);
+      rec.appendChild(document.createTextNode(result.recommendation.text));
+      wrap.appendChild(rec);
+    }
+
+    // 연계이송
+    if (result.linkage) {
+      const lnk = el('div', { className: 'linkage-box' });
+      lnk.textContent = '🔗 ' + result.linkage;
+      wrap.appendChild(lnk);
+    }
+
+    // 시사점
+    if (result.insights && result.insights.length) {
+      const sec = el('div', { className: 'insights-section' });
+      const title = el('div', { style: 'font-size:13px;font-weight:700;margin-bottom:4px;color:#555' });
+      title.textContent = '시사점';
+      sec.appendChild(title);
+      const ul = el('ul', { className: 'implication' });
+      for (const insight of result.insights) {
+        const li = el('li');
+        li.textContent = insight;
+        ul.appendChild(li);
+      }
+      sec.appendChild(ul);
+      wrap.appendChild(sec);
+    }
+
+    const disc = el('div', { className: 'disclaimer' });
+    disc.textContent = '이동 중 병원 측에 실제 수용 가능 여부를 확인하세요. 데이터는 5분 주기로 갱신됩니다.';
+    wrap.appendChild(disc);
+
+    return wrap;
+  }
+
+  // ── LLM 추천 (레거시, AI OFF fallback) ──────────────────────────────────
+
+  async function generateAndAppendRecommendation(data, genId, analysis) {
+    const { meta, hospitals } = data;
+    const regionName = meta.regionName || '';
+    const diseases = (meta.diseaseNames || []).join(', ');
+
+    // placeholder bubble 생성
+    const chat = document.getElementById('chat');
+    const msgDiv = el('div', { className: 'msg bot' });
+    const recBubble = el('div', { className: 'rec-bubble' });
+    const loadingText = el('span', { style: 'color:var(--muted);font-size:13px;font-style:italic' });
+    loadingText.textContent = 'AI 분석 중...';
+    recBubble.appendChild(loadingText);
+    msgDiv.appendChild(recBubble);
+    chat.appendChild(msgDiv);
+    scrollChat();
+
+    // 병원 데이터 요약 (상위 10곳, 프롬프트 인젝션 방지)
+    const topHospitals = hospitals.slice(0, 10).map(h => ({
+      name: h.nickname || h.name,
+      grade: h.grade,
+      verdict: h.verdict,
+      tel: h.tel || null,
+      beds: h.beds ? { er: h.beds.generalEmergencyAvailable, erTotal: h.beds.generalEmergencyTotal } : null,
+      diseaseAvailability: h.diseaseAvailability || {},
+      conditions: h.conditions && h.conditions.length
+        ? h.conditions.slice(0, 3).map(c => String(c).replace(/[^\w가-힣\s.,!?\-/():;_~]/g, '').slice(0, 120))
+        : [],
+    }));
+
+    const available = hospitals.filter(h => h.verdict === 'available').length;
+    const conditional = hospitals.filter(h => h.verdict === 'conditional').length;
+    const unsupported = hospitals.filter(h => h.verdict === 'unsupported').length;
+    const unsupportedAC = hospitals.filter(h => h.verdict === 'unsupported' && (h.grade === 'A' || h.grade === 'C')).length;
+
+    const prompt = JSON.stringify({
+      query: { region: regionName, diseases, currentTime: new Date().toLocaleTimeString('ko-KR', { hour12: false }) },
+      summary: { total: meta.totalHospitals, available, conditional, unsupported, unsupportedAC },
+      hospitals: topHospitals,
+    });
+
+    let rec = null;
+    for (let retry = 0; retry < 2; retry++) {
+      if (retry > 0) await new Promise(r => setTimeout(r, 1200));
+      try {
+        const resp = await fetch(LLM_PROXY, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-emris-token': EMRIS_API_KEY },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: prompt }],
+            system: HARNESS_INTERPRET_PROMPT,
+            type: 'recommend',
+          }),
+        });
+        if (resp.status === 401 || resp.status === 403) break;
+        if (!resp.ok) continue;
+        const respData = await resp.json();
+        const raw = (respData.content?.[0]?.text || '').trim().replace(/^```json?\s*/,'').replace(/\s*```$/,'').trim();
+        if (!raw) continue;
+        rec = JSON.parse(raw);
+        break;
+      } catch { /* retry */ }
+    }
+
+    // 새 검색이 시작됐으면 이 추천은 무효 — 조용히 제거
+    if (genId !== searchGenId) {
+      msgDiv.remove();
+      return;
+    }
+
+    // placeholder 제거 후 HARNESS 해석 결과 렌더링
+    recBubble.innerHTML = '';
+    if (!rec || (!rec.situation && !rec.recommendation && !rec.summary)) {
+      const notice = el('span', { style: 'color:var(--muted);font-size:12px' });
+      notice.textContent = 'AI 분석을 가져올 수 없습니다.';
+      recBubble.appendChild(notice);
+      scrollChat();
+      return;
+    }
+
+    // 상황 요약
+    const situation = rec.situation || rec.summary || '';
+    if (situation) {
+      const s = el('div', { className: 'rec-summary' });
+      s.textContent = situation;
+      recBubble.appendChild(s);
+    }
+
+    // 경고 (골든타임, 에스컬레이션 등)
+    if (rec.alerts && rec.alerts.length) {
+      for (const alert of rec.alerts) {
+        const a = el('div', { className: 'rec-alert' });
+        a.textContent = alert;
+        recBubble.appendChild(a);
+      }
+    }
+
+    // 핵심 추천
+    if (rec.recommendation) {
+      const r = el('div', { className: 'rec-recommendation' });
+      r.textContent = rec.recommendation;
+      recBubble.appendChild(r);
+    }
+
+    // TOP 병원 (LLM이 교차검증한 결과)
+    if (rec.hospitals_top3 && rec.hospitals_top3.length) {
+      const list = el('div', { className: 'rec-hospitals' });
+      for (const h of rec.hospitals_top3) {
+        const row = el('div', { className: 'rec-hospital-row' });
+        const gradeLabel = h.grade === 'A' ? '권역' : h.grade === 'C' ? '센터' : '기관';
+        row.textContent = `${h.name} (${gradeLabel}) — ${h.verdict}`;
+        if (h.note) {
+          const note = el('span', { style: 'color:var(--conditional);font-size:11px' });
+          note.textContent = ' ' + h.note;
+          row.appendChild(note);
+        }
+        list.appendChild(row);
+      }
+      recBubble.appendChild(list);
+    }
+
+    // 연계이송
+    if (rec.linkage) {
+      const lnk = el('div', { className: 'rec-insight' });
+      lnk.textContent = '🔗 ' + rec.linkage;
+      recBubble.appendChild(lnk);
+    }
+
+    // 시사점/데이터 품질
+    if (rec.insight) {
+      const ins = el('div', { className: 'rec-insight' });
+      ins.textContent = 'ℹ️ ' + rec.insight;
+      recBubble.appendChild(ins);
+    }
+    scrollChat();
+  }
+
+  function renderClarification(pair, region, userText) {
+    const wrap = el('div', { className: 'clarify-bubble' });
+    const q = el('div', { className: 'q' });
+    q.textContent = pair.question;
+    wrap.appendChild(q);
+    const opts = el('div', { className: 'opts' });
+    for (const opt of pair.options) {
+      const btn = el('button', { className: 'opt-btn' });
+      btn.textContent = opt.label;
+      btn.addEventListener('click', () => {
+        appendUserBubble(opt.label);
+        searchAndShow(userText, region, opt.diseases.join(','));
+      });
+      opts.appendChild(btn);
+    }
+    wrap.appendChild(opts);
+    appendBotNode(wrap);
+  }
+
+  function scrollChat() {
+    const chat = document.getElementById('chat');
+    requestAnimationFrame(() => { chat.scrollTop = chat.scrollHeight; });
+  }
+
+  function formatTime(iso) {
+    try {
+      const d = new Date(iso);
+      return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+    } catch { return iso; }
+  }
+
+}());
+</script>
+</body>
+</html>
