@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://emris.local/schemas/prektas-codebook.schema.json",
+  "title": "Pre-KTAS Codebook",
+  "description": "Canonical 5-character Pre-KTAS code catalog. Code layout: [group][level2][level3][level4 (2 chars)]. group 'C'=adult, 'D'=pediatric.",
+  "type": "object",
+  "required": ["version", "source", "stats", "entries"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "source": {
+      "type": "object",
+      "required": ["file", "sha256", "extracted_at"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "extracted_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "stats": {
+      "type": "object",
+      "required": ["total", "labeled", "reserved", "by_group"],
+      "additionalProperties": false,
+      "properties": {
+        "total": { "type": "integer", "minimum": 1 },
+        "labeled": { "type": "integer", "minimum": 0 },
+        "reserved": { "type": "integer", "minimum": 0 },
+        "by_group": {
+          "type": "object",
+          "required": ["adult", "pediatric"],
+          "additionalProperties": false,
+          "properties": {
+            "adult": { "type": "integer", "minimum": 0 },
+            "pediatric": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/entry" }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "required": ["code", "group", "grade", "reserved", "level2", "level3", "level4"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "type": "string", "pattern": "^[CD][A-Z][A-Z][A-Z]{2}$" },
+        "group": { "enum": ["adult", "pediatric"] },
+        "grade": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "reserved": { "type": "boolean" },
+        "level2": { "$ref": "#/$defs/leafSingle" },
+        "level3": { "$ref": "#/$defs/leafSingle" },
+        "level4": { "$ref": "#/$defs/leafDouble" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "reserved": { "const": true } } },
+          "then": {
+            "properties": {
+              "level2": { "type": "null" },
+              "level3": { "type": "null" },
+              "level4": { "type": "null" }
+            }
+          },
+          "else": {
+            "properties": {
+              "level2": { "type": "object" },
+              "level3": { "type": "object" },
+              "level4": { "type": "object" }
+            }
+          }
+        }
+      ]
+    },
+    "leafSingle": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "name"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "type": "string", "pattern": "^[A-Z]$" },
+            "name": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "leafDouble": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "name"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "type": "string", "pattern": "^[A-Z]{2}$" },
+            "name": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    }
+  }
+}

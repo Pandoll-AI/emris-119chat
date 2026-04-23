@@ -1,0 +1,16 @@
+{
+  "name": "emris-119chat",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "codebook:generate": "node scripts/generate-prektas-codebook.mjs",
+    "codebook:validate": "node scripts/validate-prektas-codebook.mjs",
+    "codebook:validate:strict": "node scripts/validate-prektas-codebook.mjs --strict",
+    "codebook:rebuild": "npm run codebook:generate && npm run codebook:validate:strict"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  }
+}
