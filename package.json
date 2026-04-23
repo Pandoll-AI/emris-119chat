@@ -6,8 +6,7 @@
   "scripts": {
     "codebook:generate": "node scripts/generate-prektas-codebook.mjs",
     "codebook:validate": "node scripts/validate-prektas-codebook.mjs",
-    "codebook:validate:strict": "node scripts/validate-prektas-codebook.mjs --strict",
-    "codebook:rebuild": "npm run codebook:generate && npm run codebook:validate:strict"
+    "codebook:rebuild": "npm run codebook:generate && npm run codebook:validate"
   },
   "devDependencies": {
     "ajv": "^8.17.1",

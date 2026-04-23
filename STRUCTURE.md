@@ -3,38 +3,36 @@
 ## Workflow
 
 ```
-prektas-input-keypad.html (external source)
+data/raw/Pre-KTAS_codebook.csv (정본 원본, 4,689 entries)
            │
-           │ [generate-prektas-codebook.mjs]
-           │   regex + JSON.parse, 구조적 level 코드 도출
+           │ [scripts/generate-prektas-codebook.mjs]
+           │   CSV 직접 파싱. 헤더/코드/레벨/grade 검증 후에만 출력.
            ▼
 data/prektas-codebook.json  ←  data/schemas/prektas-codebook.schema.json
            │                              │
-           │                              │ [validate-prektas-codebook.mjs]
-           │                              │   ajv compile + 무결성 체크
-           │                              │ + data/codebook-allowed-collisions.json
-           │                              │   (--strict 모드에서 대조)
+           │                              │ [scripts/validate-prektas-codebook.mjs]
+           │                              │   ajv compile + 무결성 체크 + 이름 일관성
+           │                              │   (level2 코드↔이름 1:1, 충돌 0건 강제)
            ▼                              ▼
-   (하류 빌드 스크립트           schema ok / integrity ok / 경고 or --strict 에러
-    — 다음 phase에서 정본                
+   (하류 빌드 스크립트            schema ok / integrity ok / 충돌 0
+    — Phase 3에서 정본
     JSON 소비자로 리팩터 예정)
 ```
 
 **npm 워크플로**
-- `npm run codebook:generate` — 외부 HTML → 정본 JSON
-- `npm run codebook:validate` — schema + 무결성 (warnings exit 0)
-- `npm run codebook:validate:strict` — whitelist 밖 충돌을 error로 승격 (exit 1)
-- `npm run codebook:rebuild` — generate 후 strict validate까지
+- `npm run codebook:generate` — 정본 CSV → JSON
+- `npm run codebook:validate` — schema + 무결성 + 이름 일관성 (항상 엄격)
+- `npm run codebook:rebuild` — generate 후 validate까지
 
 ## Key Files
 
 | File | Role | Depends On |
 |---|---|---|
-| `data/prektas-codebook.json` | Pre-KTAS 4,689 코드의 정본 데이터 (생성물) | `prektas-input-keypad.html` (외부) |
-| `data/schemas/prektas-codebook.schema.json` | JSON Schema draft 2020-12 | 없음 |
-| `data/codebook-allowed-collisions.json` | Known name collision whitelist | 없음 |
-| `scripts/generate-prektas-codebook.mjs` | 외부 HTML → 정본 JSON 변환 | `prektas-input-keypad.html` |
-| `scripts/validate-prektas-codebook.mjs` | 정본 JSON 검증 gate | ajv, schema, codebook, allowed-collisions |
+| `data/raw/Pre-KTAS_codebook.csv` | 정본 Pre-KTAS 코드북 원본 (4,689 entries, 9 columns) | 없음 (커밋된 정본) |
+| `data/prektas-codebook.json` | CSV로부터 생성된 JSON v2.0.0 (4,689 entries, 17 level2) | `data/raw/Pre-KTAS_codebook.csv` |
+| `data/schemas/prektas-codebook.schema.json` | JSON Schema draft 2020-12 v2 | 없음 |
+| `scripts/generate-prektas-codebook.mjs` | CSV → 정본 JSON 변환 | `data/raw/Pre-KTAS_codebook.csv` |
+| `scripts/validate-prektas-codebook.mjs` | 정본 JSON 검증 gate | ajv, schema, codebook |
 | `package.json` | npm scripts + devDeps (ajv, ajv-formats) | 없음 |
 | `index.html` | EMRIS 119 챗봇 UI (initial commit 산출물) | `api/`, Gemini REST API |
 | `api/` | Vercel serverless 엔드포인트 디렉토리 | — |
@@ -60,9 +58,8 @@ data/prektas-codebook.json  ←  data/schemas/prektas-codebook.schema.json
 
 | Command | Script | Purpose |
 |---|---|---|
-| `npm run codebook:generate` | `scripts/generate-prektas-codebook.mjs` | 외부 keypad.html → `data/prektas-codebook.json` |
-| `npm run codebook:validate` | `scripts/validate-prektas-codebook.mjs` | schema + 무결성 검증 (warning 모드) |
-| `npm run codebook:validate:strict` | `scripts/validate-prektas-codebook.mjs --strict` | whitelist 밖 충돌 → error (CI gate 용도) |
-| `npm run codebook:rebuild` | generate + validate:strict | 정본 재빌드 end-to-end |
+| `npm run codebook:generate` | `scripts/generate-prektas-codebook.mjs` | 정본 CSV → `data/prektas-codebook.json` |
+| `npm run codebook:validate` | `scripts/validate-prektas-codebook.mjs` | schema + 무결성 + 이름 일관성 (항상 엄격) |
+| `npm run codebook:rebuild` | generate + validate | 정본 재빌드 end-to-end |
 | `./run.sh {start|stop|restart}` | `run.sh` (untracked) | 로컬 dev 서버 제어 |
 | `node test-llm.mjs` | `test-llm.mjs` | LLM 연동 smoke test |
