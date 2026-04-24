@@ -1,6 +1,28 @@
 # Changelog
 
+## [2026-04-24] Phase 4.1: tier 분류 현실 반영 교정
+
+### Fixed
+- **v1.0 분류 오류 교정**: 정신과 응급(Y0150)·안과 응급(Y0160)·내시경·투석·산부인과 등을 "지역센터만으로 충분"으로 분류한 것은 한국 의료 자원 현실과 어긋남 (정신과 폐쇄병동·24/7 안과 당직은 권역·대형 지역센터에만 안정적). v1.1에서 이들을 **"권역·지역센터 공동 커버"**로 재분류.
+- 반대로 단순 폐렴·경중등도 교통사고(grade 3)는 "지역기관 기본"에서 **"지역센터 우선"**으로 전환.
+- "권역 세이브" 서사 폐기. v1.0의 "85.5% 세이브율"은 권역이 과잉 자원이라는 잘못된 전제. v1.1은 `tier_strategy` 4범주로 각 케이스의 수용 가능 tier를 직접 표현.
+
+### Changed
+- `data/y-code-to-center-tier.json` v1.0 → v1.1. 권역 전용 12개 → 7개로 축소(NICU·화상센터·수부외과·IR·흉부대동맥). 나머지 20개는 `acceptable=[regional, local_center]` 공동 커버.
+- `scripts/research/build-prektas-tier-recommendation.mjs` 전면 개편. 복합 Y후보는 **acceptable 교집합** (안전 보수적). `tier_strategy` 필드 4범주 분류(regional_only / regional_or_local_center / local_center_preferred / local_institution_preferred).
+- `research/prektas-tier-recommendation.json` v1.1 재생성.
+- `research/prektas-tier-recommendation-report.md` 전면 재작성.
+
+### Key Findings (v1.1)
+- **진짜 권역 전용(`regional_only`): 210건 (4.5%)** — NICU(29), 중증화상(47), 수부사지접합(69), 흉부대동맥 단독/복합(65+2). v1.0의 "권역 필수 398건"보다 현실적.
+- 권역·지역센터 공동(`regional_or_local_center`): 2,529건(53.9%) — 대부분의 Y코드와 grade 1–2 unmapped.
+- 지역센터 우선(`local_center_preferred`): 1,218건(26.0%) — grade 3 단순 폐렴·경중등도 외상 등.
+- 지역기관 우선(`local_institution_preferred`): 732건(15.6%) — grade 4–5 경증.
+- Y0010 흉통 63건이 Y0041 때문에 권역 전용으로 shift되는 것은 v0.2 rule 개선(압박성 흉통으로 Y0010 단독 분기) 시 복원 가능.
+
 ## [2026-04-24] Phase 4: 응급의료센터 등급 추천 전략 (권역 세이브)
+
+> **⚠️ v1.0 분류 오류**: 정신과·안과를 "지역센터만"으로 분류한 것은 한국 의료 자원 분포와 어긋남. Phase 4.1에서 교정됨. 아래 기록은 history 보존용.
 
 ### Context
 

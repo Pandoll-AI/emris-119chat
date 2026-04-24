@@ -82,6 +82,9 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | 2026-04-24 | create | claude | `scripts/research/build-prektas-tier-recommendation.mjs` | tier 추천 생성기. |
 | 2026-04-24 | run | claude | tier 추천 v1.0 | 권역 398 / 지역센터 2,341 / 지역기관 1,950. 권역 세이브율 85.5%. |
 | 2026-04-24 | write | claude | `research/prektas-tier-recommendation-report.md` | 8섹션 서술 보고서. |
+| 2026-04-24 | feedback | user | v1.0 tier 분류 교정 지시 | 정신과·안과는 권역·지역센터 공동, 단순 폐렴·경외상은 지역센터 우선. "권역 세이브" 서사 폐기. |
+| 2026-04-24 | fix | claude | tier 1.0 → 1.1 | 권역 전용 12→7, 공동 커버 15→20. 복합 Y후보 교집합 규칙 도입. tier_strategy 4범주 분류. |
+| 2026-04-24 | run | claude | tier 추천 v1.1 | regional_only=210(4.5%), 공동=2,529(53.9%), local_center_preferred=1,218(26%), local_institution_preferred=732(15.6%). |
 
 ## Next Phase Candidates
 
