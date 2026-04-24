@@ -41,6 +41,9 @@ data/prektas-codebook.json                                │
 - `npm run research:prektas-to-y-mapping` — Pre-KTAS → Y코드 v0.1 매핑 산출
 - `npm run research:prektas-tier-recommendation` — Y코드 + grade → 응급센터 tier 추천
 - `npm run research:all` — 위 둘을 순차 실행
+- `npm run build:html:recommender` — 추천 도구 HTML 생성
+- `npm run build:html:research` — 연구 설명 HTML 생성
+- `npm run build:html` — 두 HTML을 순차 빌드
 
 ## Key Files
 
@@ -59,6 +62,10 @@ data/prektas-codebook.json                                │
 | `scripts/research/build-prektas-tier-recommendation.mjs` | Y후보 + grade → 응급센터 tier 추천 | mapping.json, y-code-to-center-tier.json |
 | `research/prektas-tier-recommendation.json` | 4,689 엔트리별 tier 추천 + 세이브 플래그 | tier script 출력 |
 | `research/prektas-tier-recommendation-report.md` | 권역 세이브율·분포 분석 서술 | tier-recommendation.json |
+| `scripts/build-hospital-recommender.mjs` | 정본 JSON embed → recommender HTML | 4개 JSON |
+| `scripts/build-research-page.mjs` | 연구 설명 standalone HTML 생성 | codebook.json, tier·mapping |
+| `prektas-hospital-recommender.html` | 2.4MB standalone 추천 도구 (빌드 산출) | build script |
+| `prektas-research.html` | 12KB 연구 노트 HTML (빌드 산출) | build script |
 | `package.json` | npm scripts + devDeps (ajv, ajv-formats) | 없음 |
 | `index.html` | EMRIS 119 챗봇 UI (initial commit 산출물) | `api/`, Gemini REST API |
 | `api/` | Vercel serverless 엔드포인트 디렉토리 | — |

@@ -16,6 +16,10 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | Tier Recommendation | research-output | `research/prektas-tier-recommendation.json` | Pre-KTAS 엔트리별 tier 추천 + 요약. Y후보 + grade 기반 규칙. |
 | Tier Recommendation Report | research-output | `research/prektas-tier-recommendation-report.md` | 권역 세이브율(85.5%), level2별 분포, 한계·후속 분석. |
 | Tier Recommendation Generator | script | `scripts/research/build-prektas-tier-recommendation.mjs` | v0.1 매핑 + Y-tier 룩업 + grade fallback → tier 추천 산출. |
+| Hospital Recommender HTML | artifact | `prektas-hospital-recommender.html` | 2.4MB standalone 프로토타입. 정본 JSON embed. 단계별 입력 + tier 카드 + Y후보 UI. |
+| Research Page HTML | artifact | `prektas-research.html` | 12KB 매거진 레이아웃 연구 노트. 7섹션 서술. |
+| HTML Recommender Builder | script | `scripts/build-hospital-recommender.mjs` | 4개 JSON payload embed + XSS escape. |
+| HTML Research Builder | script | `scripts/build-research-page.mjs` | 통계 삽입 서술형 HTML 생성. |
 | Codebook Schema | schema | `data/schemas/prektas-codebook.schema.json` | JSON Schema draft 2020-12 v2. reserved 필드 제거, if/then/else 삭제, level2/3/4 필수 객체. |
 | Codebook Generator | script | `scripts/generate-prektas-codebook.mjs` | CSV → JSON 변환기. regex/eval 완전 제거. 헤더·코드·레벨 코드·등급 검증을 generator에서 수행. |
 | Codebook Validator | script | `scripts/validate-prektas-codebook.mjs` | ajv + 무결성 + 충돌·이름 일관성 검증. whitelist 로직 폐지(항상 엄격). |

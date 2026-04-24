@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pre-KTAS → 응급의료센터 등급 추천 연구 · EMRIS 119</title>
+<style>
+  :root {
+    --ink: #0a0a0a;
+    --bg: #fafaf8;
+    --dim: #6b6b68;
+    --line: rgba(10,10,10,0.14);
+    --line-soft: rgba(10,10,10,0.07);
+    --accent: #a8231c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Helvetica Neue", sans-serif; font-feature-settings: "tnum"; line-height: 1.55; font-size: 15px; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 40px 32px 96px; }
+
+  /* 마스트헤드 */
+  .masthead { border-bottom: 2px solid var(--ink); padding-bottom: 18px; margin-bottom: 36px; display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .masthead .brand { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 800; }
+  .masthead .nav { font-size: 12px; color: var(--dim); display: flex; gap: 16px; }
+  .masthead .nav a { color: var(--dim); border-bottom: none; }
+
+  /* 헤드라인 */
+  .headline { display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 48px; }
+  .headline h1 { font-size: clamp(38px, 5.2vw, 68px); line-height: 1.05; letter-spacing: -0.03em; font-weight: 900; max-width: 22ch; }
+  .headline .lede { font-size: 18px; line-height: 1.55; color: var(--dim); max-width: 62ch; }
+  .headline .kicker { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  .byline { display: flex; gap: 20px; font-size: 12px; color: var(--dim); padding-top: 16px; border-top: 1px solid var(--line); letter-spacing: 0.04em; flex-wrap: wrap; }
+
+  /* 섹션 */
+  section.chapter { margin: 64px 0 0; border-top: 1px solid var(--line); padding-top: 28px; display: grid; grid-template-columns: 200px 1fr; gap: 40px; }
+  @media (max-width: 780px) { section.chapter { grid-template-columns: 1fr; gap: 20px; } }
+  .chapter .tag { position: sticky; top: 24px; align-self: start; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); font-weight: 700; }
+  .chapter .tag .num { font-size: 28px; font-weight: 900; color: var(--ink); display: block; margin-bottom: 4px; letter-spacing: -0.02em; }
+  .chapter h2 { font-size: 30px; font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 16px; max-width: 24ch; }
+  .chapter p { margin: 14px 0; max-width: 66ch; }
+  .chapter p.dropcap::first-letter { font-size: 3.2em; float: left; line-height: 0.9; font-weight: 900; margin: 4px 8px -6px 0; color: var(--accent); }
+
+  /* 핵심 수치 */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 24px 0; border: 1px solid var(--line); }
+  @media (max-width: 640px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
+  .metric { padding: 18px 20px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .metric:nth-child(4n) { border-right: none; }
+  .metric .num { font-size: 36px; font-weight: 900; line-height: 1; letter-spacing: -0.02em; }
+  .metric .num.accent { color: var(--accent); }
+  .metric .label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); margin-top: 8px; font-weight: 600; }
+
+  /* 파이프라인 다이어그램 */
+  .pipeline { border: 1px solid var(--line); padding: 20px; margin: 24px 0; background: #ffffff; overflow-x: auto; }
+  .pipeline pre { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; line-height: 1.6; color: var(--ink); white-space: pre; }
+
+  /* 표 */
+  table.data { width: 100%; border-collapse: collapse; font-size: 13px; margin: 18px 0; }
+  table.data th, table.data td { border-bottom: 1px solid var(--line-soft); padding: 8px 6px; text-align: left; vertical-align: top; }
+  table.data th { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); font-weight: 700; border-bottom: 1px solid var(--line); }
+  table.data td.num { font-variant-numeric: tabular-nums; text-align: right; font-family: ui-monospace, monospace; }
+
+  /* 콜아웃 */
+  .pullquote { border-left: 3px solid var(--accent); padding: 8px 22px; margin: 28px 0; font-size: 20px; line-height: 1.4; font-weight: 600; max-width: 56ch; letter-spacing: -0.01em; }
+  .callout { border: 1px solid var(--line); padding: 20px 22px; background: #ffffff; margin: 20px 0; }
+  .callout .title { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 8px; }
+
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.9em; background: var(--line-soft); padding: 1px 5px; }
+
+  /* 푸터 */
+  footer.page-end { margin-top: 72px; padding-top: 24px; border-top: 2px solid var(--ink); color: var(--dim); font-size: 12px; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; letter-spacing: 0.02em; }
+  footer.page-end .version-tag { font-family: ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="masthead">
+    <div class="brand">EMRIS 119 · Research Note · 2026-04-24</div>
+    <div class="nav">
+      <a href="prektas-hospital-recommender.html">추천 도구</a>
+      <a href="https://github.com/Pandoll-AI/emris-119chat">Repository</a>
+    </div>
+  </div>
+
+  <header class="headline">
+    <div class="kicker">Pre-KTAS → 응급의료센터 등급 추천</div>
+    <h1>구급대원이 현장에서 내린 5자 코드로, 갈 수 있는 병원의 등급을 정한다.</h1>
+    <p class="lede">이 연구는 Pre-KTAS 4,689개 코드와 EMRIS 종합상황판의 27개 중증응급질환 Y코드 사이를, 0–3개의 추가 질문만으로 연결할 수 있는지 묻는다. 정답은 "Y코드 1개 확정"이 아니라 <strong>수용 가능한 응급의료센터 등급</strong>이다. 진단 확정을 현장에 떠넘기지 않으면서 자원 배분은 제안할 수 있다.</p>
+    <div class="byline">
+      <span>연구: Claude + Pandoll-AI</span>
+      <span>Codebook v2.0.0 · Tier v1.1.0</span>
+      <span>Sample: 4689 Pre-KTAS codes × 27 Y-codes</span>
+    </div>
+  </header>
+
+  <section class="chapter">
+    <div class="tag"><span class="num">01</span>문제 정의</div>
+    <div>
+      <h2>코드만으로는 수술·시술 적응을 결정할 수 없다.</h2>
+      <p class="dropcap">Pre-KTAS는 구급대원이 현장에서 환자의 긴급도를 1–5로 평가하기 위한 triage 도구다. 반면 EMRIS 종합상황판의 27개 Y코드는 병원 측 <strong>수술·시술·자원 적응</strong>을 정의한다 (Y0010 심근경색 재관류중재술, Y0020 뇌경색 재관류, Y0120 중증화상 등). 둘은 같은 환자를 서로 다른 층위에서 본다.</p>
+      <p>이 프로젝트의 초기 가설 — "Pre-KTAS 코드를 0–3개 질문으로 Y코드 1개에 확정 매핑한다" — 은 임상적으로 부적절하다. 뇌경색과 뇌출혈은 CT 없이 현장 감별이 불가능하고, 흉통의 감별진단은 병원 도착 후 ECG·심근효소·echo로 한다. 구급대원에게 진단 확정 책임을 지우는 건 119 운영 철학에 어긋난다.</p>
+      <div class="pullquote">확정 매핑 대신 <em style="color:var(--accent);">수용 가능한 자원 등급</em>만 제시한다. 확정은 병원이 한다.</div>
+    </div>
+  </section>
+
+  <section class="chapter">
+    <div class="tag"><span class="num">02</span>프레이밍 전환</div>
+    <div>
+      <h2>Y코드 확정 → 응급의료센터 등급 추천.</h2>
+      <p>4,689 코드에 대해 권역/지역센터/지역기관 중 <strong>수용 가능한 tier 집합</strong>을 추천한다. "권역 전용"은 극소수이고, 대부분은 권역과 지역센터가 공동 커버하며, 경증은 지역기관에서 충분하다.</p>
+
+      <div class="metrics">
+        <div class="metric"><div class="num accent">210</div><div class="label">권역 전용</div></div>
+        <div class="metric"><div class="num">2529</div><div class="label">권역·지역센터 공동</div></div>
+        <div class="metric"><div class="num">1218</div><div class="label">지역센터 우선</div></div>
+        <div class="metric"><div class="num">732</div><div class="label">지역기관 우선</div></div>
+      </div>
+
+      <p><strong>4.5%</strong> 만이 진짜 권역 전용이다. NICU·화상센터·수부외과·IR·흉부대동맥 등 전국 극소수 시설에서만 수용 가능한 경우. 이 그룹에는 권역 자원을 집중시키고, 나머지 <strong>95.5%</strong>는 지역 내 가용 병상에 맞춰 분배할 수 있다.</p>
+    </div>
+  </section>
+
+  <section class="chapter">
+    <div class="tag"><span class="num">03</span>데이터 파이프라인</div>
+    <div>
+      <h2>CSV 정본 → JSON 스키마 강제 → rule-based 매핑 → tier 룩업.</h2>
+
+      <div class="pipeline"><pre>data/raw/Pre-KTAS_codebook.csv          data/emris-severe-emergency-diseases.json
+ (정본 4689 entries, 17 level2)      (EMRIS 27 Y코드, canonical)
+       │                                              │
+       ▼  generate-prektas-codebook.mjs                │
+data/prektas-codebook.json ← schema (ajv 검증)        │
+       │                                              │
+       ▼  build-prektas-to-y-mapping.mjs               │
+research/prektas-to-y-mapping.json ◄──────────────────┘
+       │         (12 domain rules + 13 question catalog)
+       │
+       ▼  build-prektas-tier-recommendation.mjs
+research/prektas-tier-recommendation.json
+       │         (Y후보 교집합 + grade fallback)
+       ▼
+prektas-hospital-recommender.html · prektas-research.html</pre></div>
+
+      <p>중간 산출물은 모두 재현 가능하다. 정본 CSV의 SHA-256이 schema에 박혀 있고, ajv가 <code>level2.code ↔ code[1]</code> 같은 구조적 불변식을 강제한다. 이전 phase의 KTAS 오염 사고(§05)에서 얻은 교훈이다.</p>
+    </div>
+  </section>
+
+  <section class="chapter">
+    <div class="tag"><span class="num">04</span>규칙</div>
+    <div>
+      <h2>Y-tier는 교집합, grade는 fallback.</h2>
+      <p>Pre-KTAS 엔트리에 매칭된 Y코드 후보가 있으면 각 후보의 수용 가능 tier 리스트를 교집합해 최종 acceptable을 결정한다. 하나라도 권역 전용 Y코드가 섞이면 전체가 권역 전용이 된다 (안전 보수적). Y후보가 없으면 grade에 따라 fallback.</p>
+      <table class="data">
+        <thead><tr><th>조건</th><th>acceptable tiers (우선순위)</th><th>전략</th></tr></thead>
+        <tbody>
+          <tr><td>Y후보 있음, 교집합 = [regional]</td><td>권역</td><td>regional_only</td></tr>
+          <tr><td>Y후보 있음, 교집합 = [regional, local_center]</td><td>권역 → 지역센터</td><td>regional_or_local_center</td></tr>
+          <tr><td>Y후보 없음, grade 1–2</td><td>권역 → 지역센터</td><td>regional_or_local_center</td></tr>
+          <tr><td>Y후보 없음, grade 3</td><td>지역센터 → 지역기관</td><td>local_center_preferred</td></tr>
+          <tr><td>Y후보 없음, grade 4–5</td><td>지역기관 → 지역센터</td><td>local_institution_preferred</td></tr>
+        </tbody>
+      </table>
+
+      <p>연령 분기는 질문 없이 해결된다. Pre-KTAS 코드 첫 문자(C=성인, D=소아)가 이미 답하고 있으므로 Y0081 vs Y0082(위장관 내시경) 같은 연령 짝은 추가 질문 0개.</p>
+    </div>
+  </section>
+
+  <section class="chapter">
+    <div class="tag"><span class="num">05</span>이전 실수의 교훈</div>
+    <div>
+      <h2>정본이 아닌 데이터로 만들어진 연구는 조용히 틀린다.</h2>
+      <p>이 프로젝트의 초기 phase에서 Pre-KTAS 코드북으로 쓴 데이터의 91.7%가 KTAS 용어로 오염되어 있었다. 원인: "Pre-KTAS 코드로 KTAS 이름을 역인덱싱한 가공물"을 정본으로 오인한 것. level2 카테고리 이름이 전부 KTAS 쪽(산부인과·비뇨기과·이비인후과 등)이었고, 진짜 Pre-KTAS 분류(임신/여성생식계·비뇨기계/남성생식계·입·목/얼굴 등)로 교체하는 데 상당한 데이터 복구가 필요했다.</p>
+
+      <div class="callout">
+        <div class="title">구조적 교훈</div>
+        <p>validator 스키마를 아무리 정교하게 짜도 <strong>입력의 출처가 틀리면</strong> 전부 무의미하다. 첫 질문은 언제나 "이 파일이 정말 우리가 말하는 그 파일인가?"여야 한다. 현재 파이프라인은 정본 CSV의 SHA-256을 기록하고, generator는 CSV 헤더와 코드 구조를 양쪽에서 검증한다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter">
+    <div class="tag"><span class="num">06</span>한계</div>
+    <div>
+      <h2>무엇을 아직 모르는가.</h2>
+      <p><strong>False negative rate는 미측정이다.</strong> 이 전략이 "중증 환자를 지역기관으로 잘못 보낸" 비율을 수치화하지 않았다. 연구 프로젝트의 동반 데이터셋 <code>source-prektas.csv</code>에 225,018건의 실측 응급실 방문이 있고, 각 케이스는 병원 도착 후의 <code>최초KTAS분류과정</code>과 <code>퇴실진단코드</code>를 담고 있다. 이를 뒤집어 본 전략의 tier 추천이 실측 진단과 얼마나 맞는지 측정하는 것이 다음 phase의 1순위 과제다.</p>
+      <p>두 번째는 <strong>지역별 편차</strong>다. 현재 Y-tier 분류는 전국 평균이며, 지방 일부 권역에는 수부접합이 없고 수도권 일부 지역센터에는 NICU가 있는 등 현실 편차를 반영하지 않는다. EMRIS 실시간 병상 데이터(<code>emris-data/devdocs/*.json</code>)와 결합 시 구체화 가능하다.</p>
+      <p>세 번째는 <strong>임상 리뷰의 부재</strong>다. Y코드 tier 분류 1차안은 응급의학 전문의 검토 전이다. 특히 Y0131/Y0132(수부·사지접합)와 Y0120(중증화상) 분류는 현실 운영과 대조 필요.</p>
+    </div>
+  </section>
+
+  <section class="chapter">
+    <div class="tag"><span class="num">07</span>재현</div>
+    <div>
+      <h2>한 번의 명령으로 전체 파이프라인을 재실행할 수 있다.</h2>
+      <div class="pipeline"><pre>git clone https://github.com/Pandoll-AI/emris-119chat
+cd emris-119chat
+npm install
+
+npm run codebook:rebuild               # 정본 CSV → JSON + 스키마 검증
+npm run research:all                   # Y매핑 v0.1 + tier 추천 v1.1
+npm run build:html                     # standalone HTML 두 개 재생성
+
+open prektas-hospital-recommender.html # 추천 도구
+open prektas-research.html             # 본 문서</pre></div>
+      <p>각 단계의 산출물은 정본 데이터의 SHA-256을 포함하므로 원본 CSV가 바뀌면 즉시 감지된다.</p>
+    </div>
+  </section>
+
+  <footer class="page-end">
+    <div><span class="version-tag">codebook v2.0.0</span> · <span class="version-tag">tier v1.1.0</span> · 4689 Pre-KTAS codes · 27 EMRIS Y-codes</div>
+    <div><a href="prektas-hospital-recommender.html">→ 추천 도구 열기</a></div>
+  </footer>
+</div>
+</body>
+</html>

@@ -1,5 +1,26 @@
 # Changelog
 
+## [2026-04-24] Phase 5: standalone HTML — 병원 추천 도구 + 연구 설명
+
+### Added
+- `scripts/build-hospital-recommender.mjs` — 정본 JSON 4개(codebook·mapping·tier·y-codes)를 embed한 standalone 추천 도구 생성기. 외부 의존 없음.
+- `scripts/build-research-page.mjs` — 연구 배경·방법·한계 설명 매거진 레이아웃 HTML 생성기.
+- `prektas-hospital-recommender.html` (2.4MB, 빌드 산출) — 구급대원용 프로토타입. 단계별 selector(연령→대분류→3단계→4단계) 또는 5자 코드 직접 입력 → tier 카드 + Y후보 + rationale + safety note.
+- `prektas-research.html` (12KB, 빌드 산출) — 7섹션 서술형 연구 노트. 마스트헤드, 드롭캡, pull quote, 데이터 파이프라인 ASCII 다이어그램. CLAUDE.md 기본 디자인 가이드라인 준수(모노크롬 + 단일 accent, grotesque sans-serif, 매거진 레이아웃, sharp corners).
+
+### Changed
+- `package.json` — `build:html:recommender`, `build:html:research`, `build:html` 3개 scripts 추가.
+
+### Security
+- 생성 HTML의 XSS 방어:
+  - embed JSON payload는 `.replace(/</g, '\\u003c')` 후처리로 `</script>` 시퀀스 차단.
+  - runtime DOM 조작은 `textContent` 및 `createElement` 기반. 사용자 입력 코드는 `/^[A-Z]{5}$/` whitelist.
+
+### Out of Scope
+- 실병원 목록·실시간 병상 데이터 통합 — Phase 6.
+- v0.2 mapping rule 개선 — 이후.
+- 응급의학 전문의 임상 리뷰.
+
 ## [2026-04-24] Phase 4.1: tier 분류 현실 반영 교정
 
 ### Fixed
