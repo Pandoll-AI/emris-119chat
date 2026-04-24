@@ -268,7 +268,98 @@ const html = `<!doctype html>
     color: var(--accent);
   }
 
-  /* ── Stage 2: questions + live preview ── */
+  /* ── Stage 2: context panel ── */
+  .context-card {
+    border: 1px solid var(--ink);
+    background: var(--surface);
+    padding: 12px 14px 10px;
+    display: grid;
+    gap: 6px;
+  }
+  .context-title {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+    font-weight: 700;
+  }
+  .context-code {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .context-code .mono {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+  .ctx-grade {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    padding: 2px 7px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .context-path {
+    font-size: 12.5px;
+    color: var(--ink);
+    line-height: 1.35;
+  }
+  .context-sub {
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--dim);
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  .context-y-list { display: grid; gap: 3px; margin-top: 2px; }
+  .ctx-y-row {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    gap: 8px;
+    font-size: 12px;
+    line-height: 1.35;
+    padding: 1px 0;
+  }
+  .ctx-y-row .mono {
+    font-family: ui-monospace, monospace;
+    font-weight: 700;
+    font-size: 11.5px;
+  }
+  .ctx-y-row.dimmed { opacity: 0.4; text-decoration: line-through; }
+  .context-none {
+    font-size: 12px;
+    color: var(--dim);
+    line-height: 1.45;
+    padding-top: 2px;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  .info-msg {
+    font-size: 13px;
+    color: var(--dim);
+    padding: 14px;
+    border: 1px dashed var(--line);
+    text-align: center;
+  }
+  .q-section-title {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+    font-weight: 700;
+    padding-top: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .q-section-title .count { color: var(--ink); font-weight: 800; }
+
+  /* ── Stage 2: question cards with narrowing preview ── */
   .question-card {
     border: 1px solid var(--line);
     background: var(--surface);
@@ -294,11 +385,23 @@ const html = `<!doctype html>
     background: var(--surface);
     text-align: left;
     font-size: 13.5px;
-    min-height: 40px;
+    min-height: 44px;
     transition: border-color .1s, background-color .1s;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
   }
   .q-opt-btn:active { background: var(--bg); }
   .q-opt-btn.selected { border-color: var(--ink); background: var(--ink); color: #fff; font-weight: 600; }
+  .q-opt-btn .q-opt-text { font-weight: 500; }
+  .q-opt-btn.selected .q-opt-text { font-weight: 700; }
+  .q-opt-btn .q-opt-preview {
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 0.01em;
+    font-weight: 500;
+  }
+  .q-opt-btn.selected .q-opt-preview { color: rgba(255,255,255,0.85); }
 
   .q-skip {
     font-size: 12px;
@@ -336,7 +439,15 @@ const html = `<!doctype html>
   .live-tier.regional .tier-name { color: var(--tier-regional); }
   .live-tier.local_center .tier-name { color: var(--tier-local-center); }
   .live-tier.local_institution .tier-name { color: var(--tier-local-institution); }
-  .live-tier .tier-strategy-pill { font-size: 10.5px; padding: 2px 8px; border: 1px solid var(--line); color: var(--dim); }
+  .live-tier .tier-alt { font-size: 11.5px; color: var(--dim); }
+  .live-rationale {
+    font-size: 12px;
+    color: var(--ink);
+    line-height: 1.4;
+    padding: 6px 10px;
+    background: var(--bg);
+    border-left: 2px solid var(--ink);
+  }
   .live-y { display: flex; gap: 4px; flex-wrap: wrap; }
   .live-y .y-pill { font-family: ui-monospace, monospace; font-size: 11px; padding: 2px 6px; border: 1px solid var(--line); background: var(--bg); }
   .live-y .y-pill.removed { text-decoration: line-through; color: var(--line); }
@@ -656,13 +767,13 @@ function renderStage1Group(main) {
 function renderStage1L2(main) {
   const stage = document.createElement('div');
   stage.className = 'stage';
+  const opts = uniqL2(byGroup[state.group]);
   const p = document.createElement('div');
   p.className = 'prompt';
-  p.innerHTML = '대분류를 선택하세요<span class="hint">Pre-KTAS 17 카테고리</span>';
+  p.innerHTML = '대분류를 선택하세요<span class="hint">정본 Pre-KTAS ' + opts.length + '개 카테고리</span>';
   stage.appendChild(p);
   const grid = document.createElement('div');
   grid.className = 'btn-grid cols-2';
-  const opts = uniqL2(byGroup[state.group]);
   for (const o of opts) {
     grid.appendChild(makeOptBtn({
       code: o.c,
@@ -677,13 +788,14 @@ function renderStage1L2(main) {
 function renderStage1L3(main) {
   const stage = document.createElement('div');
   stage.className = 'stage';
+  const opts = uniqL3(byGroup[state.group], state.l2);
+  const l2Name = (opts.length && byGroup[state.group].find((e) => e.l2c === state.l2)?.l2n) || '';
   const p = document.createElement('div');
   p.className = 'prompt';
-  p.innerHTML = '주호소를 선택하세요<span class="hint">3단계 분류</span>';
+  p.innerHTML = '주호소를 선택하세요<span class="hint">' + escapeHtml(l2Name) + ' 아래 정본 ' + opts.length + '개 주호소만 표시</span>';
   stage.appendChild(p);
   const grid = document.createElement('div');
   grid.className = 'btn-grid cols-2';
-  const opts = uniqL3(byGroup[state.group], state.l2);
   for (const o of opts) {
     grid.appendChild(makeOptBtn({
       code: o.c,
@@ -698,13 +810,15 @@ function renderStage1L3(main) {
 function renderStage1L4(main) {
   const stage = document.createElement('div');
   stage.className = 'stage';
+  const opts = uniqL4(byGroup[state.group], state.l2, state.l3);
+  const sample = byGroup[state.group].find((e) => e.l2c === state.l2 && e.l3c === state.l3);
+  const pathLabel = sample ? (sample.l2n + ' → ' + sample.l3n) : '';
   const p = document.createElement('div');
   p.className = 'prompt';
-  p.innerHTML = '세부증상을 선택하세요<span class="hint">4단계 — 선택 시 Pre-KTAS 코드 완성</span>';
+  p.innerHTML = '세부증상을 선택하세요<span class="hint">' + escapeHtml(pathLabel) + ' 조합에 정본 등록된 ' + opts.length + '개 세부증상. 선택 시 Pre-KTAS 코드 완성.</span>';
   stage.appendChild(p);
   const grid = document.createElement('div');
   grid.className = 'btn-grid cols-1';
-  const opts = uniqL4(byGroup[state.group], state.l2, state.l3);
   for (const o of opts) {
     grid.appendChild(makeOptBtn({
       code: o.c,
@@ -724,18 +838,138 @@ function renderStage1L4(main) {
   main.appendChild(stage);
 }
 
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function simulateNarrow(qid, optIdx) {
+  // 특정 질문의 특정 옵션을 가정할 때 survive할 Y 집합 계산 (preview용)
+  const baseline = state.code && DATA.rec[state.code] ? DATA.rec[state.code].y : [];
+  if (baseline.length === 0) return { kept: [], removed: [] };
+  const simAnswers = Object.assign({}, state.answers);
+  simAnswers[qid] = optIdx;
+  const kept = new Set(baseline);
+  const removed = new Set();
+  for (const qk of Object.keys(simAnswers)) {
+    const eff = DATA.question_effects[qk] && DATA.question_effects[qk].options[simAnswers[qk]];
+    if (!eff) continue;
+    if (eff.y_keep) {
+      const keepSet = new Set(eff.y_keep);
+      for (const y of Array.from(kept)) if (!keepSet.has(y)) { kept.delete(y); removed.add(y); }
+    }
+    if (eff.y_remove) {
+      for (const y of eff.y_remove) if (kept.has(y)) { kept.delete(y); removed.add(y); }
+    }
+  }
+  return { kept: Array.from(kept), removed: Array.from(removed) };
+}
+
+function yShort(y) {
+  const d = DATA.diseases.find((x) => x.code === y);
+  return d ? (d.short || d.label) : y;
+}
+
+function tierRationaleText(ycodes, grade, removedArr) {
+  const rec = state.code && DATA.rec[state.code] ? DATA.rec[state.code] : null;
+  const initial = rec ? rec.y : [];
+  const parts = [];
+  if (initial.length > 0) {
+    parts.push('초기 Y후보 ' + initial.length + '개(' + initial.join(', ') + ')에서 출발.');
+  } else {
+    parts.push('27 Y코드에 해당 없음 → grade ' + grade + ' 기반 tier.');
+  }
+  if (removedArr && removedArr.length > 0) {
+    parts.push('답변으로 ' + removedArr.join(', ') + ' 제외.');
+  }
+  if (ycodes.length > 0) {
+    const allRegional = ycodes.every((y) => {
+      const t = DATA.y_tier[y];
+      return t && t.length === 1 && t[0] === 'regional';
+    });
+    if (allRegional) parts.push('생존한 Y(' + ycodes.join(', ') + ') 모두 권역 전용 → 권역센터만 가능.');
+    else parts.push('생존한 Y(' + ycodes.join(', ') + ')는 권역·지역센터 공동 커버 가능.');
+  } else if (initial.length > 0) {
+    parts.push('모든 Y후보 제외됨 → grade ' + grade + ' 기반 fallback.');
+  }
+  return parts.join(' ');
+}
+
 function renderStage2Questions(main) {
   const stage = document.createElement('div');
   stage.className = 'stage';
 
+  const e = DATA.entries.find((x) => x.c === state.code);
+  const grade = e ? e.gr : 0;
+  const { ycodes, removed } = currentCandidates();
+  const removedArr = Array.from(removed);
+  const tier = computeTier(ycodes, grade);
+  const tierDef = DATA.tier_definitions[tier.preferred];
+  const baseline = state.code && DATA.rec[state.code] ? DATA.rec[state.code].y : [];
+
+  /* ── 상단: 현재 맥락 카드 ── */
+  const ctx = document.createElement('div');
+  ctx.className = 'context-card';
+  const ctxTitle = document.createElement('div');
+  ctxTitle.className = 'context-title';
+  ctxTitle.textContent = '증상 요약';
+  ctx.appendChild(ctxTitle);
+  const ctxCode = document.createElement('div');
+  ctxCode.className = 'context-code';
+  const codeSpan = document.createElement('span');
+  codeSpan.className = 'mono';
+  codeSpan.textContent = state.code;
+  ctxCode.appendChild(codeSpan);
+  const gradeSpan = document.createElement('span');
+  gradeSpan.className = 'ctx-grade';
+  gradeSpan.textContent = 'grade ' + grade;
+  ctxCode.appendChild(gradeSpan);
+  ctx.appendChild(ctxCode);
+  if (e) {
+    const path = document.createElement('div');
+    path.className = 'context-path';
+    path.textContent = e.l2n + ' · ' + e.l3n + ' · ' + e.l4n;
+    ctx.appendChild(path);
+  }
+  if (baseline.length > 0) {
+    const yTitle = document.createElement('div');
+    yTitle.className = 'context-sub';
+    yTitle.textContent = '초기 Y후보 (EMRIS 27 중 ' + baseline.length + '개)';
+    ctx.appendChild(yTitle);
+    const yList = document.createElement('div');
+    yList.className = 'context-y-list';
+    for (const y of baseline) {
+      const d = DATA.diseases.find((x) => x.code === y);
+      const row = document.createElement('div');
+      row.className = 'ctx-y-row' + (removed.has(y) ? ' dimmed' : '');
+      const code = document.createElement('span');
+      code.className = 'mono';
+      code.textContent = y;
+      const label = document.createElement('span');
+      label.textContent = d ? d.label : '(정의 없음)';
+      row.appendChild(code);
+      row.appendChild(label);
+      yList.appendChild(row);
+    }
+    ctx.appendChild(yList);
+  } else {
+    const none = document.createElement('div');
+    none.className = 'context-none';
+    none.textContent = '해당 Pre-KTAS 코드는 EMRIS 27 중증응급질환 Y코드와 연결되지 않음. grade 기반 tier로 배정.';
+    ctx.appendChild(none);
+  }
+  stage.appendChild(ctx);
+
   if (state.qids.length === 0) {
-    // 질문 없음 → 바로 결과 프리뷰
     const p = document.createElement('div');
-    p.className = 'prompt';
-    p.innerHTML = '추가 질문이 필요하지 않습니다<span class="hint">Pre-KTAS 코드 자체로 tier 결정 가능</span>';
+    p.className = 'info-msg';
+    p.textContent = '추가 질문이 필요 없습니다. Pre-KTAS 코드 자체로 tier 결정 가능.';
     stage.appendChild(p);
   } else {
-    // 질문들 순차로 보이되 답변 진행된 만큼만
+    const intro = document.createElement('div');
+    intro.className = 'q-section-title';
+    intro.innerHTML = '추가 질문 <span class="count">' + state.qids.length + '개</span>';
+    stage.appendChild(intro);
+
     const shown = Math.min(state.qIndex + 1, state.qids.length);
     for (let i = 0; i < shown; i += 1) {
       const qid = state.qids[i];
@@ -746,11 +980,7 @@ function renderStage2Questions(main) {
 
       const counter = document.createElement('div');
       counter.className = 'q-counter';
-      const a = document.createElement('span');
-      a.textContent = '질문 ' + (i + 1) + ' / ' + state.qids.length;
-      const b = document.createElement('span');
-      b.textContent = qid;
-      counter.appendChild(a); counter.appendChild(b);
+      counter.innerHTML = '<span>질문 ' + (i + 1) + ' / ' + state.qids.length + '</span><span>' + qid + '</span>';
       card.appendChild(counter);
 
       const prompt = document.createElement('div');
@@ -769,7 +999,22 @@ function renderStage2Questions(main) {
         const btn = document.createElement('button');
         btn.className = 'q-opt-btn' + (state.answers[qid] === idx ? ' selected' : '');
         btn.type = 'button';
-        btn.textContent = optText;
+        const top = document.createElement('div');
+        top.className = 'q-opt-text';
+        top.textContent = optText;
+        btn.appendChild(top);
+        // Narrowing preview
+        const sim = simulateNarrow(qid, idx);
+        const preview = document.createElement('div');
+        preview.className = 'q-opt-preview';
+        if (sim.kept.length === 0 && baseline.length > 0) {
+          preview.textContent = '→ 모든 Y후보 제외됨 (grade ' + grade + ' 기반)';
+        } else if (sim.kept.length === baseline.length) {
+          preview.textContent = '→ Y후보 유지 (' + sim.kept.length + '개)';
+        } else {
+          preview.textContent = '→ Y후보 ' + sim.kept.length + '개 생존: ' + sim.kept.map(yShort).join(' · ');
+        }
+        btn.appendChild(preview);
         btn.addEventListener('click', () => {
           state.answers[qid] = idx;
           if (i === state.qIndex && state.qIndex < state.qids.length - 1) state.qIndex += 1;
@@ -781,7 +1026,6 @@ function renderStage2Questions(main) {
       stage.appendChild(card);
     }
 
-    // 스킵
     if (state.qIndex < state.qids.length - 1) {
       const skip = document.createElement('button');
       skip.className = 'q-skip';
@@ -792,19 +1036,14 @@ function renderStage2Questions(main) {
     }
   }
 
-  // Live preview
-  const e = DATA.entries.find((x) => x.c === state.code);
-  const grade = e ? e.gr : 0;
-  const { ycodes, removed } = currentCandidates();
-  const tier = computeTier(ycodes, grade);
-  const tierDef = DATA.tier_definitions[tier.preferred];
-
+  /* ── 하단 sticky preview: tier + 근거 서술 ── */
   const preview = document.createElement('div');
   preview.className = 'live-preview';
-  const label = document.createElement('div');
-  label.className = 'lp-label';
-  label.textContent = '현재 추천';
-  preview.appendChild(label);
+
+  const ptitle = document.createElement('div');
+  ptitle.className = 'lp-label';
+  ptitle.textContent = '현재 추천';
+  preview.appendChild(ptitle);
 
   const tierRow = document.createElement('div');
   tierRow.className = 'live-tier ' + tier.preferred;
@@ -814,24 +1053,22 @@ function renderStage2Questions(main) {
   tierRow.appendChild(tn);
   for (let i = 1; i < tier.acceptable.length; i += 1) {
     const alt = document.createElement('span');
-    alt.style.color = 'var(--dim)';
-    alt.style.fontSize = '11.5px';
+    alt.className = 'tier-alt';
     alt.textContent = '+ ' + DATA.tier_definitions[tier.acceptable[i]].short + ' 가능';
     tierRow.appendChild(alt);
   }
   preview.appendChild(tierRow);
 
+  // Rationale 서술
+  const rationale = document.createElement('div');
+  rationale.className = 'live-rationale';
+  rationale.textContent = tierRationaleText(ycodes, grade, removedArr);
+  preview.appendChild(rationale);
+
   // Y pills
-  const yWrap = document.createElement('div');
-  yWrap.className = 'live-y';
-  const baseline = state.code && DATA.rec[state.code] ? DATA.rec[state.code].y : [];
-  if (baseline.length === 0) {
-    const none = document.createElement('span');
-    none.className = 'y-pill';
-    none.style.color = 'var(--dim)';
-    none.textContent = '27 Y코드 외 (grade ' + grade + ' 기반)';
-    yWrap.appendChild(none);
-  } else {
+  if (baseline.length > 0) {
+    const yWrap = document.createElement('div');
+    yWrap.className = 'live-y';
     for (const y of baseline) {
       const pill = document.createElement('span');
       pill.className = 'y-pill' + (removed.has(y) ? ' removed' : '');
@@ -840,8 +1077,8 @@ function renderStage2Questions(main) {
       if (d) pill.title = d.label;
       yWrap.appendChild(pill);
     }
+    preview.appendChild(yWrap);
   }
-  preview.appendChild(yWrap);
 
   const bar = document.createElement('div');
   bar.className = 'continue-bar';
