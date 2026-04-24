@@ -1,5 +1,31 @@
 # Changelog
 
+## [2026-04-24] Phase 5.3: 로컬 서버 3489 + prektas 전용 라우팅 격리
+
+### Added
+- `run.sh` 재작성 (이전 3344 + 삭제된 `prektas-research-*` 파일 참조였음). 포트 **3489**로 변경. `{start|stop|restart}` 서브커맨드 유지. 필요 시 `npm run build:html` 자동 실행.
+- `public/` 디렉토리 + 심볼릭 링크:
+  - `public/index.html` → `../prektas-hospital-recommender.html`
+  - `public/research.html` → `../prektas-research.html`
+- `python3 -m http.server --directory public`로 서빙. 결과: `GET /` → 추천 도구 직접 진입, `GET /research.html` → 연구 설명.
+
+### Why
+- 루트 `index.html`은 기존 Gemini 챗봇 UI이며 prektas 연구와 **별개 서비스**. 같은 디렉토리를 서빙하면 `/`로 접근 시 챗봇이 먼저 열려 혼동 발생.
+- 빌드 산출물(`prektas-*.html`)은 루트에 유지해 Vercel 배포·git 추적 보존. 심볼릭 링크로 서빙 경로만 격리.
+
+### Paths
+- Tailscale: `http://100.106.31.34:3489/` (추천 도구), `/research.html` (연구 설명)
+- Local: `http://127.0.0.1:3489/`
+
+## [2026-04-24] Phase 5.2: Stage 1 정본 카운트 명시 + Stage 2 추론 근거 대폭 강화
+
+### Changed
+- `scripts/build-hospital-recommender.mjs` Stage 1 prompts: "정본 Pre-KTAS N개 카테고리" 등 filter 근거 명시. 327개 (group, l2, l3) 조합 × 평균 14.3개 L4 (min 1, max 37) — 이론치 676 대비 극히 제한적임이 실측 확인됨.
+- Stage 2 대폭 개편:
+  - 상단 context-card: Pre-KTAS 코드 · grade · level 경로 + 초기 Y후보를 **한글 질환명과 함께** 나열 (제거된 건 dimmed).
+  - 질문 옵션 버튼마다 narrowing preview: 선택 전 "→ Y후보 N개 생존: 심근경색 · 흉부대동맥" 미리보기 (simulateNarrow).
+  - 하단 sticky preview에 rationale 서술: "초기 Y후보 3개 → 답변으로 Y0020/Y0031 제외 → 생존 Y0032 권역 전용".
+
 ## [2026-04-24] Phase 5.1: 추천 도구 모바일 스텝 마법사 재작성 + live tier narrowing + mock 병원
 
 ### Changed

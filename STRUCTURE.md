@@ -64,8 +64,11 @@ data/prektas-codebook.json                                │
 | `research/prektas-tier-recommendation-report.md` | 권역 세이브율·분포 분석 서술 | tier-recommendation.json |
 | `scripts/build-hospital-recommender.mjs` | 정본 JSON embed → recommender HTML | 4개 JSON |
 | `scripts/build-research-page.mjs` | 연구 설명 standalone HTML 생성 | codebook.json, tier·mapping |
-| `prektas-hospital-recommender.html` | 2.4MB standalone 추천 도구 (빌드 산출) | build script |
-| `prektas-research.html` | 12KB 연구 노트 HTML (빌드 산출) | build script |
+| `prektas-hospital-recommender.html` | 약 900KB 모바일 스텝 마법사 (빌드 산출) | build script |
+| `prektas-research.html` | 15KB 연구 노트 HTML (빌드 산출) | build script |
+| `run.sh` | 포트 3489 로컬 서버 제어 (`start\|stop\|restart`) | python3, public/ |
+| `public/index.html` (심볼릭) | → `../prektas-hospital-recommender.html` | 루트 HTML |
+| `public/research.html` (심볼릭) | → `../prektas-research.html` | 루트 HTML |
 | `package.json` | npm scripts + devDeps (ajv, ajv-formats) | 없음 |
 | `index.html` | EMRIS 119 챗봇 UI (initial commit 산출물) | `api/`, Gemini REST API |
 | `api/` | Vercel serverless 엔드포인트 디렉토리 | — |
