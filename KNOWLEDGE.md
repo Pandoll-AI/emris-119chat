@@ -15,14 +15,9 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | Codebook Schema | schema | `data/schemas/prektas-codebook.schema.json` | JSON Schema draft 2020-12 v2. reserved 필드 제거, if/then/else 삭제, level2/3/4 필수 객체. |
 | Codebook Generator | script | `scripts/generate-prektas-codebook.mjs` | CSV → JSON 변환기. regex/eval 완전 제거. 헤더·코드·레벨 코드·등급 검증을 generator에서 수행. |
 | Codebook Validator | script | `scripts/validate-prektas-codebook.mjs` | ajv + 무결성 + 충돌·이름 일관성 검증. whitelist 로직 폐지(항상 엄격). |
-| KTAS Codebook CSV | external-dataset | `/Users/sjlee/Projects/prektas-research/KTAS_codebook.csv` | 4,349 KTAS 공식 코드표. 본 프로젝트 Pre-KTAS와는 **별개 taxonomy**. 향후 별도 JSON 정본화 대상. |
-| KTAS↔Pre-KTAS Mapping CSV | external-dataset | `/Users/sjlee/Projects/prektas-research/KTAS_PreKTAS_mapping.csv` | 4,690 rows 매핑 테이블. meaning/broad/remap/approximate/unmappable + score. Pre-KTAS↔KTAS bridge. |
-| Source Keypad HTML (deprecated) | external-source | `/Users/sjlee/Projects/prektas-research/prektas-input-keypad.html` | **더 이상 사용 안 함.** RECORDS_RAW는 KTAS 이름이 섞여 오염된 상태였음이 본 phase에서 확인됨. |
-| Research Standalone HTML | artifact | `prektas-research-standalone.html` (untracked) | 이전 세션 산출물. 4,689 코드 인터랙티브 테스트기. |
-| Research Report HTML | artifact | `prektas-research-report.html` (untracked) | 이전 세션 산출물. JSON 리포트 뷰어. |
-| Evaluate Script | script | `scripts/evaluate-prektas-research.mjs` (untracked) | 기존 평가 스크립트. self-fulfilling 지표 문제 있음. |
-| Research Standalone Builder | script | `scripts/build-prektas-research-standalone.mjs` (untracked) | 하드코딩 if/else 키워드 매칭으로 질환 후보 생성. |
-| Research Report Builder | script | `scripts/build-prektas-report-html.mjs` (untracked) | JSON → HTML 얇은 템플릿. |
+| KTAS Codebook CSV | external-dataset (excluded) | `/Users/sjlee/Projects/prektas-research/KTAS_codebook.csv` | 4,349 KTAS 공식 코드표. **본 프로젝트에서는 사용하지 않음.** 이전 phase 1의 오염 사고 이후 완전 격리 방침. |
+| KTAS↔Pre-KTAS Mapping CSV | external-dataset (excluded) | `/Users/sjlee/Projects/prektas-research/KTAS_PreKTAS_mapping.csv` | 4,690 rows. **본 매핑 연구에 사용하지 않음** (Phase 3 리포트 §2 명시). KTAS 이름 재유입 차단 목적. |
+| Source Keypad HTML (deprecated) | external-source | `/Users/sjlee/Projects/prektas-research/prektas-input-keypad.html` | **사용 금지.** RECORDS_RAW는 Pre-KTAS 코드 × KTAS_codebook 역인덱싱 가공물. Phase 1에서 이걸 정본으로 오인해 91.7% 오염 발생. |
 
 ## Relations
 
@@ -32,14 +27,10 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | Codebook Generator | writes | Pre-KTAS Codebook JSON | 검증 통과 시에만 출력 |
 | Codebook Validator | validates | Pre-KTAS Codebook JSON | schema + 무결성 + 이름 일관성 |
 | Codebook Validator | references | Codebook Schema | ajv로 compile |
-| Pre-KTAS Codebook JSON | cross-refs | KTAS↔Pre-KTAS Mapping CSV | 같은 pre_code를 key로 공유 (아직 JSON화 안 됨) |
-| KTAS↔Pre-KTAS Mapping CSV | maps to | KTAS Codebook CSV | 매핑의 ktas_code column |
-| Research Standalone Builder | reads | Source Keypad HTML | 기존 방식: regex + `Function()` eval |
-| Research Standalone Builder | reads | KTAS Codebook CSV | `ktasByCode` map으로 주입, 근거 텍스트용으로만 사용 |
-| Research Standalone Builder | reads | KTAS↔Pre-KTAS Mapping CSV | mapping trust 계산에 사용 |
-| Evaluate Script | reads | Research Standalone HTML | 문자열 `includes()`로 feature_checks 검사 (실질 검증 아님) |
-| Evaluate Script | writes | `prektas-research-report.json` | 평가 결과 JSON |
-| Research Report Builder | reads | `prektas-research-report.json` | → Research Report HTML |
+| Mapping Generator | reads | Pre-KTAS Codebook JSON | level2/3/4 name + grade 입력 |
+| Mapping Generator | reads | EMRIS 중증응급질환 Y코드 | 27 Y코드 valid target set |
+| Mapping Generator | writes | Pre-KTAS → Y 매핑 (v0.1) | JSON |
+| Pre-KTAS → Y 매핑 (v0.1) | informs | Pre-KTAS → Y 매핑 보고서 | 수치 근거 |
 
 ## Actions
 
@@ -75,8 +66,15 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | 2026-04-24 | write | claude | `research/prektas-to-y-mapping-report.md` | 8섹션 서술형 보고서. |
 
 ## Next Phase Candidates
-- 진짜 Pre-KTAS ↔ KTAS 관계 재분석: 매핑 CSV 기준으로 Pre-KTAS 2/3/4단계 ↔ KTAS 2/3/4단계의 대응 관계를 다시 봐야 함. 직전 분석은 오염된 데이터 기반이라 전면 재검토 필요.
-- `scripts/build-prektas-research-standalone.mjs` 리팩터 — 정본 JSON 소비자로 전환. 키워드 매칭을 level2/3/4 name 기반 분기로 교체 가능성 검토.
-- KTAS_codebook.csv, KTAS_PreKTAS_mapping.csv도 같은 정본화 프로세스(JSON + schema + validator) 적용.
-- Evaluate Script의 self-fulfilling 로직 제거, 골든셋 기반 평가로 교체.
-- iCloud .Trash의 원본 CSV 영구 보존 — 사용자가 .Trash에서 Put Back 필요 (30일 후 영구 삭제 위험).
+
+Phase 3 리포트 `research/prektas-to-y-mapping-report.md` §7에서 승계.
+
+1. **v0.2 — 카테고리 수준 포함을 level4 keyword pre-filter로 교체**. `눈`·`정신건강` 100% coverage over-inclusion 해소.
+2. **v0.2 — 5개 rule gap 해소**. 임신 20주+ 일반 복통 → Y0112, 복부 대동맥 표현, 몸통외상 세부 등. +≈10%p coverage 예상.
+3. **질문 리스트 → 질문 트리(branching)**. 현재 `questions: [q1,q2]` 는 "둘 다" 의미. 답변 기반 분기 스키마로 확장.
+4. **응급의학 전문의 1인 리뷰** — 명백한 오매핑 교정 루프.
+5. **`source-prektas.csv` 225k 실측 검증** — 이항 정확도(정답-unmapped vs 정답-mapped) 측정. false negative rate 우선.
+
+### 운영 action items
+
+- iCloud `.Trash/Pre-KTAS Research/`의 원본 CSV 영구 보존 필요. 30일 후 영구 삭제 위험. Finder → 최근 삭제된 항목 → Put Back.
