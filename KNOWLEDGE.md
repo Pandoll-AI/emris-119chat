@@ -12,6 +12,10 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | Pre-KTAS → Y 매핑 (v0.1) | research-output | `research/prektas-to-y-mapping.json` | 4,689 Pre-KTAS 엔트리별 Y코드 후보·질문·rationale. rule-based baseline. |
 | Pre-KTAS → Y 매핑 보고서 | research-output | `research/prektas-to-y-mapping-report.md` | 8섹션 서술형 해석·한계·후속 방향. |
 | Mapping Generator | script | `scripts/research/build-prektas-to-y-mapping.mjs` | 12 도메인 rule + 13 질문 카탈로그. JSON 산출. |
+| Y-Tier Classification | dataset | `data/y-code-to-center-tier.json` | 27 Y코드를 권역/지역센터/지역기관으로 분류한 1차안 (임상 리뷰 전). 권역 세이브 전략 근거. |
+| Tier Recommendation | research-output | `research/prektas-tier-recommendation.json` | Pre-KTAS 엔트리별 tier 추천 + 요약. Y후보 + grade 기반 규칙. |
+| Tier Recommendation Report | research-output | `research/prektas-tier-recommendation-report.md` | 권역 세이브율(85.5%), level2별 분포, 한계·후속 분석. |
+| Tier Recommendation Generator | script | `scripts/research/build-prektas-tier-recommendation.mjs` | v0.1 매핑 + Y-tier 룩업 + grade fallback → tier 추천 산출. |
 | Codebook Schema | schema | `data/schemas/prektas-codebook.schema.json` | JSON Schema draft 2020-12 v2. reserved 필드 제거, if/then/else 삭제, level2/3/4 필수 객체. |
 | Codebook Generator | script | `scripts/generate-prektas-codebook.mjs` | CSV → JSON 변환기. regex/eval 완전 제거. 헤더·코드·레벨 코드·등급 검증을 generator에서 수행. |
 | Codebook Validator | script | `scripts/validate-prektas-codebook.mjs` | ajv + 무결성 + 충돌·이름 일관성 검증. whitelist 로직 폐지(항상 엄격). |
@@ -31,6 +35,10 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | Mapping Generator | reads | EMRIS 중증응급질환 Y코드 | 27 Y코드 valid target set |
 | Mapping Generator | writes | Pre-KTAS → Y 매핑 (v0.1) | JSON |
 | Pre-KTAS → Y 매핑 (v0.1) | informs | Pre-KTAS → Y 매핑 보고서 | 수치 근거 |
+| Tier Recommendation Generator | reads | Pre-KTAS → Y 매핑 (v0.1) | Y후보 입력 |
+| Tier Recommendation Generator | reads | Y-Tier Classification | Y코드별 tier 룩업 |
+| Tier Recommendation Generator | writes | Tier Recommendation | per-code tier + save flag |
+| Tier Recommendation | informs | Tier Recommendation Report | 수치 근거 |
 
 ## Actions
 
@@ -65,15 +73,25 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | 2026-04-24 | run | claude | v0.1 baseline | q0=268 / q1=527 / q2=94 / q3+=0 / unmapped=3800. coverage 19.0%. |
 | 2026-04-24 | write | claude | `research/prektas-to-y-mapping-report.md` | 8섹션 서술형 보고서. |
 
+## Phase 4 Actions (2026-04-24)
+
+| Date | Action | Actor | Target | Detail |
+|---|---|---|---|---|
+| 2026-04-24 | pivot | user | 연구 프레이밍 | "Y코드 확정" → "응급의료센터 등급 추천". 권역 세이브 전략 지시. |
+| 2026-04-24 | create | claude | `data/y-code-to-center-tier.json` | 27 Y코드 tier 1차안 (권역 12 / 지역센터 15). |
+| 2026-04-24 | create | claude | `scripts/research/build-prektas-tier-recommendation.mjs` | tier 추천 생성기. |
+| 2026-04-24 | run | claude | tier 추천 v1.0 | 권역 398 / 지역센터 2,341 / 지역기관 1,950. 권역 세이브율 85.5%. |
+| 2026-04-24 | write | claude | `research/prektas-tier-recommendation-report.md` | 8섹션 서술 보고서. |
+
 ## Next Phase Candidates
 
-Phase 3 리포트 `research/prektas-to-y-mapping-report.md` §7에서 승계.
+Phase 4 리포트 §7에서 승계.
 
-1. **v0.2 — 카테고리 수준 포함을 level4 keyword pre-filter로 교체**. `눈`·`정신건강` 100% coverage over-inclusion 해소.
-2. **v0.2 — 5개 rule gap 해소**. 임신 20주+ 일반 복통 → Y0112, 복부 대동맥 표현, 몸통외상 세부 등. +≈10%p coverage 예상.
-3. **질문 리스트 → 질문 트리(branching)**. 현재 `questions: [q1,q2]` 는 "둘 다" 의미. 답변 기반 분기 스키마로 확장.
-4. **응급의학 전문의 1인 리뷰** — 명백한 오매핑 교정 루프.
-5. **`source-prektas.csv` 225k 실측 검증** — 이항 정확도(정답-unmapped vs 정답-mapped) 측정. false negative rate 우선.
+1. **실측 검증 (최우선)** — `source-prektas.csv` 225k 방문으로 false negative rate 측정. "중증인데 지역기관 추천" 비율 정량화 없이는 배포 불가.
+2. **Y-tier 1차안 응급의학 전문의 리뷰** — 특히 Y0131/0132/0120 분류 정합성.
+3. **v0.1 rule gap 보강** — Y0042 복부대동맥(현재 2건만), Y0141/0142 투석(현재 0건), Y0070 장중첩 등.
+4. **EMRIS 실시간 병상 데이터 통합** — `acceptable_tiers`의 "여유시 권역" 판정을 실제 `emris-data/devdocs/{hospitals,beds,messages}.json`로 구체화.
+5. **지역별 병원 capability 매트릭스** — 행정 등급(권역/지역센터/지역기관) 대신 실제 Y코드 커버 능력 기반 추천.
 
 ### 운영 action items
 

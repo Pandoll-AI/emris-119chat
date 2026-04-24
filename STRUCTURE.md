@@ -15,13 +15,23 @@ data/prektas-codebook.json                                │
            │   schema ok · integrity ok · 충돌 0          │
            ▼                                              ▼
          ┌────────────────────────────────────────────────────┐
-         │ [scripts/research/build-prektas-to-y-mapping.mjs]  │
+         │ [build-prektas-to-y-mapping.mjs]                   │
          │   12 domain rules + 13 question catalog            │
          └────────────────────────────────────────────────────┘
                                  │
                                  ▼
               research/prektas-to-y-mapping.json
-              research/prektas-to-y-mapping-report.md (서술)
+                                 │
+                                 │ + data/y-code-to-center-tier.json
+                                 ▼
+         ┌────────────────────────────────────────────────────┐
+         │ [build-prektas-tier-recommendation.mjs]            │
+         │   Y후보 → tier 룩업 · grade fallback · 세이브 판정 │
+         └────────────────────────────────────────────────────┘
+                                 │
+                                 ▼
+              research/prektas-tier-recommendation.json
+              research/prektas-tier-recommendation-report.md (서술)
 ```
 
 **npm 워크플로**
@@ -29,6 +39,8 @@ data/prektas-codebook.json                                │
 - `npm run codebook:validate` — schema + 무결성 + 이름 일관성 (항상 엄격)
 - `npm run codebook:rebuild` — generate 후 validate까지
 - `npm run research:prektas-to-y-mapping` — Pre-KTAS → Y코드 v0.1 매핑 산출
+- `npm run research:prektas-tier-recommendation` — Y코드 + grade → 응급센터 tier 추천
+- `npm run research:all` — 위 둘을 순차 실행
 
 ## Key Files
 
@@ -43,6 +55,10 @@ data/prektas-codebook.json                                │
 | `scripts/research/build-prektas-to-y-mapping.mjs` | Pre-KTAS → Y코드 rule-based v0.1 매핑 생성기 | prektas-codebook.json, emris-severe-emergency-diseases.json |
 | `research/prektas-to-y-mapping.json` | 4,689 Pre-KTAS 엔트리별 Y코드 후보·질문·rationale | build script 출력 |
 | `research/prektas-to-y-mapping-report.md` | 매핑 연구 서술형 보고서 | mapping.json |
+| `data/y-code-to-center-tier.json` | 27 Y코드 → 권역/지역센터/지역기관 tier 1차안 | 없음 (1차안) |
+| `scripts/research/build-prektas-tier-recommendation.mjs` | Y후보 + grade → 응급센터 tier 추천 | mapping.json, y-code-to-center-tier.json |
+| `research/prektas-tier-recommendation.json` | 4,689 엔트리별 tier 추천 + 세이브 플래그 | tier script 출력 |
+| `research/prektas-tier-recommendation-report.md` | 권역 세이브율·분포 분석 서술 | tier-recommendation.json |
 | `package.json` | npm scripts + devDeps (ajv, ajv-formats) | 없음 |
 | `index.html` | EMRIS 119 챗봇 UI (initial commit 산출물) | `api/`, Gemini REST API |
 | `api/` | Vercel serverless 엔드포인트 디렉토리 | — |

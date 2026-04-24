@@ -1,6 +1,32 @@
 # Changelog
 
-## [2026-04-24] Phase: Pre-KTAS → EMRIS 중증응급질환(27 Y코드) 매핑 v0.1 baseline
+## [2026-04-24] Phase 4: 응급의료센터 등급 추천 전략 (권역 세이브)
+
+### Context
+
+Phase 3의 "Pre-KTAS → Y코드 1개 확정" 프레이밍이 임상적으로 unsafe함(현장 진단 불가)이 확인됨. 프레이밍을 **"Pre-KTAS → 응급의료센터 등급(권역/지역센터/지역기관) 추천"**으로 전환. 진단 없이 자원 등급만 판정 → 안전. 핵심 전략은 **권역 세이브**.
+
+### Added
+- `data/y-code-to-center-tier.json` — 27 Y코드별 tier 분류 1차안. 권역 전용 12개(신경/대동맥/NICU/화상/접합/혈관중재), 지역센터 가능 15개.
+- `scripts/research/build-prektas-tier-recommendation.mjs` — Pre-KTAS → tier 추천 생성기. Y후보 + grade fallback 규칙 기반.
+- `research/prektas-tier-recommendation.json` — 4,689 엔트리별 {primary_tier, acceptable_tiers, regional_save_applied, source, rationale}.
+- `research/prektas-tier-recommendation-report.md` — 8섹션 서술형 보고서.
+
+### Changed
+- `package.json` — `research:prektas-tier-recommendation`, `research:all` 스크립트 추가.
+
+### Key Findings
+- **권역 필수 398건(8.5%)** / 지역센터 2,341건(49.9%) / 지역기관 1,950건(41.6%).
+- **권역 세이브율 85.5%** (save-eligible 2,739건 중 2,341건을 지역센터로 전환). 기존 "grade 1–2 전부 권역" 관행 대비 약 5.9배 축소.
+- 신경계 권역 비율 54.5% — Y0020/0031/0032가 모두 권역 전용이라 의식변화·두통·뇌졸중 증상 후보 전부 권역으로. 유일한 고비율 카테고리.
+- 정신건강·눈 100% 지역센터. 물질오용 쇼크/패혈증도 지역센터로 세이브됨 (내과적 중증은 지역센터 ICU로 충분).
+- Y0042(복부대동맥) 2건·Y0141/0142(투석) 0건 — v0.1 rule gap이 tier 분포에도 전파. 개선 과제.
+
+### Verification
+- `npm run codebook:rebuild` ok (회귀 없음).
+- `npm run research:all` ok — v0.1 매핑 → tier 추천 전 파이프라인 통과.
+
+## [2026-04-24] Phase 3: Pre-KTAS → EMRIS 중증응급질환(27 Y코드) 매핑 v0.1 baseline
 
 ### Context
 

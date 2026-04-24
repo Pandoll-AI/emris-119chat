@@ -7,7 +7,9 @@
     "codebook:generate": "node scripts/generate-prektas-codebook.mjs",
     "codebook:validate": "node scripts/validate-prektas-codebook.mjs",
     "codebook:rebuild": "npm run codebook:generate && npm run codebook:validate",
-    "research:prektas-to-y-mapping": "node scripts/research/build-prektas-to-y-mapping.mjs"
+    "research:prektas-to-y-mapping": "node scripts/research/build-prektas-to-y-mapping.mjs",
+    "research:prektas-tier-recommendation": "node scripts/research/build-prektas-tier-recommendation.mjs",
+    "research:all": "npm run research:prektas-to-y-mapping && npm run research:prektas-tier-recommendation"
   },
   "devDependencies": {
     "ajv": "^8.17.1",

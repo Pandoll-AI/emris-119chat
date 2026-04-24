@@ -1,0 +1,52 @@
+{
+  "version": "1.0.0",
+  "description": "27 EMRIS 중증응급질환 Y코드를 한국 응급의료센터 등급(권역/지역센터/지역기관)으로 분류한 1차안. 임상 리뷰 전 제한적 신뢰. Pre-KTAS → tier 추천 상위 룰에 사용. 권역 세이브 전략: 지역센터로 처리 가능한 Y코드는 지역센터를 기본으로, 권역은 '여유시' 허용.",
+  "source": "1차안 (응급의학 전문의 리뷰 대기)",
+  "generated_at": "2026-04-24",
+  "tier_definitions": {
+    "regional": {
+      "label": "권역응급의료센터",
+      "short": "권역센터",
+      "korean_tier": "권역"
+    },
+    "local_center": {
+      "label": "지역응급의료센터",
+      "short": "지역센터",
+      "korean_tier": "지역센터"
+    },
+    "local_institution": {
+      "label": "지역응급의료기관",
+      "short": "지역기관",
+      "korean_tier": "지역기관"
+    }
+  },
+  "y_code_tiers": [
+    { "code": "Y0010", "primary": "regional", "acceptable": ["regional"], "rationale": "24/7 심근경색 PCI는 권역급이 안정적 (심혈관조영실·심장팀)" },
+    { "code": "Y0020", "primary": "regional", "acceptable": ["regional"], "rationale": "24/7 뇌경색 재관류(rtPA/혈전제거술)는 권역급 stroke team + IR 필요" },
+    { "code": "Y0031", "primary": "regional", "acceptable": ["regional"], "rationale": "거미막하출혈 응급 개두술은 신경외과 24/7 권역급 필요" },
+    { "code": "Y0032", "primary": "regional", "acceptable": ["regional"], "rationale": "뇌내출혈 응급 수술은 신경외과 24/7 권역급 필요" },
+    { "code": "Y0041", "primary": "regional", "acceptable": ["regional"], "rationale": "흉부대동맥응급(박리/파열)은 흉부외과 24/7 권역급 필요" },
+    { "code": "Y0042", "primary": "regional", "acceptable": ["regional"], "rationale": "복부대동맥응급은 혈관외과 24/7 권역급 필요" },
+    { "code": "Y0051", "primary": "local_center", "acceptable": ["local_center", "regional"], "rationale": "담낭질환 응급수술은 일반외과 당직 있는 지역센터 가능" },
+    { "code": "Y0052", "primary": "local_center", "acceptable": ["local_center", "regional"], "rationale": "담도질환 응급처치(ERCP 등) 지역센터 소화기내과 가능" },
+    { "code": "Y0060", "primary": "local_center", "acceptable": ["local_center", "regional"], "rationale": "복부응급수술(비외상)은 일반외과 당직 있는 지역센터 커버 가능" },
+    { "code": "Y0070", "primary": "local_center", "acceptable": ["local_center", "regional"], "rationale": "소아 장중첩/폐색은 소아외과 있는 지역센터 또는 권역" },
+    { "code": "Y0081", "primary": "local_center", "acceptable": ["local_center", "regional"], "rationale": "성인 위장관 응급내시경은 소화기내과 24/7 지역센터 커버 가능" },
+    { "code": "Y0082", "primary": "local_center", "acceptable": ["local_center", "regional"], "rationale": "영유아 위장관 내시경은 소아소화기내과 있는 지역센터급" },
+    { "code": "Y0091", "primary": "local_center", "acceptable": ["local_center", "regional"], "rationale": "성인 기관지 응급내시경은 호흡기내과 있는 지역센터 가능" },
+    { "code": "Y0092", "primary": "local_center", "acceptable": ["local_center", "regional"], "rationale": "영유아 기관지 내시경은 소아과·이비인후과 협진 지역센터" },
+    { "code": "Y0100", "primary": "regional", "acceptable": ["regional"], "rationale": "저체중출생아 NICU는 3급 이상 권역 NICU 필요" },
+    { "code": "Y0111", "primary": "local_center", "acceptable": ["local_center", "regional"], "rationale": "분만은 산부인과·소아과 있는 지역센터 커버 가능" },
+    { "code": "Y0112", "primary": "local_center", "acceptable": ["local_center", "regional"], "rationale": "산과응급수술은 산부인과 24/7 지역센터 가능" },
+    { "code": "Y0113", "primary": "local_center", "acceptable": ["local_center", "regional"], "rationale": "부인과응급수술은 산부인과 24/7 지역센터 가능" },
+    { "code": "Y0120", "primary": "regional", "acceptable": ["regional"], "rationale": "중증화상은 화상센터(권역 지정 소수)만 안정적 수용" },
+    { "code": "Y0131", "primary": "regional", "acceptable": ["regional"], "rationale": "수지접합은 수부외과 전문의 24/7 권역급 또는 지정 수부접합 전문센터" },
+    { "code": "Y0132", "primary": "regional", "acceptable": ["regional"], "rationale": "사지접합은 미세수술 가능한 권역급 또는 수부접합 전문센터" },
+    { "code": "Y0141", "primary": "local_center", "acceptable": ["local_center", "regional"], "rationale": "응급혈액투석(HD)은 신장내과·투석실 있는 지역센터 가능" },
+    { "code": "Y0142", "primary": "local_center", "acceptable": ["local_center", "regional"], "rationale": "CRRT는 신장내과 + ICU 있는 지역센터 커버 가능 (중증 시 권역)" },
+    { "code": "Y0150", "primary": "local_center", "acceptable": ["local_center", "regional"], "rationale": "정신과 응급입원은 정신과 폐쇄병동 있는 지역센터 가능" },
+    { "code": "Y0160", "primary": "local_center", "acceptable": ["local_center", "regional"], "rationale": "안과 응급수술은 안과 24/7 지역센터 커버 가능" },
+    { "code": "Y0171", "primary": "regional", "acceptable": ["regional"], "rationale": "성인 영상의학 혈관중재(IR)는 권역급 IR팀 24/7 필요" },
+    { "code": "Y0172", "primary": "regional", "acceptable": ["regional"], "rationale": "영유아 혈관중재는 소아 IR 가능한 권역급만" }
+  ]
+}
