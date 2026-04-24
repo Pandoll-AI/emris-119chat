@@ -1,5 +1,35 @@
 # Changelog
 
+## [2026-04-24] Phase: Pre-KTAS → EMRIS 중증응급질환(27 Y코드) 매핑 v0.1 baseline
+
+### Context
+
+연구 목적 재정의: 4,689 Pre-KTAS 코드를 **0–3개 추가 질문**으로 EMRIS 종합상황판의 27 중증응급질환 Y코드에 매핑 가능한지 규명. 나머지 분석은 이 매핑이 어떻게 작동·실패하는지에 대한 연구.
+
+### Added
+- `data/emris-severe-emergency-diseases.json` — EMRIS 27 중증응급질환 Y코드 canonical. `emris-data/devdocs/disease_codes.json` 에서 이식. 각 항목 `{code, label, short, group, age}` 구조.
+- `scripts/research/build-prektas-to-y-mapping.mjs` — rule-based v0.1 매핑 생성기. 12개 도메인 규칙 + 13개 구조화 질문 카탈로그.
+- `research/prektas-to-y-mapping.json` — 4,689 Pre-KTAS 엔트리별 {후보 Y코드 집합, 필요 질문, rationale, confidence}.
+- `research/prektas-to-y-mapping-report.md` — 8개 섹션 서술형 보고서. coverage·등급 교차·카테고리 분석·Y코드별 후보 수·rule gap 식별.
+
+### Changed
+- `package.json` — `research:prektas-to-y-mapping` 스크립트 추가.
+
+### Removed (cleanup)
+- `prektas-research-report.html`, `prektas-research-report.json`, `prektas-research-standalone.html`, `scripts/build-prektas-{report-html,research-standalone}.mjs`, `scripts/evaluate-prektas-research.mjs` — 모두 KTAS_codebook.csv 하드코딩 참조의 오염 산출물. untracked 상태로 삭제.
+
+### Key Findings (v0.1)
+- 전체 4,689 중 매핑 가능 889건(19.0%): 0질문 268 / 1질문 527 / 2질문 94 / 3+질문 0 / unmapped 3,800.
+- **grade 1 소생 코드의 80.6%가 unmapped** — rule gap이 아니라 두 체계의 목적 차이(Pre-KTAS=triage, Y코드=수술·시술 자원 디스패치)로 해석. 물질오용 쇼크/패혈증 등 내과적 중증은 27 Y코드 외가 정답.
+- Pre-KTAS 코드 첫 문자(C=성인, D=소아)로 연령 분기(Y0081/Y0082, Y0091/Y0092, Y0171/Y0172)는 **추가 질문 0개**로 해결. Pre-KTAS 코드의 구조적 정보 가치.
+- 100% coverage 된 `눈`·`정신건강` 카테고리는 over-inclusion 위험; 향후 pre-filter 개선 대상.
+- rule gap 후보 5건 식별(임신 20주+ 일반 복통 → Y0112, 복부 대동맥 키워드, 몸통외상 세부 등). 개선 시 +≈10%p coverage 예상.
+
+### Verification
+- `npm run codebook:rebuild` ok (회귀 없음).
+- `npm run research:prektas-to-y-mapping` exit 0, JSON + 요약 출력.
+- 보고서 §4-1 수치가 스크립트 출력과 일치.
+
 ## [2026-04-23] Phase: 정본 Pre-KTAS 코드북 확보 및 KTAS-오염 데이터 교체
 
 ### Fixed

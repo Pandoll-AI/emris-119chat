@@ -1,0 +1,38 @@
+{
+  "version": "1.0.0",
+  "description": "EMRIS (중앙응급의료센터 종합상황판) 에서 실시간 모니터링되는 중증응급질환 27 Y코드. 본 프로젝트의 연구 목표는 Pre-KTAS 4,689 코드에 0–3개 추가 질문을 더해 이 27개 중 어느 것에 매핑하거나 '해당 없음'으로 판정할 수 있는지 연구하는 것.",
+  "source": {
+    "origin": "emris-data/devdocs/disease_codes.json",
+    "upstream": "EMRIS 종합상황판 (중앙응급의료센터)",
+    "retrieved_at": "2026-04-24"
+  },
+  "diseases": [
+    { "code": "Y0010", "label": "심근경색의 재관류중재술", "short": "심근경색", "group": "cardio", "age": "any" },
+    { "code": "Y0020", "label": "뇌경색의 재관류중재술", "short": "뇌경색", "group": "neuro", "age": "any" },
+    { "code": "Y0031", "label": "뇌출혈수술(거미막하 출혈)", "short": "거미막하출혈", "group": "neuro", "age": "any" },
+    { "code": "Y0032", "label": "뇌출혈수술(거미막하 출혈 외)", "short": "뇌내출혈", "group": "neuro", "age": "any" },
+    { "code": "Y0041", "label": "대동맥응급(흉부)", "short": "흉부대동맥응급", "group": "cardio", "age": "any" },
+    { "code": "Y0042", "label": "대동맥응급(복부)", "short": "복부대동맥응급", "group": "cardio", "age": "any" },
+    { "code": "Y0051", "label": "담낭담관질환(담낭질환)", "short": "담낭질환", "group": "gi", "age": "any" },
+    { "code": "Y0052", "label": "담낭담관질환(담도포함질환)", "short": "담도질환", "group": "gi", "age": "any" },
+    { "code": "Y0060", "label": "복부응급수술(비외상)", "short": "복부응급수술", "group": "gi", "age": "any" },
+    { "code": "Y0070", "label": "장중첩/폐색(유아)", "short": "장중첩/폐색", "group": "gi", "age": "pediatric" },
+    { "code": "Y0081", "label": "위장관 응급내시경(성인)", "short": "위장관 응급내시경(성인)", "group": "gi", "age": "adult" },
+    { "code": "Y0082", "label": "위장관 응급내시경(영유아)", "short": "위장관 응급내시경(영유아)", "group": "gi", "age": "pediatric" },
+    { "code": "Y0091", "label": "기관지 응급내시경(성인)", "short": "기관지 응급내시경(성인)", "group": "airway", "age": "adult" },
+    { "code": "Y0092", "label": "기관지 응급내시경(영유아)", "short": "기관지 응급내시경(영유아)", "group": "airway", "age": "pediatric" },
+    { "code": "Y0100", "label": "저체중출생아", "short": "저체중출생아", "group": "neonatal", "age": "pediatric" },
+    { "code": "Y0111", "label": "산부인과 응급(분만)", "short": "분만", "group": "obgyn", "age": "adult" },
+    { "code": "Y0112", "label": "산부인과 응급(산과수술)", "short": "산과수술", "group": "obgyn", "age": "adult" },
+    { "code": "Y0113", "label": "산부인과 응급(부인과수술)", "short": "부인과수술", "group": "obgyn", "age": "adult" },
+    { "code": "Y0120", "label": "중증화상", "short": "중증화상", "group": "burn", "age": "any" },
+    { "code": "Y0131", "label": "사지접합의 수술(수족지접합)", "short": "수지접합", "group": "limb", "age": "any" },
+    { "code": "Y0132", "label": "사지접합의 수술(수족지접합 외)", "short": "사지접합", "group": "limb", "age": "any" },
+    { "code": "Y0141", "label": "응급투석(HD)", "short": "응급 혈액투석", "group": "renal", "age": "any" },
+    { "code": "Y0142", "label": "응급투석(CRRT)", "short": "CRRT", "group": "renal", "age": "any" },
+    { "code": "Y0150", "label": "정신과적 응급입원", "short": "정신과응급", "group": "psych", "age": "any" },
+    { "code": "Y0160", "label": "안과적 응급 수술", "short": "안과응급", "group": "eye", "age": "any" },
+    { "code": "Y0171", "label": "영상의학 혈관중재(성인)", "short": "혈관중재(성인)", "group": "vascular", "age": "adult" },
+    { "code": "Y0172", "label": "영상의학 혈관중재(영유아)", "short": "혈관중재(영유아)", "group": "vascular", "age": "pediatric" }
+  ]
+}

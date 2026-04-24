@@ -3,26 +3,32 @@
 ## Workflow
 
 ```
-data/raw/Pre-KTAS_codebook.csv (정본 원본, 4,689 entries)
-           │
-           │ [scripts/generate-prektas-codebook.mjs]
-           │   CSV 직접 파싱. 헤더/코드/레벨/grade 검증 후에만 출력.
-           ▼
-data/prektas-codebook.json  ←  data/schemas/prektas-codebook.schema.json
-           │                              │
-           │                              │ [scripts/validate-prektas-codebook.mjs]
-           │                              │   ajv compile + 무결성 체크 + 이름 일관성
-           │                              │   (level2 코드↔이름 1:1, 충돌 0건 강제)
-           ▼                              ▼
-   (하류 빌드 스크립트            schema ok / integrity ok / 충돌 0
-    — Phase 3에서 정본
-    JSON 소비자로 리팩터 예정)
+data/raw/Pre-KTAS_codebook.csv              data/emris-severe-emergency-diseases.json
+ (정본 원본, 4,689 entries)                   (EMRIS 27 Y코드 target, canonical)
+           │                                              │
+           │ [generate-prektas-codebook.mjs]              │
+           ▼                                              │
+data/prektas-codebook.json                                │
+     ←  data/schemas/prektas-codebook.schema.json         │
+           │                                              │
+           │ [validate-prektas-codebook.mjs]              │
+           │   schema ok · integrity ok · 충돌 0          │
+           ▼                                              ▼
+         ┌────────────────────────────────────────────────────┐
+         │ [scripts/research/build-prektas-to-y-mapping.mjs]  │
+         │   12 domain rules + 13 question catalog            │
+         └────────────────────────────────────────────────────┘
+                                 │
+                                 ▼
+              research/prektas-to-y-mapping.json
+              research/prektas-to-y-mapping-report.md (서술)
 ```
 
 **npm 워크플로**
 - `npm run codebook:generate` — 정본 CSV → JSON
 - `npm run codebook:validate` — schema + 무결성 + 이름 일관성 (항상 엄격)
 - `npm run codebook:rebuild` — generate 후 validate까지
+- `npm run research:prektas-to-y-mapping` — Pre-KTAS → Y코드 v0.1 매핑 산출
 
 ## Key Files
 
@@ -31,16 +37,17 @@ data/prektas-codebook.json  ←  data/schemas/prektas-codebook.schema.json
 | `data/raw/Pre-KTAS_codebook.csv` | 정본 Pre-KTAS 코드북 원본 (4,689 entries, 9 columns) | 없음 (커밋된 정본) |
 | `data/prektas-codebook.json` | CSV로부터 생성된 JSON v2.0.0 (4,689 entries, 17 level2) | `data/raw/Pre-KTAS_codebook.csv` |
 | `data/schemas/prektas-codebook.schema.json` | JSON Schema draft 2020-12 v2 | 없음 |
+| `data/emris-severe-emergency-diseases.json` | EMRIS 27 중증응급질환 Y코드 target | `emris-data/devdocs/disease_codes.json` |
 | `scripts/generate-prektas-codebook.mjs` | CSV → 정본 JSON 변환 | `data/raw/Pre-KTAS_codebook.csv` |
 | `scripts/validate-prektas-codebook.mjs` | 정본 JSON 검증 gate | ajv, schema, codebook |
+| `scripts/research/build-prektas-to-y-mapping.mjs` | Pre-KTAS → Y코드 rule-based v0.1 매핑 생성기 | prektas-codebook.json, emris-severe-emergency-diseases.json |
+| `research/prektas-to-y-mapping.json` | 4,689 Pre-KTAS 엔트리별 Y코드 후보·질문·rationale | build script 출력 |
+| `research/prektas-to-y-mapping-report.md` | 매핑 연구 서술형 보고서 | mapping.json |
 | `package.json` | npm scripts + devDeps (ajv, ajv-formats) | 없음 |
 | `index.html` | EMRIS 119 챗봇 UI (initial commit 산출물) | `api/`, Gemini REST API |
 | `api/` | Vercel serverless 엔드포인트 디렉토리 | — |
 | `vercel.json` | SPA rewrites 설정 | — |
 | `test-llm.mjs` | LLM 연동 smoke test (initial commit 산출물) | `.env` |
-| `scripts/build-prektas-research-standalone.mjs` | (untracked, 이전 세션) 하드코딩 키워드 매칭 기반 HTML 빌더 — 다음 phase에서 리팩터 대상 | 외부 HTML, CSV들 |
-| `scripts/build-prektas-report-html.mjs` | (untracked, 이전 세션) JSON → HTML 리포트 뷰어 | `prektas-research-report.json` |
-| `scripts/evaluate-prektas-research.mjs` | (untracked, 이전 세션) self-fulfilling 지표 — 다음 phase에서 교체 대상 | `prektas-research-standalone.html` |
 
 ## Database
 
@@ -61,5 +68,6 @@ data/prektas-codebook.json  ←  data/schemas/prektas-codebook.schema.json
 | `npm run codebook:generate` | `scripts/generate-prektas-codebook.mjs` | 정본 CSV → `data/prektas-codebook.json` |
 | `npm run codebook:validate` | `scripts/validate-prektas-codebook.mjs` | schema + 무결성 + 이름 일관성 (항상 엄격) |
 | `npm run codebook:rebuild` | generate + validate | 정본 재빌드 end-to-end |
+| `npm run research:prektas-to-y-mapping` | `scripts/research/build-prektas-to-y-mapping.mjs` | Pre-KTAS → EMRIS 27 Y코드 v0.1 매핑 산출 |
 | `./run.sh {start|stop|restart}` | `run.sh` (untracked) | 로컬 dev 서버 제어 |
 | `node test-llm.mjs` | `test-llm.mjs` | LLM 연동 smoke test |

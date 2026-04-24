@@ -1,13 +1,17 @@
 # Project Knowledge Graph
 
-정본 Pre-KTAS 코드북 확보 phase (2026-04-23) 시점의 entities/relations/actions.
+Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/relations/actions.
 
 ## Entities
 
 | Entity | Type | Location | Description |
 |---|---|---|---|
-| Pre-KTAS Codebook Source CSV | raw-dataset | `data/raw/Pre-KTAS_codebook.csv` | **정본 Pre-KTAS 코드북 원본.** 4,689 entries, 9 columns (구분/분류코드/2단계_코드/2단계_명칭/3단계_코드/3단계_명칭/4단계_코드/4단계_명칭/중증도). iCloud .Trash에서 복구. |
-| Pre-KTAS Codebook JSON | dataset | `data/prektas-codebook.json` | CSV 기반 정본 JSON v2.0.0. 4,689 entries, 17 level2 카테고리, adult 2,241 + pediatric 2,448. 모두 labeled (reserved 없음). |
+| Pre-KTAS Codebook Source CSV | raw-dataset | `data/raw/Pre-KTAS_codebook.csv` | **정본 Pre-KTAS 코드북 원본.** 4,689 entries, 9 columns. iCloud .Trash에서 복구. |
+| Pre-KTAS Codebook JSON | dataset | `data/prektas-codebook.json` | CSV 기반 정본 JSON v2.0.0. 4,689 entries, 17 level2 카테고리. |
+| EMRIS 중증응급질환 Y코드 | target-dataset | `data/emris-severe-emergency-diseases.json` | EMRIS 종합상황판 모니터링 대상 27 Y코드. `emris-data/devdocs/disease_codes.json` 이식. |
+| Pre-KTAS → Y 매핑 (v0.1) | research-output | `research/prektas-to-y-mapping.json` | 4,689 Pre-KTAS 엔트리별 Y코드 후보·질문·rationale. rule-based baseline. |
+| Pre-KTAS → Y 매핑 보고서 | research-output | `research/prektas-to-y-mapping-report.md` | 8섹션 서술형 해석·한계·후속 방향. |
+| Mapping Generator | script | `scripts/research/build-prektas-to-y-mapping.mjs` | 12 도메인 rule + 13 질문 카탈로그. JSON 산출. |
 | Codebook Schema | schema | `data/schemas/prektas-codebook.schema.json` | JSON Schema draft 2020-12 v2. reserved 필드 제거, if/then/else 삭제, level2/3/4 필수 객체. |
 | Codebook Generator | script | `scripts/generate-prektas-codebook.mjs` | CSV → JSON 변환기. regex/eval 완전 제거. 헤더·코드·레벨 코드·등급 검증을 generator에서 수행. |
 | Codebook Validator | script | `scripts/validate-prektas-codebook.mjs` | ajv + 무결성 + 충돌·이름 일관성 검증. whitelist 로직 폐지(항상 엄격). |
@@ -57,6 +61,18 @@
 | 2026-04-23 | recover | user | iCloud .Trash | 진짜 Pre-KTAS_codebook.csv를 iCloud/.Trash/Pre-KTAS Research/Pre-KTAS/에서 발견. |
 | 2026-04-23 | measure | claude | RAW vs REAL | 4,689 entries 중 4,303건(91.7%)의 label이 다름. level2 카테고리 이름 완전히 다름(KTAS vs Pre-KTAS 전용). |
 | 2026-04-23 | replace | claude | data 파이프라인 전면 | CSV를 data/raw/에 복사, generator/schema/validator 전면 재작성. K/L whitelist 폐지. 재생성 결과 충돌 0, 경고 0. |
+
+## Phase 3 Actions (2026-04-24)
+
+| Date | Action | Actor | Target | Detail |
+|---|---|---|---|---|
+| 2026-04-24 | pivot | user | research scope | 연구 목적 재정의: 0–3 질문으로 Pre-KTAS → EMRIS 27 Y코드 매핑 가능성 규명. |
+| 2026-04-24 | locate | claude | EMRIS disease codes | `emris-data/devdocs/disease_codes.json`에서 27 Y코드 canonical 확인 (이전 19개 하드코딩은 불완전 서브셋). |
+| 2026-04-24 | clean | claude | 5 contaminated untracked files | `prektas-research-*.{html,json}`, `scripts/build-prektas-*.mjs`, `scripts/evaluate-prektas-research.mjs` 삭제. |
+| 2026-04-24 | create | claude | `data/emris-severe-emergency-diseases.json` | 27 Y코드 target 정본. |
+| 2026-04-24 | create | claude | `scripts/research/build-prektas-to-y-mapping.mjs` | v0.1 rule-based 매핑 생성기. |
+| 2026-04-24 | run | claude | v0.1 baseline | q0=268 / q1=527 / q2=94 / q3+=0 / unmapped=3800. coverage 19.0%. |
+| 2026-04-24 | write | claude | `research/prektas-to-y-mapping-report.md` | 8섹션 서술형 보고서. |
 
 ## Next Phase Candidates
 - 진짜 Pre-KTAS ↔ KTAS 관계 재분석: 매핑 CSV 기준으로 Pre-KTAS 2/3/4단계 ↔ KTAS 2/3/4단계의 대응 관계를 다시 봐야 함. 직전 분석은 오염된 데이터 기반이라 전면 재검토 필요.
