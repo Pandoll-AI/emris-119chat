@@ -1,9 +1,15 @@
 #!/usr/bin/env node
 
 /**
- * Pre-KTAS 기반 병원 등급 추천 standalone HTML 생성기.
- * 정본 JSON 4개(codebook, mapping, tier-recommendation, y-codes)를 embed.
- * 외부 의존 없음. 브라우저 직접 오픈 가능.
+ * Pre-KTAS 병원 추천 standalone HTML (모바일 스텝 마법사 v2).
+ *
+ * 3 단계:
+ *   1. Pre-KTAS 입력 — 연령 → 대분류 → 3단계 → 4단계 버튼 스텝.
+ *   2. 추가 질문 — 질문 하나씩, 선택 즉시 Y후보·tier 좁혀짐 (live preview).
+ *   3. 병원 목록 — 지역 선택 후 mock 병원 중 권장 리스트.
+ *
+ * 디자인: 모바일 우선, 컴팩트, 스크롤 최소화, 큰 터치 타겟.
+ * 네비게이션: 헤더에 [← 이전] [단계/3] [↺ 처음] + 누적 코드.
  */
 
 import fs from 'node:fs';
@@ -16,262 +22,526 @@ const output = path.join(repoRoot, 'prektas-hospital-recommender.html');
 
 const codebook = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/prektas-codebook.json'), 'utf8'));
 const mapping = JSON.parse(fs.readFileSync(path.join(repoRoot, 'research/prektas-to-y-mapping.json'), 'utf8'));
-const tier = JSON.parse(fs.readFileSync(path.join(repoRoot, 'research/prektas-tier-recommendation.json'), 'utf8'));
+const tierDoc = JSON.parse(fs.readFileSync(path.join(repoRoot, 'research/prektas-tier-recommendation.json'), 'utf8'));
 const diseases = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/emris-severe-emergency-diseases.json'), 'utf8'));
+const yTierDoc = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/y-code-to-center-tier.json'), 'utf8'));
+const mockHospitals = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/mock-hospitals.json'), 'utf8'));
 
 const recByCode = {};
-for (const r of tier.recommendations) recByCode[r.code] = r;
+for (const r of tierDoc.recommendations) recByCode[r.code] = r;
 
-const payload = {
-  codebook_meta: { version: codebook.version, total: codebook.stats.total },
-  tier_meta: { version: tier.version, generated_at: tier.generated_at },
-  tier_definitions: tier.tier_definitions,
-  strategy_definitions: tier.strategy_definitions,
-  question_catalog: mapping.question_catalog,
-  diseases: diseases.diseases,
-  entries: codebook.entries,
-  recommendations: recByCode,
+// 경량 entries: code·group·grade·level2·3·4만
+const liteEntries = codebook.entries.map((e) => ({
+  c: e.code, g: e.group, gr: e.grade,
+  l2c: e.level2.code, l2n: e.level2.name,
+  l3c: e.level3.code, l3n: e.level3.name,
+  l4c: e.level4.code, l4n: e.level4.name,
+}));
+
+// 경량 recommendations: candidates · grade · level 이름만
+const liteRec = {};
+for (const k of Object.keys(recByCode)) {
+  const r = recByCode[k];
+  liteRec[k] = { y: r.y_candidates, gr: r.grade };
+}
+
+// Y-tier 룩업 압축
+const yTier = {};
+for (const t of yTierDoc.y_code_tiers) yTier[t.code] = t.acceptable;
+
+// 질문 효과 — 특정 답변이 어느 Y코드를 살아남게 하는지 정의.
+// keys = question id; values = { options: [ { y_keep: [Ycode, ...] | null } ] }
+// y_keep: 이 옵션 선택 시 후보 중 이 리스트에 포함된 것만 남김. null이면 필터링 없음.
+const questionEffects = {
+  chest_pain_character: { options: [
+    { y_keep: ['Y0010'] },                // 조이듯 압박성 → 심근경색만
+    { y_keep: ['Y0041', 'Y0042'] },        // 찢어지듯 이동성 → 대동맥만
+    { y_keep: null },                      // 비특이적 → 유지
+  ]},
+  aortic_location: { options: [
+    { y_keep: ['Y0010', 'Y0041'] },        // 흉부
+    { y_keep: ['Y0042'] },                 // 복부
+  ]},
+  onset_time_stroke: { options: [
+    { y_keep: null },                      // <4.5h — 모두 유지
+    { y_remove: ['Y0020'] },               // 4.5–24h — 재관류 탈락
+    { y_remove: ['Y0020'] },               // >24h — 재관류 탈락
+  ]},
+  trauma_or_spontaneous: { options: [
+    { y_keep: ['Y0032'] },                 // 외상성 → 뇌내출혈만
+    { y_remove: ['Y0032'] },               // 비외상성/자발성 → 자발 뇌출혈 유지
+  ]},
+  pregnancy_status: { options: [
+    { y_keep: ['Y0111', 'Y0112'] },        // 20주 미만
+    { y_keep: ['Y0111', 'Y0112'] },        // 20주 이상
+    { y_keep: ['Y0113'] },                 // 비임신 → 부인과
+    { y_keep: null },                      // 미상 → 유지
+  ]},
+  foreign_body_site: { options: [
+    { y_keep: ['Y0082'] },                 // 위장관
+    { y_keep: ['Y0092'] },                 // 기도
+  ]},
+  burn_severity: { options: [
+    { y_keep: ['Y0120'] },                 // 중증
+    { y_remove: ['Y0120'] },               // 중등도
+    { y_remove: ['Y0120'] },               // 경증
+  ]},
+  dialysis_indication: { options: [
+    { y_keep: ['Y0141'] },
+    { y_keep: ['Y0142'] },
+    { y_remove: ['Y0141', 'Y0142'] },
+  ]},
+  replantation_part: { options: [
+    { y_keep: ['Y0131'] },
+    { y_keep: ['Y0132'] },
+  ]},
+  psychiatric_risk: { options: [
+    { y_keep: ['Y0150'] },
+    { y_remove: ['Y0150'] },
+  ]},
+  eye_emergency_kind: { options: [
+    { y_keep: ['Y0160'] },
+    { y_remove: ['Y0160'] },
+  ]},
+  onset_acute_or_chronic: { options: [
+    { y_keep: null }, { y_keep: null },
+  ]},
+  bleeding_site: { options: [
+    { y_keep: null }, { y_keep: null }, { y_keep: null },
+  ]},
 };
 
-// XSS 방어: JSON payload 내 `</script>` 시퀀스 차단.
+const payload = {
+  codebook_version: codebook.version,
+  tier_version: tierDoc.version,
+  tier_definitions: tierDoc.tier_definitions,
+  strategy_definitions: tierDoc.strategy_definitions,
+  questions: mapping.question_catalog,
+  question_effects: questionEffects,
+  diseases: diseases.diseases,
+  y_tier: yTier,
+  entries: liteEntries,
+  rec: liteRec,
+  hospitals: mockHospitals.hospitals,
+  regions: mockHospitals.regions,
+};
+
 const payloadJson = JSON.stringify(payload).replace(/</g, '\\u003c');
 
 const html = `<!doctype html>
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Pre-KTAS 기반 병원 등급 추천 · EMRIS 119</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pre-KTAS 병원 추천</title>
 <style>
   :root {
     --ink: #0a0a0a;
     --bg: #fafaf8;
+    --surface: #ffffff;
     --dim: #6b6b68;
-    --line: rgba(10,10,10,0.14);
-    --line-soft: rgba(10,10,10,0.07);
+    --line: rgba(10,10,10,0.12);
+    --line-soft: rgba(10,10,10,0.06);
     --accent: #a8231c;
+    --ok: #1d6b3f;
     --tier-regional: #a8231c;
     --tier-local-center: #8b4238;
     --tier-local-institution: #5a4a42;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overscroll-behavior: none; }
   body {
     background: var(--bg);
     color: var(--ink);
     font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Helvetica Neue", sans-serif;
-    font-feature-settings: "tnum", "ss01";
-    line-height: 1.45;
-    font-size: 14px;
-    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.4;
+    font-feature-settings: "tnum";
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-width: 520px;
+    margin: 0 auto;
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
   }
-  button { font-family: inherit; color: inherit; background: none; border: none; cursor: pointer; }
-  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
-  .shell { display: grid; grid-template-columns: 460px 1fr; min-height: 100vh; }
-  @media (max-width: 1000px) { .shell { grid-template-columns: 1fr; } }
-  .input-panel { border-right: 1px solid var(--line); padding: 40px 36px 64px; background: #ffffff; display: flex; flex-direction: column; gap: 28px; min-height: 100vh; }
-  .brand-line { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); font-weight: 600; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
-  .brand-line a { color: var(--dim); border-bottom: none; }
-  h1 { font-size: 30px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 800; }
-  .lede { font-size: 14px; color: var(--dim); line-height: 1.55; max-width: 40ch; }
-  .section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
-  .chooser { display: grid; gap: 12px; }
-  .chooser label { display: grid; gap: 5px; }
-  .chooser select, .chooser input[type=text] { font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--line); border-radius: 0; padding: 10px 12px; outline: none; }
-  .chooser select:focus, .chooser input[type=text]:focus { border-color: var(--ink); }
-  .chooser .label-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-  .chooser .label-row .count { font-size: 11px; color: var(--dim); letter-spacing: 0.04em; }
-  .code-badge { display: inline-flex; align-items: baseline; gap: 6px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 28px; font-weight: 700; letter-spacing: 0.06em; }
-  .code-badge .faded { color: var(--line); }
-  .code-meta { font-size: 12px; color: var(--dim); display: flex; flex-wrap: wrap; gap: 14px; }
-  .code-meta b { color: var(--ink); font-weight: 600; }
-  .questions { display: grid; gap: 14px; }
-  .question-card { border: 1px solid var(--line); padding: 14px 14px 12px; background: var(--bg); }
-  .question-card .q-prompt { font-weight: 600; margin-bottom: 4px; font-size: 13.5px; }
-  .question-card .q-purpose { font-size: 11.5px; color: var(--dim); margin-bottom: 10px; }
-  .q-options { display: grid; gap: 5px; }
-  .q-options label { display: flex; align-items: baseline; gap: 8px; cursor: pointer; padding: 6px 8px; border: 1px solid transparent; font-size: 13px; }
-  .q-options label:hover { background: #ffffff; }
-  .q-options input[type=radio] { accent-color: var(--accent); }
-  .q-options label.selected { border-color: var(--line); background: #ffffff; }
-  .reset-btn { font-size: 11.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); padding: 8px 0; align-self: flex-start; border-bottom: 1px solid var(--line); }
-  .reset-btn:hover { color: var(--ink); border-color: var(--ink); }
-  .result-panel { padding: 40px 44px 64px; display: flex; flex-direction: column; gap: 30px; max-width: 920px; }
-  .result-empty { color: var(--dim); font-size: 14px; border: 1px dashed var(--line); padding: 40px; text-align: center; }
-  .result-group { display: grid; gap: 10px; }
-  .result-group h2 { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
-  .tier-card { padding: 24px 28px 26px; border: 1px solid var(--line); background: #ffffff; }
-  .tier-card .label-strip { font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin-bottom: 8px; }
-  .tier-card .tier-name { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
-  .tier-card .tier-strategy { font-size: 12.5px; color: var(--dim); margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
-  .tier-card.regional .tier-name { color: var(--tier-regional); }
-  .tier-card.local_center .tier-name { color: var(--tier-local-center); }
-  .tier-card.local_institution .tier-name { color: var(--tier-local-institution); }
-  .acceptable-tiers { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
-  .pill { font-size: 11.5px; padding: 4px 10px; border: 1px solid currentColor; letter-spacing: 0.02em; }
-  .pill.primary { border-color: var(--ink); background: var(--ink); color: #fff; }
-  .pill.secondary { color: var(--dim); }
-  .y-candidates { border: 1px solid var(--line); padding: 18px 22px; background: #ffffff; }
-  .y-candidates ul { list-style: none; display: grid; gap: 8px; }
-  .y-candidates li { display: grid; grid-template-columns: 66px 1fr; gap: 14px; padding: 8px 0; border-top: 1px solid var(--line-soft); }
-  .y-candidates li:first-child { border-top: none; padding-top: 0; }
-  .y-candidates .y-code { font-family: ui-monospace, monospace; font-weight: 700; font-size: 13px; }
-  .y-candidates .y-label { font-size: 13px; }
-  .rationale-box { border-left: 2px solid var(--ink); padding: 4px 16px; font-size: 13px; color: var(--ink); background: transparent; }
-  .rationale-box .source { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin-top: 6px; display: block; }
-  .safety-note { font-size: 12px; color: var(--dim); border: 1px solid var(--line); padding: 14px 16px; background: #ffffff; }
-  .safety-note b { color: var(--accent); font-weight: 600; }
-  footer.page-footer { grid-column: 1 / -1; border-top: 1px solid var(--line); padding: 28px 44px 36px; color: var(--dim); font-size: 11.5px; display: flex; gap: 24px; flex-wrap: wrap; align-items: center; justify-content: space-between; letter-spacing: 0.02em; }
-  footer.page-footer .version-tag { font-family: ui-monospace, monospace; }
+  button { font-family: inherit; color: inherit; background: none; border: none; cursor: pointer; font-size: inherit; }
+  a { color: inherit; text-decoration: none; border-bottom: 1px solid currentColor; }
+
+  /* ── Header ── */
+  header {
+    flex: 0 0 auto;
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    display: grid;
+    gap: 6px;
+  }
+  .nav-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .nav-btn {
+    font-size: 13px;
+    padding: 6px 10px;
+    min-width: 52px;
+    min-height: 32px;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    background: var(--surface);
+  }
+  .nav-btn:disabled { color: var(--line); border-color: var(--line-soft); }
+  .nav-btn:active { background: var(--bg); }
+  .step-indicator {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+    font-weight: 700;
+  }
+  .code-strip {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    display: flex;
+    gap: 4px;
+    align-items: baseline;
+  }
+  .code-strip .ch { min-width: 14px; text-align: center; color: var(--ink); }
+  .code-strip .ch.empty { color: var(--line); }
+  .code-strip .meta { font-family: inherit; font-size: 11px; color: var(--dim); font-weight: 500; letter-spacing: 0; margin-left: 8px; }
+
+  /* ── Stage container ── */
+  main {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 16px 14px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .stage { display: flex; flex-direction: column; gap: 12px; }
+
+  .prompt {
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+  .prompt .hint { display: block; font-size: 12px; color: var(--dim); font-weight: 500; margin-top: 4px; letter-spacing: 0; }
+
+  /* ── Button grids ── */
+  .btn-grid { display: grid; gap: 8px; }
+  .btn-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .btn-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .btn-grid.cols-1 { grid-template-columns: 1fr; }
+
+  .opt-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    padding: 12px 12px;
+    min-height: 56px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    text-align: left;
+    transition: border-color .12s, background-color .12s;
+    cursor: pointer;
+  }
+  .opt-btn:active { background: var(--bg); }
+  .opt-btn.primary { border-color: var(--ink); }
+  .opt-btn.primary:active { background: var(--ink); color: #fff; }
+  .opt-btn .opt-code {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 0.04em;
+  }
+  .opt-btn .opt-label {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .opt-btn .opt-grade {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  /* ── Stage 2: questions + live preview ── */
+  .question-card {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    padding: 14px 14px 10px;
+    display: grid;
+    gap: 10px;
+  }
+  .q-counter {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+  }
+  .q-prompt { font-size: 15px; font-weight: 700; line-height: 1.3; }
+  .q-purpose { font-size: 12px; color: var(--dim); line-height: 1.4; }
+  .q-options { display: grid; gap: 6px; }
+  .q-opt-btn {
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    text-align: left;
+    font-size: 13.5px;
+    min-height: 40px;
+    transition: border-color .1s, background-color .1s;
+  }
+  .q-opt-btn:active { background: var(--bg); }
+  .q-opt-btn.selected { border-color: var(--ink); background: var(--ink); color: #fff; font-weight: 600; }
+
+  .q-skip {
+    font-size: 12px;
+    color: var(--dim);
+    padding: 4px 0;
+    border-bottom: 1px solid var(--line-soft);
+    align-self: flex-end;
+  }
+
+  /* Live preview under questions */
+  .live-preview {
+    position: sticky;
+    bottom: 0;
+    margin: 4px -14px -24px;
+    padding: 12px 14px 16px;
+    background: var(--surface);
+    border-top: 1px solid var(--ink);
+    display: grid;
+    gap: 8px;
+  }
+  .live-preview .lp-label {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+    font-weight: 700;
+  }
+  .live-tier {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .live-tier .tier-name { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
+  .live-tier.regional .tier-name { color: var(--tier-regional); }
+  .live-tier.local_center .tier-name { color: var(--tier-local-center); }
+  .live-tier.local_institution .tier-name { color: var(--tier-local-institution); }
+  .live-tier .tier-strategy-pill { font-size: 10.5px; padding: 2px 8px; border: 1px solid var(--line); color: var(--dim); }
+  .live-y { display: flex; gap: 4px; flex-wrap: wrap; }
+  .live-y .y-pill { font-family: ui-monospace, monospace; font-size: 11px; padding: 2px 6px; border: 1px solid var(--line); background: var(--bg); }
+  .live-y .y-pill.removed { text-decoration: line-through; color: var(--line); }
+
+  .continue-bar { display: flex; gap: 8px; margin-top: 8px; }
+  .continue-btn {
+    flex: 1;
+    padding: 12px;
+    background: var(--ink);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    min-height: 44px;
+    letter-spacing: 0.02em;
+  }
+  .continue-btn:disabled { background: var(--dim); }
+  .continue-btn:active { background: var(--accent); }
+
+  /* ── Stage 3: hospitals ── */
+  .region-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .region-btn {
+    padding: 8px 6px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    font-size: 12px;
+    min-height: 36px;
+  }
+  .region-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 700; }
+  .hospital-list { display: grid; gap: 8px; }
+  .hospital-card {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    padding: 12px 12px 10px;
+    display: grid;
+    gap: 4px;
+  }
+  .hospital-card.recommended { border-color: var(--ink); border-width: 2px; padding: 11px; }
+  .hospital-card .h-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .hospital-card .h-name { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  .hospital-card .h-tier { font-size: 11px; padding: 2px 6px; border: 1px solid currentColor; font-weight: 600; white-space: nowrap; }
+  .hospital-card .h-tier.regional { color: var(--tier-regional); }
+  .hospital-card .h-tier.local_center { color: var(--tier-local-center); }
+  .hospital-card .h-tier.local_institution { color: var(--tier-local-institution); }
+  .hospital-card .h-meta {
+    font-size: 11.5px;
+    color: var(--dim);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .hospital-card .h-meta .ok { color: var(--ok); font-weight: 600; }
+  .hospital-card .h-meta .ng { color: var(--accent); font-weight: 600; }
+  .recommend-badge { font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); font-weight: 800; }
+
+  .empty-msg { color: var(--dim); font-size: 13px; text-align: center; padding: 32px 12px; border: 1px dashed var(--line); }
+  .safety-foot {
+    font-size: 11px;
+    color: var(--dim);
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    line-height: 1.45;
+  }
+  .safety-foot b { color: var(--accent); font-weight: 700; }
+
+  /* ── Stage 1 sub progress ── */
+  .substep-breadcrumb {
+    display: flex;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 0.02em;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 2px;
+  }
+  .substep-breadcrumb .crumb { padding: 1px 0; }
+  .substep-breadcrumb .crumb.active { color: var(--ink); font-weight: 700; }
+  .substep-breadcrumb .sep { color: var(--line); }
 </style>
 </head>
 <body>
-<div class="shell">
-  <section class="input-panel">
-    <div class="brand-line">EMRIS 119 · Pre-KTAS 병원 등급 추천 프로토타입</div>
-    <div>
-      <h1>증상 분류 코드로<br/>수용 가능한 응급의료센터 등급을 찾습니다.</h1>
-      <p class="lede" style="margin-top: 14px;">구급대원이 현장에서 부여한 Pre-KTAS 5자 코드를 입력하면, 권역/지역센터/지역기관 중 수용 가능한 등급과 EMRIS 27 중증응급질환 Y코드 후보를 제시합니다. 진단 확정이 아닌 자원 등급 매칭이 목적입니다.</p>
-    </div>
-    <div class="chooser">
-      <div class="section-title">단계별 선택</div>
-      <label>
-        <div class="label-row"><span>연령군</span><span class="count" id="count-group"></span></div>
-        <select id="sel-group">
-          <option value="">— 선택 —</option>
-          <option value="adult">성인 (C로 시작)</option>
-          <option value="pediatric">소아 (D로 시작)</option>
-        </select>
-      </label>
-      <label>
-        <div class="label-row"><span>대분류 (2단계)</span><span class="count" id="count-l2"></span></div>
-        <select id="sel-l2"><option value="">— 대분류 선택 —</option></select>
-      </label>
-      <label>
-        <div class="label-row"><span>주호소 (3단계)</span><span class="count" id="count-l3"></span></div>
-        <select id="sel-l3"><option value="">— 3단계 선택 —</option></select>
-      </label>
-      <label>
-        <div class="label-row"><span>세부증상 (4단계)</span><span class="count" id="count-l4"></span></div>
-        <select id="sel-l4"><option value="">— 4단계 선택 —</option></select>
-      </label>
-      <label>
-        <div class="label-row"><span>직접 Pre-KTAS 코드 입력</span><span class="count">5자</span></div>
-        <input type="text" id="sel-code" placeholder="예: CCAAA" maxlength="5" style="text-transform:uppercase; font-family: ui-monospace, monospace;" />
-      </label>
-      <div class="code-badge" id="code-display"><span class="faded">—</span></div>
-      <div class="code-meta" id="code-meta"></div>
-    </div>
-    <div class="questions" id="questions-container"></div>
-    <button class="reset-btn" id="btn-reset">↺ 초기화</button>
-  </section>
-  <section class="result-panel" id="result-panel">
-    <div class="result-empty">Pre-KTAS 코드를 선택하거나 입력하면 결과가 여기에 나타납니다.</div>
-  </section>
-  <footer class="page-footer">
-    <div>
-      <span class="version-tag">codebook v${codebook.version}</span> ·
-      <span class="version-tag">tier v${tier.version}</span> ·
-      총 ${codebook.stats.total}개 Pre-KTAS 코드 · EMRIS 27 Y코드
-    </div>
-    <div><a href="prektas-research.html">연구 배경 보기 →</a></div>
-  </footer>
-</div>
+<header>
+  <div class="nav-row">
+    <button class="nav-btn" id="btn-back">← 이전</button>
+    <div class="step-indicator" id="step-indicator">1 · Pre-KTAS 입력</div>
+    <button class="nav-btn" id="btn-home">↺ 처음</button>
+  </div>
+  <div class="code-strip" id="code-strip"></div>
+</header>
+<main id="main"></main>
 <script>
 const DATA = ${payloadJson};
 const $ = (id) => document.getElementById(id);
-const state = { group:'', l2:'', l3:'', l4:'', code:'', answers:{} };
+
+/*
+ * State machine:
+ *   stage: 'group' | 'l2' | 'l3' | 'l4' | 'questions' | 'region' | 'hospitals'
+ *   history: stack of stages for [이전]
+ */
+const state = {
+  stage: 'group',
+  history: [],
+  group: null, l2: null, l3: null, l4: null,
+  code: null,
+  answers: {},  // qid → optionIndex
+  qIndex: 0,
+  qids: [],
+  region: null,
+};
+
+const STAGE_LABEL = {
+  group: '1 · 연령군',
+  l2: '1 · 대분류',
+  l3: '1 · 주호소',
+  l4: '1 · 세부증상',
+  questions: '2 · 추가 질문',
+  region: '3 · 지역 선택',
+  hospitals: '3 · 병원 추천',
+};
+
+/* ── indexing ── */
 const byGroup = { adult: [], pediatric: [] };
-for (const e of DATA.entries) byGroup[e.group].push(e);
+for (const e of DATA.entries) byGroup[e.g].push(e);
 
-function uniqueLevel2(entries) {
-  const map = new Map();
-  for (const e of entries) if (!map.has(e.level2.code)) map.set(e.level2.code, e.level2.name);
-  return Array.from(map.entries()).sort().map(([c, n]) => ({ code: c, name: n }));
+function uniqL2(es) {
+  const m = new Map();
+  for (const e of es) if (!m.has(e.l2c)) m.set(e.l2c, e.l2n);
+  return Array.from(m.entries()).sort().map(([c, n]) => ({ c, n }));
 }
-function uniqueLevel3(entries, l2code) {
-  const map = new Map();
-  for (const e of entries) { if (e.level2.code !== l2code) continue; if (!map.has(e.level3.code)) map.set(e.level3.code, e.level3.name); }
-  return Array.from(map.entries()).sort().map(([c, n]) => ({ code: c, name: n }));
+function uniqL3(es, l2c) {
+  const m = new Map();
+  for (const e of es) { if (e.l2c !== l2c) continue; if (!m.has(e.l3c)) m.set(e.l3c, e.l3n); }
+  return Array.from(m.entries()).sort().map(([c, n]) => ({ c, n }));
 }
-function uniqueLevel4(entries, l2code, l3code) {
+function uniqL4(es, l2c, l3c) {
   const out = [];
-  for (const e of entries) if (e.level2.code === l2code && e.level3.code === l3code) out.push({ code: e.level4.code, name: e.level4.name, entry: e });
-  return out.sort((a, b) => a.code.localeCompare(b.code));
+  for (const e of es) if (e.l2c === l2c && e.l3c === l3c) out.push({ c: e.l4c, n: e.l4n, gr: e.gr });
+  return out.sort((a, b) => a.c.localeCompare(b.c));
 }
 
-function escapeHtml(s) {
-  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function populateL2() {
-  const sel = $('sel-l2');
-  sel.innerHTML = '<option value="">— 대분류 선택 —</option>';
-  if (!state.group) { sel.disabled = true; $('count-l2').textContent = ''; return; }
-  const opts = uniqueLevel2(byGroup[state.group]);
-  $('count-l2').textContent = opts.length + '개';
-  sel.disabled = false;
-  for (const o of opts) { const op = document.createElement('option'); op.value = o.code; op.textContent = o.code + ' · ' + o.name; sel.appendChild(op); }
-}
-function populateL3() {
-  const sel = $('sel-l3');
-  sel.innerHTML = '<option value="">— 3단계 선택 —</option>';
-  if (!state.group || !state.l2) { sel.disabled = true; $('count-l3').textContent = ''; return; }
-  const opts = uniqueLevel3(byGroup[state.group], state.l2);
-  $('count-l3').textContent = opts.length + '개';
-  sel.disabled = false;
-  for (const o of opts) { const op = document.createElement('option'); op.value = o.code; op.textContent = o.code + ' · ' + o.name; sel.appendChild(op); }
-}
-function populateL4() {
-  const sel = $('sel-l4');
-  sel.innerHTML = '<option value="">— 4단계 선택 —</option>';
-  if (!state.group || !state.l2 || !state.l3) { sel.disabled = true; $('count-l4').textContent = ''; return; }
-  const opts = uniqueLevel4(byGroup[state.group], state.l2, state.l3);
-  $('count-l4').textContent = opts.length + '개';
-  sel.disabled = false;
-  for (const o of opts) { const op = document.createElement('option'); op.value = o.code; op.textContent = o.code + ' · g' + o.entry.grade + ' · ' + o.name; sel.appendChild(op); }
-}
-function updateCountGroup() { if (!state.group) { $('count-group').textContent = ''; return; } $('count-group').textContent = byGroup[state.group].length + '개 코드'; }
-
-function currentCode() {
-  if (state.code && state.code.length === 5 && /^[A-Z]{5}$/.test(state.code)) return state.code;
+function computeCode() {
   if (state.group && state.l2 && state.l3 && state.l4) {
-    const prefix = state.group === 'adult' ? 'C' : 'D';
-    return prefix + state.l2 + state.l3 + state.l4;
+    const p = state.group === 'adult' ? 'C' : 'D';
+    return p + state.l2 + state.l3 + state.l4;
   }
   return null;
 }
 
-function renderCodeBadge() {
-  const c = currentCode();
-  const badge = $('code-display');
-  badge.innerHTML = '';
-  if (!c) { const s = document.createElement('span'); s.className = 'faded'; s.textContent = '—'; badge.appendChild(s); $('code-meta').textContent = ''; return; }
-  for (const ch of c) { const sp = document.createElement('span'); sp.textContent = ch; badge.appendChild(sp); }
-  const entry = DATA.entries.find((e) => e.code === c);
-  const meta = $('code-meta');
-  meta.innerHTML = '';
-  if (entry) {
-    const mk = (inner) => { const sp = document.createElement('span'); sp.innerHTML = inner; meta.appendChild(sp); };
-    mk('<b>g' + entry.grade + '</b> 등급');
-    mk(escapeHtml(entry.level2.name));
-    mk(escapeHtml(entry.level3.name));
-    mk(escapeHtml(entry.level4.name));
-  } else {
-    const sp = document.createElement('span');
-    sp.style.color = '#a8231c';
-    sp.textContent = '정본 코드북에 없는 코드입니다.';
-    meta.appendChild(sp);
+/* ── question effects → narrow candidates ── */
+function currentCandidates() {
+  const code = state.code;
+  if (!code || !DATA.rec[code]) return { ycodes: [], removed: new Set() };
+  const baseline = DATA.rec[code].y;
+  const kept = new Set(baseline);
+  const removed = new Set();
+  for (const qid of Object.keys(state.answers)) {
+    const optIdx = state.answers[qid];
+    const effectDef = DATA.question_effects[qid];
+    if (!effectDef || !effectDef.options[optIdx]) continue;
+    const eff = effectDef.options[optIdx];
+    if (eff.y_keep) {
+      const keepSet = new Set(eff.y_keep);
+      for (const y of Array.from(kept)) {
+        if (!keepSet.has(y)) { kept.delete(y); removed.add(y); }
+      }
+    }
+    if (eff.y_remove) {
+      for (const y of eff.y_remove) {
+        if (kept.has(y)) { kept.delete(y); removed.add(y); }
+      }
+    }
   }
+  return { ycodes: Array.from(kept), removed };
 }
 
+/* ── tier from narrowed candidates ── */
+function computeTier(ycodes, grade) {
+  if (ycodes.length > 0) {
+    let accept = new Set(DATA.y_tier[ycodes[0]]);
+    const firstOrder = DATA.y_tier[ycodes[0]].slice();
+    for (let i = 1; i < ycodes.length; i += 1) {
+      const s = new Set(DATA.y_tier[ycodes[i]]);
+      accept = new Set([...accept].filter((x) => s.has(x)));
+    }
+    const ordered = firstOrder.filter((x) => accept.has(x));
+    const key = ordered.join(',');
+    let strategy = 'regional_only';
+    if (key === 'regional,local_center') strategy = 'regional_or_local_center';
+    return { acceptable: ordered, preferred: ordered[0], strategy };
+  }
+  if (grade === 1 || grade === 2) return { acceptable: ['regional', 'local_center'], preferred: 'regional', strategy: 'regional_or_local_center' };
+  if (grade === 3) return { acceptable: ['local_center', 'local_institution'], preferred: 'local_center', strategy: 'local_center_preferred' };
+  return { acceptable: ['local_institution', 'local_center'], preferred: 'local_institution', strategy: 'local_institution_preferred' };
+}
+
+/* ── relevant question ids for this code ── */
 function findQuestionIds(code) {
-  const rec = DATA.recommendations[code];
-  if (!rec || rec.y_candidates.length === 0) return [];
-  const cands = new Set(rec.y_candidates);
+  if (!code) return [];
+  const rec = DATA.rec[code];
+  if (!rec || rec.y.length === 0) return [];
+  const cands = new Set(rec.y);
   const qids = new Set();
   if (cands.has('Y0010') || cands.has('Y0041')) { qids.add('chest_pain_character'); qids.add('aortic_location'); }
-  if (cands.has('Y0020') || cands.has('Y0031') || cands.has('Y0032')) { qids.add('onset_time_stroke'); qids.add('trauma_or_spontaneous'); }
+  if (cands.has('Y0020') || cands.has('Y0031') || cands.has('Y0032')) { qids.add('trauma_or_spontaneous'); qids.add('onset_time_stroke'); }
   if (cands.has('Y0111') || cands.has('Y0112') || cands.has('Y0113')) qids.add('pregnancy_status');
   if (cands.has('Y0082') && cands.has('Y0092')) qids.add('foreign_body_site');
   if (cands.has('Y0131') || cands.has('Y0132')) qids.add('replantation_part');
@@ -282,222 +552,458 @@ function findQuestionIds(code) {
   return Array.from(qids).slice(0, 3);
 }
 
-function renderQuestions() {
-  const container = $('questions-container');
-  container.innerHTML = '';
-  const code = currentCode();
-  if (!code) return;
-  const qids = findQuestionIds(code);
-  if (qids.length === 0) return;
-
-  const title = document.createElement('div');
-  title.className = 'section-title';
-  title.textContent = '추가 질문 · ' + qids.length + '개';
-  container.appendChild(title);
-
-  for (const qid of qids) {
-    const q = DATA.question_catalog[qid];
-    if (!q) continue;
-    const card = document.createElement('div');
-    card.className = 'question-card';
-    const prompt = document.createElement('div');
-    prompt.className = 'q-prompt';
-    prompt.textContent = q.prompt;
-    card.appendChild(prompt);
-    const purpose = document.createElement('div');
-    purpose.className = 'q-purpose';
-    purpose.textContent = q.purpose;
-    card.appendChild(purpose);
-    const opts = document.createElement('div');
-    opts.className = 'q-options';
-    q.options.forEach((optText, i) => {
-      const label = document.createElement('label');
-      if (state.answers[qid] === i) label.classList.add('selected');
-      const input = document.createElement('input');
-      input.type = 'radio';
-      input.name = 'q-' + qid;
-      input.value = String(i);
-      if (state.answers[qid] === i) input.checked = true;
-      input.addEventListener('change', () => {
-        state.answers[qid] = i;
-        renderQuestions();
-        renderResult();
-      });
-      const span = document.createElement('span');
-      span.textContent = optText;
-      label.appendChild(input);
-      label.appendChild(span);
-      opts.appendChild(label);
-    });
-    card.appendChild(opts);
-    container.appendChild(card);
+/* ── rendering helpers ── */
+function setHeader() {
+  $('step-indicator').textContent = STAGE_LABEL[state.stage] || '';
+  const strip = $('code-strip');
+  strip.innerHTML = '';
+  const fullCode = computeCode();
+  const display = fullCode
+    ? fullCode
+    : (state.group === 'adult' ? 'C' : state.group === 'pediatric' ? 'D' : '_') +
+      (state.l2 || '_') + (state.l3 || '_') + (state.l4 ? state.l4 : '__');
+  for (const ch of display) {
+    const sp = document.createElement('span');
+    sp.className = 'ch' + (ch === '_' ? ' empty' : '');
+    sp.textContent = ch;
+    strip.appendChild(sp);
   }
+  if (fullCode) {
+    const e = DATA.entries.find((x) => x.c === fullCode);
+    if (e) {
+      const meta = document.createElement('span');
+      meta.className = 'meta';
+      meta.textContent = 'g' + e.gr + ' · ' + e.l4n;
+      strip.appendChild(meta);
+    }
+  }
+  $('btn-back').disabled = state.history.length === 0;
+  $('btn-home').disabled = state.stage === 'group' && state.history.length === 0;
 }
 
-function renderResult() {
-  const panel = $('result-panel');
-  panel.innerHTML = '';
-  const code = currentCode();
-  if (!code) {
-    const empty = document.createElement('div');
-    empty.className = 'result-empty';
-    empty.textContent = 'Pre-KTAS 코드를 선택하거나 입력하면 결과가 여기에 나타납니다.';
-    panel.appendChild(empty);
-    return;
+function pushStage(next) {
+  state.history.push(state.stage);
+  state.stage = next;
+  render();
+}
+function goBack() {
+  if (state.history.length === 0) return;
+  const prev = state.history.pop();
+  state.stage = prev;
+  // 이전 선택은 유지. 단 질문 답변은 이전 단계로 갈 때 유지.
+  render();
+}
+function goHome() {
+  state.stage = 'group';
+  state.history = [];
+  state.group = state.l2 = state.l3 = state.l4 = state.code = null;
+  state.answers = {};
+  state.qIndex = 0;
+  state.qids = [];
+  state.region = null;
+  render();
+}
+
+function makeOptBtn({ code, label, grade, onClick, cls = 'opt-btn' }) {
+  const btn = document.createElement('button');
+  btn.className = cls;
+  btn.type = 'button';
+  if (code) {
+    const c = document.createElement('span');
+    c.className = 'opt-code';
+    c.textContent = code;
+    btn.appendChild(c);
   }
-  const rec = DATA.recommendations[code];
-  if (!rec) {
-    const empty = document.createElement('div');
-    empty.className = 'result-empty';
-    empty.textContent = '정본 Pre-KTAS 코드북에 없는 코드입니다: ' + code;
-    panel.appendChild(empty);
-    return;
+  const l = document.createElement('span');
+  l.className = 'opt-label';
+  l.textContent = label;
+  btn.appendChild(l);
+  if (grade != null) {
+    const g = document.createElement('span');
+    g.className = 'opt-grade';
+    g.textContent = 'grade ' + grade;
+    btn.appendChild(g);
   }
+  btn.addEventListener('click', onClick);
+  return btn;
+}
 
-  const tierKey = rec.preferred_tier;
-  const tierDef = DATA.tier_definitions[tierKey];
-  const strategyDesc = DATA.strategy_definitions[rec.tier_strategy] || '';
+function renderStage1Group(main) {
+  const stage = document.createElement('div');
+  stage.className = 'stage';
+  const p = document.createElement('div');
+  p.className = 'prompt';
+  p.innerHTML = '연령군을 선택하세요<span class="hint">성인(C) / 소아(D) Pre-KTAS 체계 분기</span>';
+  stage.appendChild(p);
+  const grid = document.createElement('div');
+  grid.className = 'btn-grid cols-2';
+  grid.appendChild(makeOptBtn({
+    code: 'C',
+    label: '성인',
+    onClick: () => { state.group = 'adult'; pushStage('l2'); },
+    cls: 'opt-btn primary',
+  }));
+  grid.appendChild(makeOptBtn({
+    code: 'D',
+    label: '소아',
+    onClick: () => { state.group = 'pediatric'; pushStage('l2'); },
+    cls: 'opt-btn primary',
+  }));
+  stage.appendChild(grid);
+  main.appendChild(stage);
+}
 
-  const tierBlock = document.createElement('div');
-  tierBlock.className = 'result-group';
-  const h2a = document.createElement('h2');
-  h2a.textContent = 'Primary 응급의료센터 등급';
-  tierBlock.appendChild(h2a);
-  const card = document.createElement('div');
-  card.className = 'tier-card ' + tierKey;
-  const label = document.createElement('div');
-  label.className = 'label-strip';
-  label.textContent = '1순위 추천';
-  card.appendChild(label);
-  const name = document.createElement('div');
-  name.className = 'tier-name';
-  name.textContent = tierDef.label;
-  card.appendChild(name);
-  const pills = document.createElement('div');
-  pills.className = 'acceptable-tiers';
-  rec.acceptable_tiers.forEach((t, i) => {
-    const def = DATA.tier_definitions[t];
-    const pill = document.createElement('span');
-    pill.className = 'pill ' + (i === 0 ? 'primary' : 'secondary');
-    pill.textContent = def.short + (i === 0 ? ' · 1순위' : ' · 가능');
-    pills.appendChild(pill);
-  });
-  card.appendChild(pills);
-  const strat = document.createElement('div');
-  strat.className = 'tier-strategy';
-  strat.textContent = strategyDesc;
-  card.appendChild(strat);
-  tierBlock.appendChild(card);
-  panel.appendChild(tierBlock);
+function renderStage1L2(main) {
+  const stage = document.createElement('div');
+  stage.className = 'stage';
+  const p = document.createElement('div');
+  p.className = 'prompt';
+  p.innerHTML = '대분류를 선택하세요<span class="hint">Pre-KTAS 17 카테고리</span>';
+  stage.appendChild(p);
+  const grid = document.createElement('div');
+  grid.className = 'btn-grid cols-2';
+  const opts = uniqL2(byGroup[state.group]);
+  for (const o of opts) {
+    grid.appendChild(makeOptBtn({
+      code: o.c,
+      label: o.n,
+      onClick: () => { state.l2 = o.c; pushStage('l3'); },
+    }));
+  }
+  stage.appendChild(grid);
+  main.appendChild(stage);
+}
 
-  const rBlock = document.createElement('div');
-  rBlock.className = 'result-group';
-  const h2b = document.createElement('h2');
-  h2b.textContent = '판정 근거';
-  rBlock.appendChild(h2b);
-  const rBox = document.createElement('div');
-  rBox.className = 'rationale-box';
-  rBox.textContent = rec.rationale;
-  const src = document.createElement('span');
-  src.className = 'source';
-  src.textContent = 'source: ' + rec.source + ' · strategy: ' + rec.tier_strategy;
-  rBox.appendChild(src);
-  rBlock.appendChild(rBox);
-  panel.appendChild(rBlock);
+function renderStage1L3(main) {
+  const stage = document.createElement('div');
+  stage.className = 'stage';
+  const p = document.createElement('div');
+  p.className = 'prompt';
+  p.innerHTML = '주호소를 선택하세요<span class="hint">3단계 분류</span>';
+  stage.appendChild(p);
+  const grid = document.createElement('div');
+  grid.className = 'btn-grid cols-2';
+  const opts = uniqL3(byGroup[state.group], state.l2);
+  for (const o of opts) {
+    grid.appendChild(makeOptBtn({
+      code: o.c,
+      label: o.n,
+      onClick: () => { state.l3 = o.c; pushStage('l4'); },
+    }));
+  }
+  stage.appendChild(grid);
+  main.appendChild(stage);
+}
 
-  const yBlock = document.createElement('div');
-  yBlock.className = 'result-group';
-  const h2c = document.createElement('h2');
-  h2c.textContent = 'EMRIS 27 Y코드 후보';
-  yBlock.appendChild(h2c);
-  const yBox = document.createElement('div');
-  yBox.className = 'y-candidates';
-  if (rec.y_candidates.length === 0) {
-    yBox.textContent = '해당 Y코드 없음 — 27개 중증응급질환 외 (grade 기반 tier 추천).';
+function renderStage1L4(main) {
+  const stage = document.createElement('div');
+  stage.className = 'stage';
+  const p = document.createElement('div');
+  p.className = 'prompt';
+  p.innerHTML = '세부증상을 선택하세요<span class="hint">4단계 — 선택 시 Pre-KTAS 코드 완성</span>';
+  stage.appendChild(p);
+  const grid = document.createElement('div');
+  grid.className = 'btn-grid cols-1';
+  const opts = uniqL4(byGroup[state.group], state.l2, state.l3);
+  for (const o of opts) {
+    grid.appendChild(makeOptBtn({
+      code: o.c,
+      label: o.n,
+      grade: o.gr,
+      onClick: () => {
+        state.l4 = o.c;
+        state.code = computeCode();
+        state.qids = findQuestionIds(state.code);
+        state.answers = {};
+        state.qIndex = 0;
+        pushStage('questions');
+      },
+    }));
+  }
+  stage.appendChild(grid);
+  main.appendChild(stage);
+}
+
+function renderStage2Questions(main) {
+  const stage = document.createElement('div');
+  stage.className = 'stage';
+
+  if (state.qids.length === 0) {
+    // 질문 없음 → 바로 결과 프리뷰
+    const p = document.createElement('div');
+    p.className = 'prompt';
+    p.innerHTML = '추가 질문이 필요하지 않습니다<span class="hint">Pre-KTAS 코드 자체로 tier 결정 가능</span>';
+    stage.appendChild(p);
   } else {
-    const ul = document.createElement('ul');
-    for (const y of rec.y_candidates) {
-      const d = DATA.diseases.find((x) => x.code === y);
-      const li = document.createElement('li');
-      const c1 = document.createElement('span');
-      c1.className = 'y-code';
-      c1.textContent = y;
-      const c2 = document.createElement('span');
-      c2.className = 'y-label';
-      c2.textContent = d ? d.label : '(정의 누락)';
-      li.appendChild(c1); li.appendChild(c2);
-      ul.appendChild(li);
-    }
-    yBox.appendChild(ul);
-  }
-  yBlock.appendChild(yBox);
-  panel.appendChild(yBlock);
-
-  const answered = Object.keys(state.answers);
-  if (answered.length > 0) {
-    const aBlock = document.createElement('div');
-    aBlock.className = 'result-group';
-    const h2d = document.createElement('h2');
-    h2d.textContent = '답변 기록';
-    aBlock.appendChild(h2d);
-    const aBox = document.createElement('div');
-    aBox.className = 'y-candidates';
-    const ul = document.createElement('ul');
-    for (const qid of answered) {
-      const q = DATA.question_catalog[qid];
+    // 질문들 순차로 보이되 답변 진행된 만큼만
+    const shown = Math.min(state.qIndex + 1, state.qids.length);
+    for (let i = 0; i < shown; i += 1) {
+      const qid = state.qids[i];
+      const q = DATA.questions[qid];
       if (!q) continue;
-      const li = document.createElement('li');
-      li.style.gridTemplateColumns = '1fr';
-      const b = document.createElement('b');
-      b.textContent = q.prompt;
-      const ans = document.createElement('span');
-      ans.textContent = ' → ' + q.options[state.answers[qid]];
-      li.appendChild(b); li.appendChild(ans);
-      ul.appendChild(li);
+      const card = document.createElement('div');
+      card.className = 'question-card';
+
+      const counter = document.createElement('div');
+      counter.className = 'q-counter';
+      const a = document.createElement('span');
+      a.textContent = '질문 ' + (i + 1) + ' / ' + state.qids.length;
+      const b = document.createElement('span');
+      b.textContent = qid;
+      counter.appendChild(a); counter.appendChild(b);
+      card.appendChild(counter);
+
+      const prompt = document.createElement('div');
+      prompt.className = 'q-prompt';
+      prompt.textContent = q.prompt;
+      card.appendChild(prompt);
+
+      const purpose = document.createElement('div');
+      purpose.className = 'q-purpose';
+      purpose.textContent = q.purpose;
+      card.appendChild(purpose);
+
+      const opts = document.createElement('div');
+      opts.className = 'q-options';
+      q.options.forEach((optText, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'q-opt-btn' + (state.answers[qid] === idx ? ' selected' : '');
+        btn.type = 'button';
+        btn.textContent = optText;
+        btn.addEventListener('click', () => {
+          state.answers[qid] = idx;
+          if (i === state.qIndex && state.qIndex < state.qids.length - 1) state.qIndex += 1;
+          render();
+        });
+        opts.appendChild(btn);
+      });
+      card.appendChild(opts);
+      stage.appendChild(card);
     }
-    aBox.appendChild(ul);
-    aBlock.appendChild(aBox);
-    panel.appendChild(aBlock);
+
+    // 스킵
+    if (state.qIndex < state.qids.length - 1) {
+      const skip = document.createElement('button');
+      skip.className = 'q-skip';
+      skip.type = 'button';
+      skip.textContent = '이 질문 건너뛰기 →';
+      skip.addEventListener('click', () => { state.qIndex += 1; render(); });
+      stage.appendChild(skip);
+    }
+  }
+
+  // Live preview
+  const e = DATA.entries.find((x) => x.c === state.code);
+  const grade = e ? e.gr : 0;
+  const { ycodes, removed } = currentCandidates();
+  const tier = computeTier(ycodes, grade);
+  const tierDef = DATA.tier_definitions[tier.preferred];
+
+  const preview = document.createElement('div');
+  preview.className = 'live-preview';
+  const label = document.createElement('div');
+  label.className = 'lp-label';
+  label.textContent = '현재 추천';
+  preview.appendChild(label);
+
+  const tierRow = document.createElement('div');
+  tierRow.className = 'live-tier ' + tier.preferred;
+  const tn = document.createElement('span');
+  tn.className = 'tier-name';
+  tn.textContent = tierDef.label;
+  tierRow.appendChild(tn);
+  for (let i = 1; i < tier.acceptable.length; i += 1) {
+    const alt = document.createElement('span');
+    alt.style.color = 'var(--dim)';
+    alt.style.fontSize = '11.5px';
+    alt.textContent = '+ ' + DATA.tier_definitions[tier.acceptable[i]].short + ' 가능';
+    tierRow.appendChild(alt);
+  }
+  preview.appendChild(tierRow);
+
+  // Y pills
+  const yWrap = document.createElement('div');
+  yWrap.className = 'live-y';
+  const baseline = state.code && DATA.rec[state.code] ? DATA.rec[state.code].y : [];
+  if (baseline.length === 0) {
+    const none = document.createElement('span');
+    none.className = 'y-pill';
+    none.style.color = 'var(--dim)';
+    none.textContent = '27 Y코드 외 (grade ' + grade + ' 기반)';
+    yWrap.appendChild(none);
+  } else {
+    for (const y of baseline) {
+      const pill = document.createElement('span');
+      pill.className = 'y-pill' + (removed.has(y) ? ' removed' : '');
+      pill.textContent = y;
+      const d = DATA.diseases.find((x) => x.code === y);
+      if (d) pill.title = d.label;
+      yWrap.appendChild(pill);
+    }
+  }
+  preview.appendChild(yWrap);
+
+  const bar = document.createElement('div');
+  bar.className = 'continue-bar';
+  const cont = document.createElement('button');
+  cont.className = 'continue-btn';
+  cont.type = 'button';
+  cont.textContent = '병원 추천 보기 →';
+  cont.addEventListener('click', () => pushStage('region'));
+  bar.appendChild(cont);
+  preview.appendChild(bar);
+
+  stage.appendChild(preview);
+  main.appendChild(stage);
+}
+
+function renderStage3Region(main) {
+  const stage = document.createElement('div');
+  stage.className = 'stage';
+  const p = document.createElement('div');
+  p.className = 'prompt';
+  p.innerHTML = '환자 지역을 선택하세요<span class="hint">Mock 데이터 — 실데이터 통합은 다음 phase</span>';
+  stage.appendChild(p);
+
+  const grid = document.createElement('div');
+  grid.className = 'region-grid';
+  const all = document.createElement('button');
+  all.className = 'region-btn';
+  all.type = 'button';
+  all.textContent = '전체';
+  all.addEventListener('click', () => { state.region = null; pushStage('hospitals'); });
+  grid.appendChild(all);
+  for (const r of DATA.regions) {
+    const hasHospital = DATA.hospitals.some((h) => h.region === r);
+    if (!hasHospital) continue;
+    const btn = document.createElement('button');
+    btn.className = 'region-btn';
+    btn.type = 'button';
+    btn.textContent = r;
+    btn.addEventListener('click', () => { state.region = r; pushStage('hospitals'); });
+    grid.appendChild(btn);
+  }
+  stage.appendChild(grid);
+  main.appendChild(stage);
+}
+
+function renderStage3Hospitals(main) {
+  const stage = document.createElement('div');
+  stage.className = 'stage';
+
+  const e = DATA.entries.find((x) => x.c === state.code);
+  const grade = e ? e.gr : 0;
+  const { ycodes } = currentCandidates();
+  const tier = computeTier(ycodes, grade);
+  const tierDef = DATA.tier_definitions[tier.preferred];
+
+  const p = document.createElement('div');
+  p.className = 'prompt';
+  const pl = state.region ? state.region : '전국';
+  p.innerHTML = pl + ' · <span style="color:var(--accent)">' + tierDef.short + '</span> 권장<span class="hint">Y후보 ' + (ycodes.length ? ycodes.join(', ') : '없음') + ' · 권장 등급과 일치하는 병원 우선</span>';
+  stage.appendChild(p);
+
+  // 병원 후보 필터링·정렬
+  const needY = new Set(ycodes);
+  const hospitals = DATA.hospitals
+    .filter((h) => !state.region || h.region === state.region)
+    .filter((h) => tier.acceptable.includes(h.tier));
+
+  // 스코어링: (a) tier 일치도 (preferred=+3, acceptable=+1), (b) Y코드 매칭 수, (c) 거리 역순
+  const scored = hospitals.map((h) => {
+    let score = 0;
+    if (h.tier === tier.preferred) score += 30;
+    else score += 10;
+    if (needY.size > 0) {
+      let matches = 0;
+      for (const y of ycodes) if (h.y_supported.includes(y)) matches += 1;
+      score += matches * 10;
+      if (matches === needY.size) score += 15;
+    }
+    score -= h.distance_mock_km * 0.5;
+    return { h, score, yMatches: ycodes.filter((y) => h.y_supported.includes(y)) };
+  }).sort((a, b) => b.score - a.score);
+
+  if (scored.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-msg';
+    empty.textContent = state.region ? (state.region + '에 등록된 mock 병원이 없습니다.') : '추천 가능한 mock 병원이 없습니다.';
+    stage.appendChild(empty);
+  } else {
+    const list = document.createElement('div');
+    list.className = 'hospital-list';
+    scored.forEach(({ h, yMatches }, i) => {
+      const card = document.createElement('div');
+      card.className = 'hospital-card' + (i === 0 ? ' recommended' : '');
+      const head = document.createElement('div');
+      head.className = 'h-head';
+      const nameWrap = document.createElement('div');
+      if (i === 0) {
+        const badge = document.createElement('div');
+        badge.className = 'recommend-badge';
+        badge.textContent = '가장 적합';
+        nameWrap.appendChild(badge);
+      }
+      const name = document.createElement('div');
+      name.className = 'h-name';
+      name.textContent = h.name;
+      nameWrap.appendChild(name);
+      head.appendChild(nameWrap);
+
+      const tierBadge = document.createElement('span');
+      tierBadge.className = 'h-tier ' + h.tier;
+      tierBadge.textContent = DATA.tier_definitions[h.tier].short;
+      head.appendChild(tierBadge);
+      card.appendChild(head);
+
+      const meta = document.createElement('div');
+      meta.className = 'h-meta';
+      const region = document.createElement('span');
+      region.textContent = h.region;
+      meta.appendChild(region);
+      const dist = document.createElement('span');
+      dist.textContent = '~' + h.distance_mock_km + ' km';
+      meta.appendChild(dist);
+      if (ycodes.length > 0) {
+        const yBadge = document.createElement('span');
+        yBadge.className = yMatches.length === ycodes.length ? 'ok' : (yMatches.length > 0 ? '' : 'ng');
+        yBadge.textContent = 'Y코드 ' + yMatches.length + '/' + ycodes.length + ' 커버';
+        meta.appendChild(yBadge);
+      }
+      card.appendChild(meta);
+      list.appendChild(card);
+    });
+    stage.appendChild(list);
   }
 
   const note = document.createElement('div');
-  note.className = 'safety-note';
-  const bold = document.createElement('b');
-  bold.textContent = '주의';
-  note.appendChild(bold);
-  const rest = document.createTextNode(' — 본 도구는 정본 Pre-KTAS 코드북과 EMRIS 27 Y코드 매핑의 1차안에 기반한 연구용 프로토타입입니다. 진단 확정이 아닌 자원 등급 매칭이 목적이며, 실제 환자 배정은 EMRIS 종합상황판 실시간 병상 정보와 의료기관 담당자 확인을 거쳐야 합니다. 임상 리뷰 전의 Y코드 tier 분류는 수도권/지방 편차를 반영하지 않습니다.');
-  note.appendChild(rest);
-  panel.appendChild(note);
+  note.className = 'safety-foot';
+  note.innerHTML = '<b>주의</b> — 거리·Y코드 지원 여부는 mock 데이터. 실제 배정은 EMRIS 종합상황판 실시간 병상 정보와 의료기관 확인 후.';
+  stage.appendChild(note);
+
+  main.appendChild(stage);
 }
 
-$('sel-group').addEventListener('change', (e) => { state.group = e.target.value; state.l2 = state.l3 = state.l4 = state.code = ''; state.answers = {}; $('sel-code').value = ''; updateCountGroup(); populateL2(); populateL3(); populateL4(); renderCodeBadge(); renderQuestions(); renderResult(); });
-$('sel-l2').addEventListener('change', (e) => { state.l2 = e.target.value; state.l3 = state.l4 = state.code = ''; state.answers = {}; $('sel-code').value = ''; populateL3(); populateL4(); renderCodeBadge(); renderQuestions(); renderResult(); });
-$('sel-l3').addEventListener('change', (e) => { state.l3 = e.target.value; state.l4 = state.code = ''; state.answers = {}; $('sel-code').value = ''; populateL4(); renderCodeBadge(); renderQuestions(); renderResult(); });
-$('sel-l4').addEventListener('change', (e) => { state.l4 = e.target.value; state.code = ''; state.answers = {}; $('sel-code').value = ''; renderCodeBadge(); renderQuestions(); renderResult(); });
-$('sel-code').addEventListener('input', (e) => {
-  const v = e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
-  e.target.value = v; state.code = v;
-  if (v.length === 5) {
-    const entry = DATA.entries.find((x) => x.code === v);
-    if (entry) {
-      state.group = entry.group; state.l2 = entry.level2.code; state.l3 = entry.level3.code; state.l4 = entry.level4.code;
-      $('sel-group').value = entry.group; updateCountGroup();
-      populateL2(); $('sel-l2').value = state.l2;
-      populateL3(); $('sel-l3').value = state.l3;
-      populateL4(); $('sel-l4').value = state.l4;
-    }
-  }
-  state.answers = {};
-  renderCodeBadge(); renderQuestions(); renderResult();
-});
-$('btn-reset').addEventListener('click', () => {
-  state.group = state.l2 = state.l3 = state.l4 = state.code = ''; state.answers = {};
-  $('sel-group').value = ''; $('sel-code').value = '';
-  updateCountGroup(); populateL2(); populateL3(); populateL4();
-  renderCodeBadge(); renderQuestions(); renderResult();
-});
+/* ── main render ── */
+function render() {
+  setHeader();
+  const main = $('main');
+  main.innerHTML = '';
+  const s = state.stage;
+  if (s === 'group') renderStage1Group(main);
+  else if (s === 'l2') renderStage1L2(main);
+  else if (s === 'l3') renderStage1L3(main);
+  else if (s === 'l4') renderStage1L4(main);
+  else if (s === 'questions') renderStage2Questions(main);
+  else if (s === 'region') renderStage3Region(main);
+  else if (s === 'hospitals') renderStage3Hospitals(main);
+  main.scrollTop = 0;
+}
 
-updateCountGroup(); populateL2(); populateL3(); populateL4();
+$('btn-back').addEventListener('click', goBack);
+$('btn-home').addEventListener('click', goHome);
+
+render();
 </script>
 </body>
 </html>

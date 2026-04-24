@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0-mock",
+  "description": "Mock 병원 데이터 — Phase 5에서 추천 도구 prototype용. 병원명은 실제이나 tier/Y코드 지원 여부·거리는 가상. 다음 phase에서 emris-data/devdocs/hospitals.json + messages.json 실시간 데이터로 교체 예정.",
+  "regions": ["서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "세종", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"],
+  "hospitals": [
+    { "id": "h-snuh", "name": "서울대학교병원", "region": "서울", "tier": "regional", "distance_mock_km": 3.2, "y_supported": ["Y0010","Y0020","Y0031","Y0032","Y0041","Y0042","Y0051","Y0052","Y0060","Y0070","Y0081","Y0082","Y0091","Y0092","Y0100","Y0111","Y0112","Y0113","Y0120","Y0131","Y0132","Y0141","Y0142","Y0150","Y0160","Y0171","Y0172"] },
+    { "id": "h-asan", "name": "서울아산병원", "region": "서울", "tier": "regional", "distance_mock_km": 8.7, "y_supported": ["Y0010","Y0020","Y0031","Y0032","Y0041","Y0042","Y0051","Y0052","Y0060","Y0070","Y0081","Y0082","Y0091","Y0092","Y0100","Y0111","Y0112","Y0113","Y0131","Y0132","Y0141","Y0142","Y0150","Y0160","Y0171","Y0172"] },
+    { "id": "h-sev", "name": "세브란스병원", "region": "서울", "tier": "regional", "distance_mock_km": 5.1, "y_supported": ["Y0010","Y0020","Y0031","Y0032","Y0041","Y0042","Y0051","Y0052","Y0060","Y0081","Y0082","Y0091","Y0092","Y0100","Y0111","Y0112","Y0113","Y0120","Y0131","Y0132","Y0141","Y0142","Y0150","Y0160","Y0171","Y0172"] },
+    { "id": "h-samsung", "name": "삼성서울병원", "region": "서울", "tier": "regional", "distance_mock_km": 6.4, "y_supported": ["Y0010","Y0020","Y0031","Y0032","Y0041","Y0042","Y0051","Y0052","Y0060","Y0081","Y0091","Y0100","Y0111","Y0112","Y0113","Y0141","Y0142","Y0150","Y0160","Y0171"] },
+    { "id": "h-smc", "name": "서울성모병원", "region": "서울", "tier": "regional", "distance_mock_km": 4.5, "y_supported": ["Y0010","Y0020","Y0031","Y0032","Y0041","Y0051","Y0052","Y0060","Y0081","Y0091","Y0100","Y0111","Y0112","Y0113","Y0141","Y0142","Y0150","Y0160","Y0171"] },
+    { "id": "h-kangbuk", "name": "강북삼성병원", "region": "서울", "tier": "local_center", "distance_mock_km": 2.8, "y_supported": ["Y0010","Y0020","Y0051","Y0052","Y0060","Y0081","Y0091","Y0111","Y0112","Y0113","Y0141","Y0150","Y0160"] },
+    { "id": "h-konkuk", "name": "건국대학교병원", "region": "서울", "tier": "local_center", "distance_mock_km": 3.9, "y_supported": ["Y0010","Y0020","Y0031","Y0051","Y0052","Y0060","Y0081","Y0111","Y0112","Y0113","Y0141","Y0150","Y0160"] },
+    { "id": "h-eulji", "name": "서울을지병원", "region": "서울", "tier": "local_center", "distance_mock_km": 3.1, "y_supported": ["Y0051","Y0052","Y0060","Y0081","Y0091","Y0111","Y0112","Y0113","Y0141","Y0150"] },
+    { "id": "h-bundang", "name": "분당서울대학교병원", "region": "경기", "tier": "regional", "distance_mock_km": 18.4, "y_supported": ["Y0010","Y0020","Y0031","Y0032","Y0041","Y0042","Y0051","Y0052","Y0060","Y0070","Y0081","Y0082","Y0091","Y0092","Y0100","Y0111","Y0112","Y0113","Y0120","Y0131","Y0132","Y0141","Y0142","Y0150","Y0160","Y0171","Y0172"] },
+    { "id": "h-ajou", "name": "아주대학교병원", "region": "경기", "tier": "regional", "distance_mock_km": 22.1, "y_supported": ["Y0010","Y0020","Y0031","Y0032","Y0041","Y0042","Y0051","Y0060","Y0070","Y0081","Y0082","Y0091","Y0100","Y0111","Y0112","Y0113","Y0120","Y0131","Y0132","Y0141","Y0142","Y0150","Y0160","Y0171"] },
+    { "id": "h-ilsan", "name": "일산백병원", "region": "경기", "tier": "local_center", "distance_mock_km": 12.8, "y_supported": ["Y0010","Y0020","Y0051","Y0052","Y0060","Y0081","Y0111","Y0112","Y0113","Y0141","Y0150","Y0160"] },
+    { "id": "h-inha", "name": "인하대학교병원", "region": "인천", "tier": "regional", "distance_mock_km": 15.3, "y_supported": ["Y0010","Y0020","Y0031","Y0032","Y0041","Y0042","Y0051","Y0060","Y0070","Y0081","Y0091","Y0100","Y0111","Y0112","Y0113","Y0131","Y0132","Y0141","Y0142","Y0150","Y0160","Y0171"] },
+    { "id": "h-pnuh", "name": "부산대학교병원", "region": "부산", "tier": "regional", "distance_mock_km": 4.7, "y_supported": ["Y0010","Y0020","Y0031","Y0032","Y0041","Y0042","Y0051","Y0060","Y0070","Y0081","Y0082","Y0091","Y0100","Y0111","Y0112","Y0113","Y0120","Y0131","Y0132","Y0141","Y0142","Y0150","Y0160","Y0171","Y0172"] },
+    { "id": "h-dau", "name": "동아대학교병원", "region": "부산", "tier": "local_center", "distance_mock_km": 3.2, "y_supported": ["Y0010","Y0051","Y0060","Y0081","Y0111","Y0112","Y0113","Y0141","Y0150","Y0160"] },
+    { "id": "h-knuh", "name": "경북대학교병원", "region": "대구", "tier": "regional", "distance_mock_km": 5.8, "y_supported": ["Y0010","Y0020","Y0031","Y0032","Y0041","Y0042","Y0051","Y0060","Y0081","Y0091","Y0100","Y0111","Y0112","Y0113","Y0120","Y0131","Y0132","Y0141","Y0142","Y0150","Y0160","Y0171"] },
+    { "id": "h-cnu", "name": "전남대학교병원", "region": "광주", "tier": "regional", "distance_mock_km": 6.1, "y_supported": ["Y0010","Y0020","Y0031","Y0032","Y0041","Y0051","Y0060","Y0070","Y0081","Y0091","Y0100","Y0111","Y0112","Y0113","Y0141","Y0142","Y0150","Y0160","Y0171"] },
+    { "id": "h-cnuh", "name": "충남대학교병원", "region": "대전", "tier": "regional", "distance_mock_km": 4.4, "y_supported": ["Y0010","Y0020","Y0031","Y0032","Y0041","Y0051","Y0060","Y0081","Y0091","Y0100","Y0111","Y0112","Y0113","Y0141","Y0150","Y0160","Y0171"] },
+    { "id": "h-local-1", "name": "성심의료재단 강남병원", "region": "서울", "tier": "local_institution", "distance_mock_km": 1.8, "y_supported": [] },
+    { "id": "h-local-2", "name": "경기도립 수원의료원", "region": "경기", "tier": "local_institution", "distance_mock_km": 14.2, "y_supported": [] },
+    { "id": "h-local-3", "name": "부산의료원", "region": "부산", "tier": "local_institution", "distance_mock_km": 5.5, "y_supported": [] }
+  ]
+}

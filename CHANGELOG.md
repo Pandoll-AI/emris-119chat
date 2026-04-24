@@ -1,5 +1,26 @@
 # Changelog
 
+## [2026-04-24] Phase 5.1: 추천 도구 모바일 스텝 마법사 재작성 + live tier narrowing + mock 병원
+
+### Changed
+- `scripts/build-hospital-recommender.mjs` 전면 재작성. 데스크톱 2단 레이아웃 → **모바일 우선 3단계 스텝 마법사**. 큰 터치 타겟, sticky header `[← 이전] · 단계 · [↺ 처음]` + 누적 코드 스트립, 스크롤 최소화.
+  - Stage 1 (Pre-KTAS 입력): 연령 2버튼 → 대분류 17버튼(2열) → 3단계 버튼(2열) → 4단계 버튼(1열, grade 표시). 선택 즉시 다음 sub-step 이동.
+  - Stage 2 (추가 질문 + live tier): 질문 1개씩 순차 표시. 선택 시 **즉시 후보 Y코드 필터링·tier 재계산**. 하단 sticky preview에 tier 이름·acceptable·Y pills(제거된 건 취소선) 실시간 표시. 질문 skip 가능, 답변 중 변경 시 재render.
+  - Stage 3 (병원 추천): 지역 그리드(mock 17개 시도) → 병원 카드 리스트. tier preference × Y코드 커버 수 × 거리 기반 스코어링. 1위 "가장 적합" 배지.
+- `prektas-hospital-recommender.html` 재빌드 — 2.4MB → **890KB** (entries payload 압축).
+
+### Added
+- `data/mock-hospitals.json` — 20개 mock 병원 (권역 7 · 지역센터 8 · 지역기관 3 + 기타). 실제 병원명 + mock tier/거리/Y코드 지원.
+- Question effects (build script inline) — 각 질문 옵션이 후보 Y코드를 어떻게 좁히는지 정의 (`y_keep` / `y_remove`). 예: `chest_pain_character` "압박성" → Y0010만, "찢어지듯" → Y0041/Y0042만.
+
+### Key UX Improvement
+- 이전: 질문 답변이 "기록만" 되고 추천 tier에 영향 없음.
+- 이후: 답변이 **실제로 후보를 줄이고 tier를 바꿈**. "답변 전 권역 → 답변 후 지역센터" 같은 전환이 화면에서 즉시 보임.
+
+### Out of Scope
+- 실제 EMRIS 데이터 연동 (`emris-data/devdocs/hospitals.json` 410개) — Phase 6.
+- 실시간 병상 정보 (messages.json) — Phase 6.
+
 ## [2026-04-24] Phase 5: standalone HTML — 병원 추천 도구 + 연구 설명
 
 ### Added
