@@ -556,6 +556,66 @@
   .wiz-submit:disabled { background: var(--t-dim); cursor: not-allowed; }
   .wiz-submit:hover:not(:disabled) { background: var(--t-accent); }
 
+  /* Pre-KTAS 매핑 검토 카드 (Phase 6 Step 11) */
+  .prektas-review {
+    border: 1px solid var(--t-line);
+    background: var(--t-bg);
+    padding: 10px 12px;
+    margin: 10px 0;
+    display: grid;
+    gap: 6px;
+  }
+  .prektas-review.needs-revision {
+    border-color: var(--t-accent);
+    background: rgba(168, 35, 28, 0.04);
+  }
+  .prektas-review .pr-label {
+    font-size: var(--fs-xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--t-dim);
+    font-weight: 700;
+  }
+  .prektas-review.needs-revision .pr-label { color: var(--t-accent); }
+  .prektas-review .pr-comment {
+    font-size: var(--fs-md);
+    color: var(--t-ink);
+    line-height: 1.5;
+  }
+  .prektas-review .pr-suggested {
+    font-family: var(--t-font-mono);
+    font-size: var(--fs-sm);
+    padding: 4px 8px;
+    border: 1px solid var(--t-accent);
+    color: var(--t-accent);
+    align-self: flex-start;
+    font-weight: 700;
+  }
+  .prektas-review .pr-note {
+    font-size: var(--fs-xs);
+    color: var(--t-dim);
+    font-style: italic;
+  }
+  .prektas-review .pr-capabilities {
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid var(--t-line-soft);
+    display: grid;
+    gap: 4px;
+  }
+  .prektas-review .pr-cap-label {
+    font-size: var(--fs-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--t-dim);
+    font-weight: 700;
+  }
+  .prektas-review .pr-capabilities > div {
+    font-size: var(--fs-md);
+    color: var(--t-ink);
+    line-height: 1.5;
+  }
+
   #input-bar {
     flex-shrink: 0;
     display: flex;
@@ -3251,6 +3311,40 @@ JSON만 반환. 마크다운/설명 금지.`;
       const sub = el('div', { style: 'font-size:12px;color:var(--muted);margin-bottom:6px' });
       sub.textContent = result.summary;
       wrap.appendChild(sub);
+    }
+
+    // Phase 6 Step 11 — Pre-KTAS Y코드 매핑 검토 (마법사 모드만)
+    if (result.prektas_review) {
+      const rv = result.prektas_review;
+      const card = el('div', { className: 'prektas-review' + (rv.verdict === 'needs_revision' ? ' needs-revision' : ' appropriate') });
+      const lbl = el('div', { className: 'pr-label' });
+      lbl.textContent = '🔍 Y코드 매핑 검토';
+      card.appendChild(lbl);
+      if (rv.comment) {
+        const cm = el('div', { className: 'pr-comment' });
+        cm.textContent = rv.comment;
+        card.appendChild(cm);
+      }
+      if (rv.verdict === 'needs_revision' && rv.suggested_y_codes && rv.suggested_y_codes.length) {
+        const sg = el('div', { className: 'pr-suggested' });
+        sg.textContent = 'AI 제안 Y코드: ' + rv.suggested_y_codes.join(', ');
+        card.appendChild(sg);
+        // "이 Y코드로 추가 조회" 버튼 — Step 12에서 활성화 예정 (현재 informational only)
+        const note = el('div', { className: 'pr-note' });
+        note.textContent = '※ 추가 조회 버튼은 Step 12에서 활성화';
+        card.appendChild(note);
+      }
+      if (rv.required_capabilities) {
+        const cap = el('div', { className: 'pr-capabilities' });
+        const t = el('span', { className: 'pr-cap-label' });
+        t.textContent = '🏥 필요 자원';
+        cap.appendChild(t);
+        const v = el('div');
+        v.textContent = rv.required_capabilities;
+        cap.appendChild(v);
+        card.appendChild(cap);
+      }
+      wrap.appendChild(card);
     }
 
     // 경고 배너
