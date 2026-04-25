@@ -121,6 +121,50 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | prektas_review (UI) | render-component | `index.html` (script) | LLM Y코드 검토 카드 + 자원 요건 박스 + override 재조회 버튼. |
 | E2E Test Scenarios | doc | `ui-audit/phase6-e2e-scenarios.md` | 7개 manual test scenarios (PoC 데모용). |
 
+## Phase 7 Entities (추가, 2026-04-25)
+
+| Entity | Type | Location | Description |
+|---|---|---|---|
+| callLLMWithRetry | js-function | `index.html` (script) | 점증 backoff [0, 1s, 3s, 5s, 10s] 4회 재시도 헬퍼. retryable=false면 즉시 반환. fetchFn 표준 응답 객체 (`{ ok, data?, kind?, status?, retryable? }`) 강제. |
+| renderLLMError | render-component | `index.html` (script) | LLM 실패 시 렌더되는 에러 카드. 헤더 + 본문 + 재시도 버튼 + `<details>` 진단 정보 (kind/HTTP/message). 한국어 라벨. |
+| HARNESS_FOLLOWUP_PROMPT | llm-prompt | `index.html` (script) | 직전 환자 컨텍스트·추천을 존중하는 평문 한국어 follow-up 프롬프트. 인접 광역 안내 + 재조회 필요 명시 + Y코드 노출 금지. |
+| runFollowUp | js-function | `index.html` (script) | 활성 케이스의 messages를 LLM contents로 직렬화. 에러 카드 prefix 필터링. callLLMWithRetry 사용. |
+| viewCaseReadOnly | render-function | `index.html` (script) | 기록 패널 클릭 시 chat 영역에 메시지 리플레이 + 케이스 헤더 배너 + 마감 안내. drawer 자동 닫기. |
+| enhanceRibbonScroll | js-function | `index.html` (script) | 리본 row를 `.ribbon-wrap`로 감싸고 좌·우 화살표 + 마우스 드래그 스크롤을 추가. 드래그 후 단발 click suppress. |
+
+## Phase 7 Actions (2026-04-25) — AI 폴백 제거 + UX 정리
+
+| Date | Action | Actor | Target | Detail |
+|---|---|---|---|---|
+| 2026-04-25 | feedback | user | wizard reset + LLM 라벨 | 새 케이스 클릭 시 wizard도 첫 단계로 + "Y코드 매핑" 같은 시스템 식별자 미노출. |
+| 2026-04-25 | fix | claude | `dd1dc9f` | WizardController.reset() + 사용자 라벨 한국어화 + LLM 임무 A 프롬프트 평문 한국어 강제. |
+| 2026-04-25 | feedback | user | AI 모드 폴백 제거 | LLM 실패 시 룰 기반 결과로 떨어지면 안 됨, 재시도 후 명시적 에러 표시. AI 디폴트 ON. |
+| 2026-04-25 | refactor | claude | `ddbe35b` | callLLMWithRetry 헬퍼 + renderLLMError 카드 + parseWithLLM/interpretWithHarness 폴백 제거 + renderRateLimitChoice 정리 + AI 디폴트 명시화. |
+| 2026-04-25 | feedback | user | follow-up 컨텍스트 + 기록 패널 | 위저드 후 후속 질문 시 컨텍스트 끊김 + 기록 항목 클릭 무동작. |
+| 2026-04-25 | implement | claude | `a0ed5a3` | HARNESS_FOLLOWUP_PROMPT + runFollowUp + viewCaseReadOnly. sendMessage 라우팅 분기. |
+| 2026-04-25 | feedback | user | "마법사" 용어 제거 | 평가 도구 정체성을 흐림. Pre-KTAS로 직설적 통일. |
+| 2026-04-25 | rename | claude | `7dd3739` | index.html, build-chatbot-payload.mjs, build-hospital-recommender.mjs, lib/chatbot-payload.js의 "마법사" → "Pre-KTAS" 24+ 곳. 내부 식별자(WizardController, mode-wizard-btn)는 보존. |
+| 2026-04-25 | feedback | user | 리본 화살표·드래그 + Level 표기 | 좁은 viewport 좌우 끝 항목 접근성 + 케이스 메시지에 환자 grade 추가. |
+| 2026-04-25 | implement | claude | `c363110` | enhanceRibbonScroll + ribbon-arrow CSS + Pre-KTAS 평가 메시지 "(Level N)" 포함. |
+| 2026-04-25 | review | claude | post-merge audit | Quality 8.5/10. 3 informational (follow-up generation token, 에러 prefix 필터, viewCaseReadOnly 모호성). 0 critical. |
+| 2026-04-25 | deploy | claude | Vercel production | `https://119chat.emergency-info.com` 5 commits 배포 + 마커 검증. |
+
+## Phase 7 Relations
+
+| Subject | Relation | Object | Context |
+|---|---|---|---|
+| callLLMWithRetry | wraps | parseWithLLM | 키워드 매칭 실패 시 LLM 호출 재시도 |
+| callLLMWithRetry | wraps | interpretWithHarness | 추천 단계 LLM 호출 재시도 |
+| callLLMWithRetry | wraps | runFollowUp | follow-up LLM 호출 재시도 |
+| renderLLMError | rendered-by | searchAndShow | LLM 추천 실패 시 폴백 대신 노출 |
+| renderLLMError | rendered-by | sendMessage | parseWithLLM 실패 시 노출 |
+| renderLLMError | rendered-by | runFollowUp | follow-up 실패 시 노출 |
+| runFollowUp | reads | CaseStore.getActive | 활성 케이스 messages·hospitals_snapshot |
+| runFollowUp | uses | HARNESS_FOLLOWUP_PROMPT | 평문 한국어 follow-up 시스템 프롬프트 |
+| sendMessage | routes-to | runFollowUp | 활성 케이스 + hospitals_snapshot 있고 keyword 미스 시 |
+| viewCaseReadOnly | reads | CaseStore (case object) | drawer 클릭 시 |
+| enhanceRibbonScroll | called-by | buildRibbons | region/disease 두 ribbon에 화살표·드래그 wiring |
+
 ## Next Phase Candidates
 
 Phase 4 리포트 §7에서 승계.

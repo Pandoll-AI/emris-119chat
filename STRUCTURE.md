@@ -66,7 +66,7 @@ data/prektas-codebook.json                                │
 | `research/prektas-tier-recommendation-report.md` | 권역 세이브율·분포 분석 서술 | tier-recommendation.json |
 | `scripts/build-hospital-recommender.mjs` | 정본 JSON embed → recommender HTML | 4개 JSON |
 | `scripts/build-research-page.mjs` | 연구 설명 standalone HTML 생성 | codebook.json, tier·mapping |
-| `index.html` | EMRIS 챗봇 통합 페이지 (Phase 6): 자유 채팅 + Pre-KTAS 마법사 + LLM 4임무 + CaseStore + drawer | `api/llm.js`, `lib/chatbot-payload.js`, EMRIS API |
+| `index.html` | EMRIS 챗봇 통합 페이지 (Phase 6+7): 자유 채팅 + Pre-KTAS 평가 + LLM 4임무 + CaseStore + drawer + 폴백 제거·재시도(Phase 7) + follow-up 컨텍스트 + 리본 화살표·드래그 | `api/llm.js`, `lib/chatbot-payload.js`, EMRIS API |
 | `lib/chatbot-payload.js` | 정본 코드북·매핑·tier·question effects 합본 (671KB) | `data/`, `research/` JSON |
 | `scripts/build-chatbot-payload.mjs` | 페이로드 빌드 스크립트 | 정본 JSON 4개 |
 | `prektas-hospital-recommender.html` | 약 900KB 모바일 스텝 마법사 (교육·연구용, 빌드 산출) | build script |
@@ -77,8 +77,43 @@ data/prektas-codebook.json                                │
 | `package.json` | npm scripts + devDeps (ajv, ajv-formats) | 없음 |
 | `index.html` | EMRIS 119 챗봇 UI (initial commit 산출물) | `api/`, Gemini REST API |
 | `api/` | Vercel serverless 엔드포인트 디렉토리 | — |
-| `vercel.json` | SPA rewrites 설정 | — |
+| `vercel.json` | SPA rewrites 설정 (`/` → `/index.html`, `api/llm.js` maxDuration 30s) | — |
+| `.vercelignore` | `public/`, `data/raw/`, `*.csv` 등 배포 제외. chatbot이 루트 index로 정확히 서빙되게 함 | — |
 | `test-llm.mjs` | LLM 연동 smoke test (initial commit 산출물) | `.env` |
+
+## Phase 7 추가 사항 (2026-04-25)
+
+### LLM 호출 흐름 (폴백 제거 후)
+```
+사용자 입력
+   │
+   ├─ keywordFallback (즉시, region+disease 추출)
+   │     ├─ 둘 다 매칭: searchAndShow (LLM 파싱 안 함)
+   │     ├─ 활성 케이스에 hospitals_snapshot 있고 키워드 미스: runFollowUp
+   │     │     └─ HARNESS_FOLLOWUP_PROMPT + case.messages contents
+   │     │           └─ callLLMWithRetry → 평문 답변 or renderLLMError
+   │     └─ 그 외 + AI ON: parseWithLLM
+   │           └─ callLLMWithRetry → region+disease or renderLLMError
+   │
+   └─ searchAndShow (EMRIS API 조회) → useLLM
+         ├─ AI ON or 마법사 모드 (forceLLM):
+         │     └─ interpretWithHarness → callLLMWithRetry
+         │           ├─ 200: renderAdaptiveResult (4임무 카드)
+         │           ├─ 429: renderRateLimitChoice (재시도 버튼만, 폴백 옵션 X)
+         │           └─ 401/5xx/network/parse: renderLLMError + onRetry
+         └─ AI OFF (사용자 명시 토글): renderSmartResult (룰 기반, 폴백 아님)
+```
+
+### Phase 7 Key Functions (in `index.html`)
+| Function | Role | Used By |
+|---|---|---|
+| `callLLMWithRetry(fetchFn, opts?)` | 점증 backoff [0,1s,3s,5s,10s] 재시도 헬퍼 | parseWithLLM, interpretWithHarness, runFollowUp |
+| `renderLLMError({error, onRetry})` | 에러 카드 (헤더+본문+재시도+진단 details) | searchAndShow, sendMessage, runFollowUp, renderRateLimitChoice |
+| `llmErrorLabel(kind)` | kind → 한국어 라벨 매핑 | renderLLMError |
+| `runFollowUp(text)` | 케이스 컨텍스트 보존 LLM 호출 (평문 답변) | sendMessage |
+| `buildFollowUpMessages(caseObj)` | case.messages → LLM contents 직렬화 (에러 카드 prefix 필터) | runFollowUp |
+| `viewCaseReadOnly(c)` | 기록 패널 클릭 시 chat 영역 메시지 리플레이 | renderDrawer 클릭 핸들러 |
+| `enhanceRibbonScroll(rowEl)` | ribbon에 좌우 화살표 + 드래그 스크롤 wiring | buildRibbons |
 
 ## Database
 

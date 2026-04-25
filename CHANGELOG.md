@@ -1,5 +1,63 @@
 # Changelog
 
+## [2026-04-25] Phase 7: AI 모드 폴백 제거 + follow-up 컨텍스트 + 용어 통일 + 리본 UX
+
+> Phase 6 직후 PoC 데모 피드백 라운드. 5개 atomic commits.
+
+### 변경 동기
+1. **AI 폴백이 사용자에게 잘못된 신뢰를 줌** — LLM 실패 시 클라이언트 룰 기반 결과로 조용히 떨어지면 응급의료 추천 도메인에서 위험.
+2. **마법사로 받은 추천에 후속 질문 시 컨텍스트 끊김** — sendMessage가 새 검색으로 오인하여 "지역과 증상을 함께 말씀해주세요" 응답.
+3. **기록 패널 클릭이 console.log만 찍고 동작 안 함** (TODO 상태).
+4. **"마법사" 용어가 평가 도구 정체성을 흐림** — Pre-KTAS 코드북 결정론 평가이므로 도구명을 직설적으로.
+5. **모바일에서 리본 좌우 끝 항목 접근성 부족** — 화살표·드래그 없음.
+
+### Commits
+| # | 작업 | Commit |
+|---|---|---|
+| 1 | 새 케이스 시 wizard reset + Y코드 매핑 → 평이 한국어 | `dd1dc9f` |
+| 2 | AI 모드 폴백 제거 + 점증 backoff 재시도 + 에러 카드 | `ddbe35b` |
+| 3 | follow-up 컨텍스트 보존 + 기록 패널 read-only 보기 | `a0ed5a3` |
+| 4 | "마법사" → "Pre-KTAS" 용어 통일 (24+ 곳) | `7dd3739` |
+| 5 | 리본 좌우 화살표·드래그 스크롤 + Pre-KTAS 평가 Level 표기 | `c363110` |
+
+### Added
+- `callLLMWithRetry(fetchFn, opts)` — 점증 gap [0, 1s, 3s, 5s, 10s] 4회 재시도 헬퍼. 401/403/429는 재시도 무의미하므로 즉시 반환. 5xx/network/parse는 재시도 대상.
+- `renderLLMError({ error, onRetry })` — sharp corners + accent 좌측 보더, 한국어 라벨, `<details>` 진단 정보 (kind/HTTP status/message), "🔄 다시 시도" 버튼.
+- `llmErrorLabel(kind)` — auth/rate_limit/network/parse/5xx/4xx/unknown 한국어 매핑.
+- `HARNESS_FOLLOWUP_PROMPT` — 직전 환자 컨텍스트·추천 존중하는 평문 한국어 follow-up 시스템 프롬프트. 인근 시도/권역 인접 광역 안내 + 재조회 필요 명시 + Y코드 노출 금지.
+- `runFollowUp(text)` — 활성 케이스 messages를 LLM contents로 직렬화. 에러 카드 메시지 prefix 필터링으로 잡음 제거.
+- `viewCaseReadOnly(caseObj)` — drawer 닫고 chat 영역 메시지 리플레이 + 케이스 헤더 배너 + 마감 케이스 안내 노트.
+- `enhanceRibbonScroll(rowEl)` — `.ribbon-wrap` 컨테이너 + `.ribbon-arrow` 좌·우 오버레이 + pointerdown/move/up 드래그 + 드래그 후 단발 click suppress.
+- CSS: `.llm-error-card`, `.ribbon-wrap`, `.ribbon-arrow`, `.ribbon-row.dragging`.
+
+### Changed
+- AI 디폴트 ON 명시화: `localStorage.getItem('emris_ai') === null ? true : ...` (line 1195).
+- `parseWithLLM` — `keywordFallback` 폴백 제거. 실패 시 `{ _llmError, kind, status, message }` 반환. 호출자(sendMessage)에서 에러 카드 + retry 버튼.
+- `interpretWithHarness` — null 반환 → `_llmError`/`_rateLimit` 반환. `searchAndShow` LLM 분기 폴백을 `renderLLMError`로 교체. AI OFF 분기는 사용자 명시 선택이므로 본래 룰 기반 동작 유지.
+- `renderRateLimitChoice` — "AI 미사용 답변" 버튼 제거. "🔄 AI 재시도"만 노출. `prektasContext` 인자 추가하여 마법사 모드 follow-up retry 정확화.
+- `sendMessage` — 활성 케이스에 `hospitals_snapshot` + `messages.length > 1` 있고 keywordFallback 미스 시 `runFollowUp` 호출하여 새 검색 흐름 우회.
+- 헤더 입력 모드 토글: "📋 Pre-KTAS 마법사" → "📋 Pre-KTAS".
+- 케이스 시작 메시지: "📋 마법사 평가 — CIHAD · 실신/전실신 / 쇼크" → "📋 Pre-KTAS 평가 — CIHAD (Level 2) · 실신/전실신 / 쇼크".
+- prektas_review UI 라벨 한국어화: "🔍 Y코드 매핑 검토" → "🔍 중증 응급질환 여부 판정". "AI 제안 Y코드" → "AI 추가 진단 후보". "🔄 이 Y코드로 추가 조회" → "🔄 추가 진단 포함하여 다시 조회".
+- LLM 시스템 프롬프트(임무 A): comment 출력에 Y코드 미노출 명시. "현재 판정이 적절합니다" / "현재 판정 외에도 [추가 진단]이 적절할 수 있습니다 — [임상 근거]" 패턴.
+
+### Fixed
+- 새 케이스 버튼이 마법사 첫 단계까지 reset하도록 `WizardController.reset()` 호출 추가. `window.WizardController` 전역 노출.
+- 기록 패널 케이스 항목 클릭 시 `console.log` → `viewCaseReadOnly(c)` 호출.
+
+### Review (Pre-Landing Audit, post-merge)
+- Quality Score: **8.5/10** (3 informational, 0 critical).
+- INFO: `runFollowUp` lacks generation token (rapid follow-ups could arrive out-of-order via retry button) — confidence 7/10. PoC acceptable.
+- INFO: `buildFollowUpMessages` 에러 카드 prefix 필터 의존 — confidence 6/10. 강건성 위해 `_synthetic: true` 메타 마커가 더 깔끔.
+- INFO: `viewCaseReadOnly` 활성 케이스 모호성 — confidence 8/10. 배너 안내로 mitigated. PoC 범위 외.
+- XSS / localStorage / 드래그 충돌 처리: 모두 안전.
+
+### 배포
+- main pushed: `dd1dc9f` → `c363110` (5 commits)
+- Vercel production deployed: `https://119chat.emergency-info.com` 에 모든 마커 반영 확인
+
+---
+
 ## [2026-04-25] Phase 6 (완료): 챗봇 통합 — Pre-KTAS 마법사를 챗봇 입력 모드로 흡수
 
 > 16단계 대규모 리팩터 **전부 완료**. 자세한 plan: `~/.claude/plans/mighty-herding-sutton.md`.
