@@ -8,6 +8,50 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
+    /* === Design tokens v2 (도입 — 사용처는 Step 2 이후 점진 마이그레이션) === */
+
+    /* Color tokens — 모노크롬 + accent 1색 */
+    --t-bg:           #fafaf8;
+    --t-surface:      #ffffff;
+    --t-ink:          #0a0a0a;
+    --t-dim:          #6b6b68;
+    --t-line:         rgba(10, 10, 10, 0.12);
+    --t-line-soft:    rgba(10, 10, 10, 0.06);
+    --t-accent:       #a8231c;
+    --t-accent-soft:  rgba(168, 35, 28, 0.08);
+
+    /* Tier 색 — 챗봇·마법사 공유 */
+    --t-tier-regional:           #a8231c;
+    --t-tier-local-center:       #8b4238;
+    --t-tier-local-institution:  #5a4a42;
+
+    /* 시술 가용성 색 (의미 보존, 톤 정렬) */
+    --t-state-available:    #1d6b3f;
+    --t-state-conditional:  #9a6409;
+    --t-state-unavailable:  #a8231c;
+    --t-state-unsupported:  #9ca3af;
+    --t-state-blocked:      #5b21b6;
+
+    /* Spacing — 4px grid */
+    --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+    --sp-5: 20px; --sp-6: 24px; --sp-7: 32px; --sp-8: 48px;
+
+    /* Radius — sharp corners 정책 (라운드 0~2px) */
+    --r-0: 0;
+    --r-1: 2px;
+
+    /* Font */
+    --t-font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Helvetica Neue", sans-serif;
+    --t-font-mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+    /* Type scale */
+    --fs-xs:  11px; --fs-sm:  12px; --fs-md:  13px; --fs-base: 14px;
+    --fs-lg:  15px; --fs-xl:  17px; --fs-2xl: 22px; --fs-3xl: 30px;
+
+    /* Transitions */
+    --t-fast: 0.12s; --t-mid: 0.2s;
+
+    /* === Legacy tokens (기존 코드 동작 보장 — 점진 deprecate) === */
     --bg: #ffffff;
     --surface: #f8f9fa;
     --border: #e5e7eb;
