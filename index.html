@@ -2458,7 +2458,68 @@ JSON만 반환. 마크다운/설명 금지.`;
 
   // ── API 호출 ──────────────────────────────────
 
-  async function searchAndShow(queryText, region, diseases) {
+  /**
+   * Phase 6 Step 8 — 자유 채팅·마법사 합류 함수.
+   * 두 입력 경로가 같은 EMRIS 조회 + LLM 추천 파이프라인으로 들어옴.
+   *
+   * @param {{
+   *   mode: 'chat'|'wizard',
+   *   region: string,
+   *   diseases: string|string[],
+   *   queryText?: string,
+   *   prektasContext?: object  // 마법사 모드일 때만
+   * }} input
+   */
+  async function runCaseFromInput(input) {
+    const { mode, region } = input;
+    // 마법사 페이로드는 snake_case (LLM에 그대로 전달용). 양쪽 키 허용.
+    const prektasContext = input.prektas_context || input.prektasContext || null;
+    const diseases = Array.isArray(input.diseases) ? input.diseases.join(',') : (input.diseases || '');
+
+    // CaseStore에 마법사 모드면 새 case 시작 (자유 채팅은 sendMessage가 처리)
+    if (mode === 'wizard' && window.CaseStore) {
+      const summary = prektasContext
+        ? (prektasContext.patient.pre_code + ' · ' + prektasContext.patient.level3 + ' / ' + prektasContext.patient.level4)
+        : (region + ' ' + diseases);
+      // 기존 active가 chat이면 새 case로
+      const active = window.CaseStore.getActive();
+      if (!active || active.input_mode !== 'wizard') {
+        window.CaseStore.startNew({
+          input_mode: 'wizard',
+          summary,
+          patient: prektasContext ? prektasContext.patient : null,
+          assessment: prektasContext ? prektasContext.rule_based : null,
+          region,
+        });
+      } else {
+        window.CaseStore.updateActive({
+          summary, patient: prektasContext ? prektasContext.patient : null,
+          assessment: prektasContext ? prektasContext.rule_based : null, region,
+        });
+      }
+
+      // 챗봇 화면으로 전환 + 사용자 입력 표시
+      document.getElementById('mode-chat-btn').click();
+      const userText = '📋 마법사 평가 — ' + summary;
+      appendUserBubble(userText);
+
+      // ribbon 동기화 (Q6 — 마법사에서 region 받아 ribbon active)
+      try {
+        const rbtn = document.querySelector('#region-ribbon .ribbon-btn[data-code="' + region + '"]');
+        if (rbtn) {
+          document.querySelectorAll('#region-ribbon .ribbon-btn').forEach(b => b.classList.remove('selected'));
+          rbtn.classList.add('selected');
+        }
+      } catch (e) {}
+    }
+
+    // 두 모드 공통: searchAndShow 호출 (prektasContext 포함)
+    const finalQuery = input.queryText
+      || (prektasContext ? '[마법사] ' + prektasContext.patient.pre_code + ' ' + prektasContext.patient.level3 + ' / ' + prektasContext.patient.level4 : (region + ' ' + diseases));
+    await searchAndShow(finalQuery, region, diseases, prektasContext);
+  }
+
+  async function searchAndShow(queryText, region, diseases, prektasContext) {
     collapseChips();
     userCollapsedChips = false;
     const myGenId = ++searchGenId;
@@ -2481,11 +2542,16 @@ JSON만 반환. 마크다운/설명 금지.`;
         return;
       }
 
+      // CaseStore에 hospitals_snapshot 저장 (모드 무관)
+      if (window.CaseStore) {
+        try { window.CaseStore.updateActive({ hospitals_snapshot: data }); } catch (e) {}
+      }
+
       // AI ON: LLM HARNESS 해석이 메인 출력
       if (aiEnabled && data.hospitals && data.hospitals.length > 0) {
         loadingEl.remove();
         const aiLoading = appendLoadingBubble();
-        const llmResult = await interpretWithHarness(data, queryText);
+        const llmResult = await interpretWithHarness(data, queryText, prektasContext);
         aiLoading.remove();
 
         if (myGenId !== searchGenId) return; // stale
@@ -3047,7 +3113,7 @@ JSON만 반환. 마크다운/설명 금지.`;
 
   // ── LLM HARNESS 해석 (AI ON 메인 출력) ──────────────────────────────────
 
-  async function interpretWithHarness(apiData, userText) {
+  async function interpretWithHarness(apiData, userText, prektasContext) {
     const { meta, hospitals } = apiData;
     const topHospitals = hospitals.slice(0, 12).map(h => ({
       name: h.nickname || h.name,
@@ -3069,13 +3135,18 @@ JSON만 반환. 마크다운/설명 금지.`;
     const conditional = hospitals.filter(h => h.verdict === 'conditional').length;
     const unsupported = hospitals.filter(h => h.verdict === 'unsupported').length;
 
-    const prompt = JSON.stringify({
+    const promptObj = {
       userQuery: userText,
       currentTime: new Date().toLocaleTimeString('ko-KR', { hour12: false }),
       query: { region: meta.regionName, diseases: meta.diseaseNames, diseaseCodes: meta.diseases },
       counts: { total: meta.totalHospitals, available, conditional, unsupported },
       hospitals: topHospitals,
-    });
+    };
+    // Phase 6 Step 8 — 마법사 모드 컨텍스트 주입 (Step 9에서 4임무 prompt에 사용)
+    if (prektasContext) {
+      promptObj.prektas_context = prektasContext;
+    }
+    const prompt = JSON.stringify(promptObj);
 
     try {
       const resp = await fetch(LLM_PROXY, {
