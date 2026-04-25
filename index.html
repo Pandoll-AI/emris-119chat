@@ -631,6 +631,71 @@
     line-height: 1.5;
   }
 
+  /* Phase 7 — LLM 에러 카드 */
+  .llm-error-card {
+    border-left: 3px solid var(--t-accent);
+    background: var(--t-surface);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 14px;
+  }
+  .llm-error-card .lec-header {
+    font-weight: 700;
+    color: var(--t-accent);
+    font-size: var(--fs-base);
+    letter-spacing: -0.01em;
+  }
+  .llm-error-card .lec-body {
+    font-size: var(--fs-sm);
+    color: var(--t-ink);
+    line-height: 1.5;
+  }
+  .llm-error-card .lec-retry {
+    align-self: flex-start;
+    padding: 8px 14px;
+    border: 1px solid var(--t-accent);
+    background: var(--t-surface);
+    color: var(--t-accent);
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    border-radius: var(--r-0);
+    font-size: var(--fs-sm);
+    transition: background var(--t-fast), color var(--t-fast);
+  }
+  .llm-error-card .lec-retry:hover { background: var(--t-accent); color: #ffffff; }
+  .llm-error-card .lec-retry:disabled { opacity: 0.5; cursor: wait; }
+  .llm-error-card .lec-diagnostic {
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid var(--t-line-soft);
+    font-size: var(--fs-xs);
+    color: var(--t-dim);
+  }
+  .llm-error-card .lec-diagnostic summary {
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    color: var(--t-dim);
+  }
+  .llm-error-card .lec-diagnostic summary::-webkit-details-marker { display: none; }
+  .llm-error-card .lec-diagnostic summary::before {
+    content: '▶ ';
+    font-size: 10px;
+    transition: transform var(--t-fast);
+    display: inline-block;
+  }
+  .llm-error-card .lec-diagnostic[open] summary::before { content: '▼ '; }
+  .llm-error-card .lec-diag-list {
+    margin-top: 6px;
+    display: grid;
+    gap: 3px;
+    color: var(--t-dim);
+    font-family: var(--t-font-mono, ui-monospace, SFMono-Regular, monospace);
+    font-size: 11px;
+  }
+
   #input-bar {
     flex-shrink: 0;
     display: flex;
@@ -1191,8 +1256,9 @@
   let welcomeShown = false;
   let searchGenId = 0;       // 추천 bubble 순서 보장: 새 검색마다 증가
   let userCollapsedChips = false; // 사용자가 수동으로 chips를 접었는지
-  // Phase 6 PoC 결정: AI 기본 ON (사용자가 명시적으로 OFF 한 경우만 OFF)
-  let aiEnabled = localStorage.getItem('emris_ai') !== '0';
+  // Phase 7 — AI 기본 ON (첫 방문자 = ON, 명시적으로 OFF 토글한 경우만 '0' 저장)
+  const _aiPref = localStorage.getItem('emris_ai');
+  let aiEnabled = _aiPref === null ? true : _aiPref !== '0';
 
   // ── DOM 헬퍼 ──────────────────────────────────
   function esc(str) {
@@ -1748,6 +1814,88 @@
     while (el.firstChild) el.removeChild(el.firstChild);
   }
 
+  // ── Phase 7: LLM 점증 backoff 재시도 + 에러 카드 ──
+  // CLAUDE.md 글로벌 규칙: incremental gap (1s, 3s, 5s, 10s, ...)
+  // fetchFn 반환 타입: { ok, data?, status?, kind?, retryable?, message? }
+  async function callLLMWithRetry(fetchFn, opts) {
+    const o = opts || {};
+    const maxAttempts = o.maxAttempts || 4;
+    const gaps = [0, 1000, 3000, 5000, 10000];
+    let lastErr = null;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const wait = gaps[attempt] || 10000;
+      if (wait) await new Promise(function(r){ setTimeout(r, wait); });
+      try {
+        const result = await fetchFn();
+        if (result && result.ok) return result;
+        if (result && result.retryable === false) return result; // 401/403/429 — 재시도 무의미
+        lastErr = result || { ok: false, kind: 'unknown', retryable: true };
+      } catch (e) {
+        lastErr = { ok: false, kind: 'network', message: String(e && e.message ? e.message : e), retryable: true };
+      }
+    }
+    return lastErr || { ok: false, kind: 'unknown', retryable: true };
+  }
+
+  function llmErrorLabel(kind) {
+    switch (kind) {
+      case 'auth':       return 'API 인증 오류 (401/403)';
+      case 'rate_limit': return '사용량 한도 초과 (429)';
+      case 'network':    return '네트워크 연결 오류';
+      case 'parse':      return '응답 파싱 실패';
+      case '5xx':        return 'AI 서버 응답 오류';
+      case '4xx':        return 'AI 요청 오류';
+      default:           return '알 수 없는 오류';
+    }
+  }
+
+  // 에러 카드: 재시도 버튼 + 진단 정보 (details 접힘)
+  function renderLLMError(opts) {
+    const o = opts || {};
+    const card = el('div', { className: 'llm-error-card bubble' });
+
+    const hdr = el('div', { className: 'lec-header' });
+    hdr.textContent = '⚠ AI 분석을 불러오지 못했습니다';
+    card.appendChild(hdr);
+
+    const body = el('div', { className: 'lec-body' });
+    body.textContent = '잠시 후 다시 시도해 주세요.';
+    card.appendChild(body);
+
+    if (typeof o.onRetry === 'function') {
+      const btn = el('button', { className: 'lec-retry' });
+      btn.type = 'button';
+      btn.textContent = '🔄 다시 시도';
+      btn.addEventListener('click', function() {
+        btn.disabled = true;
+        btn.textContent = '재시도 중…';
+        try { o.onRetry(); } catch (e) { console.error('[renderLLMError] retry failed:', e); }
+        // 카드 자체는 onRetry 결과가 새 메시지로 추가되도록 두고, 버튼만 비활성화
+      });
+      card.appendChild(btn);
+    }
+
+    if (o.error) {
+      const det = document.createElement('details');
+      det.className = 'lec-diagnostic';
+      const sum = document.createElement('summary');
+      sum.textContent = '진단 정보';
+      det.appendChild(sum);
+      const list = el('div', { className: 'lec-diag-list' });
+      const line1 = el('div'); line1.textContent = '종류: ' + llmErrorLabel(o.error.kind || 'unknown'); list.appendChild(line1);
+      if (o.error.status) {
+        const line2 = el('div'); line2.textContent = 'HTTP: ' + o.error.status; list.appendChild(line2);
+      }
+      if (o.error.message) {
+        const line3 = el('div'); line3.textContent = '메시지: ' + String(o.error.message).slice(0, 200); list.appendChild(line3);
+      }
+      det.appendChild(list);
+      card.appendChild(det);
+    }
+
+    return card;
+  }
+
   // ── 케이스 컨트롤 (Phase 6 Step 4): 새 케이스 + 기록 drawer ──
   function setupCaseControls() {
     const newBtn = document.getElementById('case-new-btn');
@@ -1972,6 +2120,19 @@
       const kwFailed = !parsed.region || !parsed.diseases || !parsed.diseases.length;
       if (kwFailed && aiEnabled) {
         parsed = await parseWithLLM(text);
+        // Phase 7 — LLM 실패 시 폴백 없이 에러 카드 노출
+        if (parsed && parsed._llmError) {
+          appendBotNode(renderLLMError({
+            error: parsed,
+            onRetry: function() {
+              // 같은 입력 텍스트로 재시도 (입력창은 비어있으므로 직접 호출)
+              const retryInput = document.getElementById('user-input');
+              if (retryInput) retryInput.value = text;
+              sendMessage();
+            },
+          }));
+          return;
+        }
       }
 
       const hasRegion = parsed && parsed.region;
@@ -2177,27 +2338,39 @@ JSON만 반환. 마크다운/설명 금지.`;
 
   // ── LLM 파싱 ──────────────────────────────────
 
+  // Phase 7 — 폴백 제거. 재시도 후에도 실패 시 { _llmError: true, ... } 반환
   async function parseWithLLM(userText) {
     const systemPrompt = HARNESS_PARSE_PROMPT;
-
-    try {
-      const resp = await fetch(LLM_PROXY, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-emris-token': EMRIS_API_KEY },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: userText }],
-          system: systemPrompt,
-        }),
-      });
-
-      if (!resp.ok) return keywordFallback(userText);
-
-      const data = await resp.json();
+    const result = await callLLMWithRetry(async function() {
+      let resp;
+      try {
+        resp = await fetch(LLM_PROXY, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-emris-token': EMRIS_API_KEY },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: userText }],
+            system: systemPrompt,
+          }),
+        });
+      } catch (e) {
+        return { ok: false, kind: 'network', message: String(e && e.message ? e.message : e), retryable: true };
+      }
+      if (resp.status === 401 || resp.status === 403) return { ok: false, kind: 'auth', status: resp.status, retryable: false };
+      if (resp.status === 429) return { ok: false, kind: 'rate_limit', status: resp.status, retryable: false };
+      if (resp.status >= 500) return { ok: false, kind: '5xx', status: resp.status, retryable: true };
+      if (!resp.ok) return { ok: false, kind: '4xx', status: resp.status, retryable: false };
+      let data;
+      try { data = await resp.json(); }
+      catch (e) { return { ok: false, kind: 'parse', message: 'JSON 응답 파싱 실패', retryable: true }; }
       const raw = (data.content?.[0]?.text || '').trim().replace(/```json?|```/g, '').trim();
-      return JSON.parse(raw);
-    } catch {
-      return keywordFallback(userText);
-    }
+      try {
+        return { ok: true, data: JSON.parse(raw) };
+      } catch (e) {
+        return { ok: false, kind: 'parse', message: 'LLM 출력 JSON 파싱 실패', retryable: true };
+      }
+    });
+    if (result.ok) return result.data;
+    return { _llmError: true, kind: result.kind || 'unknown', status: result.status || null, message: result.message || '' };
   }
 
   function keywordFallback(text) {
@@ -2682,17 +2855,29 @@ JSON만 반환. 마크다운/설명 금지.`;
         if (myGenId !== searchGenId) return; // stale
 
         if (llmResult && llmResult._rateLimit) {
-          // 429 rate limit → 사용자 선택
-          renderRateLimitChoice(data, diseases || '', queryText);
+          // 429 rate limit → 사용자 선택 (재시도)
+          renderRateLimitChoice(data, diseases || '', queryText, prektasContext);
+        } else if (llmResult && llmResult._llmError) {
+          // Phase 7 — LLM 실패 시 폴백 없이 에러 카드 + 재시도 버튼
+          appendBotNode(renderLLMError({
+            error: llmResult,
+            onRetry: function() {
+              searchAndShow(queryText, region, diseases, prektasContext);
+            },
+          }));
         } else if (llmResult) {
           appendBotNode(renderAdaptiveResult(llmResult));
         } else {
-          // LLM 실패 → 클라이언트 HARNESS fallback
-          const analysis = analyzeResults(data, diseases || '', queryText, new Date());
-          appendBotNode(renderSmartResult(data, analysis));
+          // 방어적: _llmError도 _rateLimit도 아닌 falsy → 동일 에러 카드 처리
+          appendBotNode(renderLLMError({
+            error: { kind: 'unknown' },
+            onRetry: function() {
+              searchAndShow(queryText, region, diseases, prektasContext);
+            },
+          }));
         }
       }
-      // AI OFF: 클라이언트 HARNESS (기존)
+      // AI OFF: 클라이언트 HARNESS (사용자 명시적 선택이므로 폴백 아님)
       else {
         loadingEl.remove();
         const analysis = analyzeResults(data, diseases || '', queryText, new Date());
@@ -3273,56 +3458,68 @@ JSON만 반환. 마크다운/설명 금지.`;
     }
     const prompt = JSON.stringify(promptObj);
 
-    try {
-      const resp = await fetch(LLM_PROXY, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-emris-token': EMRIS_API_KEY },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: prompt }],
-          system: HARNESS_INTERPRET_PROMPT,
-          type: 'recommend',
-        }),
-      });
-      if (resp.status === 429) return { _rateLimit: true };
-      if (resp.status === 401 || resp.status === 403) return null;
-      if (!resp.ok) return null;
-      const respData = await resp.json();
+    // Phase 7 — 점증 backoff(1s/3s/5s) 재시도. 폴백 제거.
+    const result = await callLLMWithRetry(async function() {
+      let resp;
+      try {
+        resp = await fetch(LLM_PROXY, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-emris-token': EMRIS_API_KEY },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: prompt }],
+            system: HARNESS_INTERPRET_PROMPT,
+            type: 'recommend',
+          }),
+        });
+      } catch (e) {
+        return { ok: false, kind: 'network', message: String(e && e.message ? e.message : e), retryable: true };
+      }
+      if (resp.status === 429) return { ok: false, kind: 'rate_limit', status: 429, retryable: false };
+      if (resp.status === 401 || resp.status === 403) return { ok: false, kind: 'auth', status: resp.status, retryable: false };
+      if (resp.status >= 500) return { ok: false, kind: '5xx', status: resp.status, retryable: true };
+      if (!resp.ok) return { ok: false, kind: '4xx', status: resp.status, retryable: false };
+      let respData;
+      try { respData = await resp.json(); }
+      catch (e) { return { ok: false, kind: 'parse', message: 'JSON 응답 파싱 실패', retryable: true }; }
       const raw = (respData.content?.[0]?.text || '').trim().replace(/^```json?\s*/,'').replace(/\s*```$/,'').trim();
-      if (!raw) return null;
-      return JSON.parse(raw);
-    } catch { return null; }
+      if (!raw) return { ok: false, kind: 'parse', message: '빈 LLM 응답', retryable: true };
+      try { return { ok: true, data: JSON.parse(raw) }; }
+      catch (e) { return { ok: false, kind: 'parse', message: 'LLM 출력 JSON 파싱 실패', retryable: true }; }
+    });
+    if (result.ok) return result.data;
+    if (result.kind === 'rate_limit') return { _rateLimit: true };
+    return { _llmError: true, kind: result.kind || 'unknown', status: result.status || null, message: result.message || '' };
   }
 
-  function renderRateLimitChoice(apiData, diseases, queryText) {
+  // Phase 7 — 폴백 옵션 제거. "AI 재시도"만 노출.
+  function renderRateLimitChoice(apiData, diseases, queryText, prektasContext) {
     const wrap = el('div', { className: 'clarify-bubble' });
     const q = el('div', { className: 'q' });
-    q.textContent = 'LLM 사용 리밋입니다. 1분 안에 복구될 가능성이 높습니다.';
+    q.textContent = 'AI 사용량 한도에 도달했습니다. 잠시 후 다시 시도해 주세요. (보통 1분 이내 복구)';
     wrap.appendChild(q);
     const opts = el('div', { className: 'opts' });
 
-    const btnNonAi = el('button', { className: 'opt-btn' });
-    btnNonAi.textContent = 'AI 미사용 답변';
-    btnNonAi.addEventListener('click', () => {
-      wrap.parentElement.remove();
-      const analysis = analyzeResults(apiData, diseases, queryText, new Date());
-      appendBotNode(renderSmartResult(apiData, analysis));
-    });
-    opts.appendChild(btnNonAi);
-
     const btnRetry = el('button', { className: 'opt-btn' });
-    btnRetry.textContent = 'AI 재시도';
+    btnRetry.textContent = '🔄 AI 재시도';
     btnRetry.addEventListener('click', async () => {
       wrap.parentElement.remove();
       const loading = appendLoadingBubble();
-      const llmResult = await interpretWithHarness(apiData, queryText);
+      const llmResult = await interpretWithHarness(apiData, queryText, prektasContext);
       loading.remove();
       if (llmResult && llmResult._rateLimit) {
-        renderRateLimitChoice(apiData, diseases, queryText);
+        renderRateLimitChoice(apiData, diseases, queryText, prektasContext);
+      } else if (llmResult && llmResult._llmError) {
+        appendBotNode(renderLLMError({
+          error: llmResult,
+          onRetry: function() { renderRateLimitChoice(apiData, diseases, queryText, prektasContext); },
+        }));
       } else if (llmResult) {
         appendBotNode(renderAdaptiveResult(llmResult));
       } else {
-        const analysis = analyzeResults(apiData, diseases, queryText, new Date());
-        appendBotNode(renderSmartResult(apiData, analysis));
+        appendBotNode(renderLLMError({
+          error: { kind: 'unknown' },
+          onRetry: function() { renderRateLimitChoice(apiData, diseases, queryText, prektasContext); },
+        }));
       }
     });
     opts.appendChild(btnRetry);
