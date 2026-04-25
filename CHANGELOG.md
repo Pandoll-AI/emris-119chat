@@ -1,5 +1,40 @@
 # Changelog
 
+## [2026-04-25] Phase 6 (진행 중): 챗봇 통합 — Pre-KTAS 마법사를 챗봇 입력 모드로 흡수
+
+> 16단계 대규모 리팩터. Step 1–3 완료 (foundation). 나머지 13단계 진행 예정.
+> 자세한 plan: `~/.claude/plans/mighty-herding-sutton.md`.
+
+### Context
+- PoC. 데모 동시 접속자 간 동기화 없음 (각 브라우저 localStorage 독립).
+- LLM 중복 호출 방지: 추천·설명 단계에서만 LLM (마법사 모드는 1회, 자유 채팅은 파싱+추천 2회).
+- 마법사 모드는 LLM에게 룰 기반 Y코드 매핑 검토 임무 동시 부여 (4임무 통합 프롬프트).
+- 케이스 모델 + 새 케이스 + 기록 + in-session follow-up.
+- 디자인 갱신 (마법사 v1.1과 시각 통일).
+
+### Step 1 — 디자인 토큰 layer (`b8402c4`)
+- `index.html` `:root`에 v2 디자인 토큰 추가: color/spacing/radius/font/transition.
+- 레거시 변수 보존 (회귀 위험 0).
+
+### Step 2 — 디자인 갱신 (`4ac33a8`)
+- 레거시 변수를 v2 토큰으로 alias 매핑 (값만 swap).
+- 모노크롬 + 빨간 accent + sharp corners (Python regex로 모든 border-radius sweep).
+- AI 토글, ribbon-btn, badge, hospital-card 등 컴포넌트 톤 통일.
+- `body` font-family를 `var(--t-font-sans)` (Pretendard 우선)로 변경.
+- `public/chatbot.html` 심볼릭 링크 추가 (dev 서버 테스트용).
+
+### Step 3 — CaseStore 모듈 (`747e326`)
+- localStorage 기반 케이스 저장소: list/get/getActive/startNew/appendMessage/updateActive/closeActive/remove/_wipe.
+- Storage: `emris_cases_v1` (배열), `emris_active_case_id` (문자열).
+- 50건 cap, FIFO eviction (closed case부터).
+- smoke test: startNew → append × 3 → update → 두번째 startNew (자동 archive) → list (최신순) → closeActive 모두 정상.
+- 챗봇은 아직 미사용 (Step 5에서 sendMessage에 연결).
+
+### Out of Scope (Phase 6 종료까지)
+- v0.2 mapping rule 개선 (Y0010 단독 분기) — 별도 phase
+- false negative rate 측정 (`source-prektas.csv`) — 별도 phase
+- 응급의학 전문의 임상 리뷰
+
 ## [2026-04-24] Phase 5.3: 로컬 서버 3489 + prektas 전용 라우팅 격리
 
 ### Added

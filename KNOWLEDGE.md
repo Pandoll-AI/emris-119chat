@@ -21,7 +21,9 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | HTML Recommender Builder | script | `scripts/build-hospital-recommender.mjs` | 5개 JSON payload embed + 질문 effects + mock 병원 + XSS escape. 모바일 스텝 마법사. |
 | Mock Hospital Data | dataset | `data/mock-hospitals.json` | 20개 mock 병원 (실제 이름 + mock tier·거리·Y코드 지원). Phase 6에서 emris-data 실데이터로 교체. |
 | Local Server Script | tooling | `run.sh` | 포트 3489 · `{start\|stop\|restart}`. python3 -m http.server + `--directory public`. |
-| Public Serve Dir | routing | `public/` | 심볼릭 링크로 prektas 2페이지만 노출. 기존 Gemini 챗봇(`index.html`)과 격리. |
+| Public Serve Dir | routing | `public/` | 심볼릭 링크로 prektas 2페이지 + chatbot 1페이지(Phase 6 dev 테스트용) 노출. |
+| CaseStore | js-module | `index.html` (script) | localStorage 기반 케이스 저장소 (Phase 6 Step 3). 챗봇 conversation·assessment·hospitals_snapshot을 case 단위로 보존. window.CaseStore expose. |
+| Design Tokens v2 | css-tokens | `index.html` (`:root`) | 챗봇·마법사 시각 통일을 위한 모노크롬 + 단일 accent 디자인 시스템 토큰 (color/spacing/radius/font/transition). 레거시 변수는 alias로 보존. |
 | HTML Research Builder | script | `scripts/build-research-page.mjs` | 통계 삽입 서술형 HTML 생성. |
 | Codebook Schema | schema | `data/schemas/prektas-codebook.schema.json` | JSON Schema draft 2020-12 v2. reserved 필드 제거, if/then/else 삭제, level2/3/4 필수 객체. |
 | Codebook Generator | script | `scripts/generate-prektas-codebook.mjs` | CSV → JSON 변환기. regex/eval 완전 제거. 헤더·코드·레벨 코드·등급 검증을 generator에서 수행. |
