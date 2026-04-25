@@ -81,7 +81,14 @@ data/prektas-codebook.json                                │
 | `research/validation-stratified.json` | **Phase 8f** — region/age/grade stratified | validate-phase8.py 출력 |
 | `research/validation-error-audit.json` | **Phase 8g** — top 50 FN/FP patterns | validate-phase8.py 출력 |
 | `research/prektas-validation-report-v1.0.md` | **Phase 8i 최종 보고서** — 9 섹션. H1 FAIL · H2 PASS · v0.2 권고. | 위 결과 4개 종합 |
-| `research/y-code-mappability-matrix.json` | **Phase 9a 1차 초안 (draft)** — 27 Y코드 × A/B/C 분류 (Confident/Candidate/Tier-only). v0.2 알고리즘 설계 source of truth. 자문자 검토 대기. | 사용자 명시 의견 + v1.0 결과 + 임상 추론 |
+| `research/y-code-mappability-matrix.json` | **Phase 9b frozen v1.0** — 27 Y코드 × A:10/B:6/C:11 분류. 자문자 5건 변경 반영. v0.2 알고리즘 source of truth. | 자문자 검토 + 사용자 명시 의견 + v1.0 결과 |
+| `research/mappability-review-2026-04-26-moexk8az.json` | 자문자 검토 원본 (5건 변경 + 8 질문 답변) | consultation tool export |
+| `prektas-mappability-review.html` | **Phase 9b 자문 검토 도구** — 38.8KB SPA. 1차 초안 → 자문자 검토 → JSON export. Tailscale + Vercel host. | 매트릭스 v1.0-draft inline embed |
+| `scripts/research/build-prektas-to-y-mapping-v0.2.mjs` | **Phase 9c v0.2 알고리즘** — mappability + y_candidates(confidence) + tier_recommendation 출력. Special rules 4건. | matrix v1.0 + codebook + y-code tier |
+| `research/prektas-to-y-mapping-v0.2.json` | **Phase 9c v0.2 출력** — 4,689 entries. A:434/B:295/C:45/unmapped:3,915 | v0.2 알고리즘 |
+| `scripts/research/validate-v0_2.py` | **Phase 9d directional 통계** — 광주·전라 CSV 단일 패스 + 모순 검출. informational only. | v0.2 mapping + frozen ICD-10 cluster |
+| `research/validation-results-v0.2.json` | **Phase 9d 통계** — sens·spec·tier agreement 85.7% + Type-A/B/C/D 모순. 결정 X. | validate-v0_2.py |
+| `research/prektas-validation-report-v2.0.md` | **Phase 9e 보고서 v2.0** — 임상 정합성 reframe. 8 섹션. 통계 임계 폐기. | 위 산출물 + 매트릭스 v1.0 |
 | `run.sh` | 포트 3489 로컬 서버 제어 (`start\|stop\|restart`) | python3, public/ |
 | `public/index.html` (심볼릭) | → `../prektas-hospital-recommender.html` | 루트 HTML |
 | `public/research.html` (심볼릭) | → `../prektas-research.html` | 루트 HTML |

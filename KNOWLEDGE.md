@@ -165,6 +165,58 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | viewCaseReadOnly | reads | CaseStore (case object) | drawer 클릭 시 |
 | enhanceRibbonScroll | called-by | buildRibbons | region/disease 두 ribbon에 화살표·드래그 wiring |
 
+## Phase 9b–9e Entities (2026-04-26) — v0.2 reframe 완료
+
+| Entity | Type | Location | Description |
+|---|---|---|---|
+| Mappability Matrix v1.0 (frozen) | research-output | `research/y-code-mappability-matrix.json` | 27 Y코드 × A(10)/B(6)/C(11) 분류. 자문자 5건 변경 반영. |
+| Consultant Review | research-output | `research/mappability-review-2026-04-26-moexk8az.json` | 자문자 30분 검토 원본 (5건 변경 + 8 질문 답변) |
+| v0.2 Algorithm Script | script | `scripts/research/build-prektas-to-y-mapping-v0.2.mjs` | mappability + y_candidates(confidence) + tier_recommendation 출력. Special rules 4건. |
+| v0.2 Mapping Output | research-output | `research/prektas-to-y-mapping-v0.2.json` | 4,689 entries × v0.2 schema (A:434/B:295/C:45/unmapped:3915) |
+| v0.2 Directional Validation | script | `scripts/research/validate-v0_2.py` | 광주·전라 CSV directional 통계. informational only. |
+| v0.2 Validation Results | research-output | `research/validation-results-v0.2.json` | sens·spec·tier agreement 85.7% + Type-A/B/C/D 모순 |
+| Validation Report v2.0 | research-output | `research/prektas-validation-report-v2.0.md` | 임상 정합성 reframe 보고서. 8 섹션. |
+| Mappability Review Tool | rendered-html (SPA) | `prektas-mappability-review.html` | 자문자 검토용 38.8KB SPA. Tailscale + Vercel host. |
+
+## Phase 9b–9e Relations
+
+| Subject | Relation | Object | Context |
+|---|---|---|---|
+| Mappability Matrix v1.0 | informs | v0.2 Algorithm Script | group → confidence/tier 결정 |
+| Consultant Review | merged-into | Mappability Matrix v1.0 | 5건 변경 반영 후 frozen |
+| v0.2 Algorithm Script | reads | Mappability Matrix v1.0 | primary authority |
+| v0.2 Algorithm Script | writes | v0.2 Mapping Output | 4,689 entries |
+| v0.2 Directional Validation | reads | v0.2 Mapping Output + frozen ICD-10 cluster | mapping ∩ ground truth |
+| v0.2 Directional Validation | writes | v0.2 Validation Results | informational only |
+| Validation Report v2.0 | references | Mappability Matrix v1.0 (primary) | 임상 정합성 우선 |
+| Validation Report v2.0 | demotes | v0.2 Validation Results | informational appendix |
+| Mappability Review Tool | facilitates | Consultant Review | 30분 자문 작업 |
+
+## Phase 9b–9e Actions (2026-04-26)
+
+| Date | Action | Actor | Target | Detail |
+|---|---|---|---|---|
+| 2026-04-26 | build | claude | `prektas-mappability-review.html` | 자문 도구 SPA 빌드 + Tailscale host |
+| 2026-04-26 | review | user (응급의학 전문의) | 매트릭스 1차 초안 | 30분 검토. 5건 변경 (Y0041·Y0042·Y0100·Y0112·Y0113), 8 질문 답변. 일관 원칙: "tier 직송 + 병원 검사" |
+| 2026-04-26 | freeze | claude | Mappability Matrix v1.0 | draft → frozen, consultant_changes 5건 + special_rules 4건 명시 |
+| 2026-04-26 | implement | claude | v0.2 Algorithm Script | matrix-driven dispatch + 4 special rules |
+| 2026-04-26 | execute | claude | v0.2 mapping | 4,689 entries 산출 (A:434·B:295·C:45·unmapped:3915) |
+| 2026-04-26 | validate | claude | v0.2 directional | CSV 130,536 visits — sens 0.329, spec 0.845, tier agreement 85.7% |
+| 2026-04-26 | reframe | claude | Validation Report v2.0 | 통계 임계값 폐기, 임상 정합성 우선 framing |
+| 2026-04-26 | replace | claude | research.html | v1.0 결과 페이지 → v2.0 임상 정합성 reframe 페이지 전면 교체 |
+| 2026-04-26 | commit | claude | `fd0b908`, `5515015` | 2 commits |
+| 2026-04-26 | deploy | claude | Vercel production | `prektas-research.html` 새 페이지 + 자문 도구 |
+
+## Phase 9 Reframe 핵심 결정
+
+| 항목 | v1.0 | v2.0 |
+|---|---|---|
+| Framing | "sens 0.394 → 임상 활용 불가" | "현장 정보 한계 인정 + 명확 case 매핑" |
+| Primary authority | 통계 임계값 | 임상 정합성 (응급의학 추론) |
+| 광주·전라 데이터 | sensitivity 평가 근거 | directional probe (informational only) |
+| C 그룹 (Y0141·Y0060 등) | recall 0% = rule 실패 | 의도된 tier-only |
+| 출력 channel | candidates 단일 | mappability + y_candidates(confidence) + tier 분리 |
+
 ## Phase 9a Entities (2026-04-26) — v0.2 매핑성 매트릭스 (draft)
 
 | Entity | Type | Location | Description |

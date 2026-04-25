@@ -1,5 +1,92 @@
 # Changelog
 
+## [2026-04-26] Phase 9b–9e 완료: v0.2 임상 정합성 reframe + 보고서 v2.0
+
+> v1.0 framing("sens 0.394 → 임상 활용 불가") 폐기. 자문자 검토 frozen 매트릭스(10·6·11) + v0.2 알고리즘 + directional 통계 + 보고서·페이지 reframe. 3 commits.
+
+### 변경 동기
+- 응급의학 전문의 자문자 framing 변경 요청 ("통계 임계 폐기, 임상 정합성 우선")
+- 광주·전라 데이터는 검증 안 됨 — 통계는 directional probe (참고치)
+- 명확한 case만 Y매핑 (A 그룹), 모호한 case는 tier만 (C 그룹)
+
+### Commits
+| # | 작업 | Commit |
+|---|---|---|
+| 1 | Phase 9b — 매핑성 매트릭스 v1.0 frozen (자문자 5건 변경) | `fd0b908` |
+| 2 | Phase 9c+9d+9e — v0.2 알고리즘 + directional 통계 + 보고서·페이지 | `5515015` |
+
+### Phase 9b — 매트릭스 frozen
+- `research/y-code-mappability-matrix.json` v1.0 (status: frozen)
+  - 1차 초안 12·7·8 → 자문자 검토 후 **10·6·11**
+  - 자문자 변경 5건: Y0041(B→C)·Y0042(B→C)·Y0100(A→B)·Y0112(A→B)·Y0113(B→C)
+  - 자문자 일관 원칙: "후보군 narrowing보다 tier 직송 + 병원 검사"
+- `research/mappability-review-2026-04-26-moexk8az.json` (자문 원본 보존)
+- `prektas-mappability-review.html` (38.8KB SPA 자문 도구, Tailscale + Vercel)
+
+### Phase 9c — v0.2 알고리즘
+- `scripts/research/build-prektas-to-y-mapping-v0.2.mjs` (~430 lines)
+  - 출력 schema 분리: `mappability` + `y_candidates(confidence)` + `tier_recommendation`
+  - Special rules 4건:
+    - Y0100·Y0111·Y0112 co-trigger (분만 임박)
+    - Y0160 conditional A 승격 (안구 천공·관통)
+    - Y0150 specific feature only (자해·정신증)
+    - Y0032 specific feature only (편마비·GCS·극심한 두통)
+- `research/prektas-to-y-mapping-v0.2.json` (4,689 entries)
+  - A:434 (9.3%) / B:295 (6.3%) / C:45 (1.0%) / unmapped:3,915 (83.5%)
+
+### Phase 9d — Directional 통계 (informational only)
+- `scripts/research/validate-v0_2.py` (~250 lines)
+- `research/validation-results-v0.2.json` (130,536 visits, informational)
+  - Confident only: sens 0.134, spec **0.934**, F1 0.162
+  - Confident + candidate: sens 0.329, spec **0.845**, F1 0.257
+  - v0.1 비교: sens 0.394, spec 0.808
+  - **Specificity 향상** (over-trigger 좁히기 효과 0.808 → 0.845)
+  - **Tier agreement 85.7%** (사전 등록 H4 임계 0.80 directional 통과)
+  - Type-A 모순 200건 (text rule 정밀화 후속)
+  - Type-B 일치율 67.5%
+
+### Phase 9e — 보고서·페이지 reframe
+- `research/prektas-validation-report-v2.0.md` (8 섹션)
+  - 통계 임계값 폐기 명시
+  - 임상 정합성 우선 framing
+  - 광주·전라 데이터 caveat 강조
+- `prektas-research.html` 전면 교체
+  - 헤드라인: "현장 정보의 한계는 인정. 명확한 case만 매핑, 나머지는 tier 직송"
+  - Reframe verdict 박스 (good 색상): "활용 불가 아닌 활용 가능 범위 정의"
+  - 광주·전라 데이터 caveat 박스 (accent)
+  - 매핑성 매트릭스 시각화 3 카드 (A·B·C)
+  - 자문자 변경 5건 표
+  - v0.2 binary metrics + tier agreement (informational)
+  - 자문자 원칙 pullquote
+  - 산출물 8개 GitHub 링크
+- `scripts/build-research-page.mjs` 재작성 (v2.0 결과 임베드)
+- `run.sh` print_url에 자문 도구 + 추천 도구 URL 추가
+- `public/` 심볼릭 링크 추가 (mappability-review.html, consultation.html)
+
+### 핵심 framing 전환
+| | v1.0 | v2.0 |
+|---|---|---|
+| Framing | "sens 39.4% → 임상 활용 불가" | "현장 정보 한계 인정 + 명확 case 매핑 + tier 직송" |
+| Primary authority | 통계 임계값 (sens 0.80, spec 0.80) | 임상 정합성 (응급의학 추론) |
+| 광주·전라 데이터 | sensitivity 평가 근거 | directional probe (informational only) |
+| C 그룹 | recall 0% = "rule absent" | 의도된 tier-only (자문자 결정) |
+
+### Review (Pre-Landing Audit)
+- Quality Score (Phase 9b): 8.5/10 (4 informational, 0 critical)
+- Quality Score (Phase 9c+d+e): 9/10 (자문자 framing 내재화 + reframe 일관성)
+
+### 배포
+- main pushed: `fd0b908`, `5515015`
+- Vercel production: `https://119chat.emergency-info.com/prektas-research.html`
+- 자문 도구 Tailscale: `http://100.106.31.34:3489/mappability-review.html`
+
+### 다음 단계 (사용자 결정 필요)
+- v0.3: Type-A 200건 audit + text rule 정밀화 + C 그룹 trigger 키워드 확장
+- 9f: 챗봇 통합 (마법사에 mappability·confidence·tier 표시) — 별도 plan 가능
+- 외부 cohort 확보 (수도권 데이터)
+
+---
+
 ## [2026-04-26] Phase 9a (draft): v0.2 매핑성 매트릭스 1차 초안 — 임상 정합성 reframe
 
 > v0.1 보고서의 "sensitivity 39.4% → 임상 활용 불가" framing이 임상 자문자(응급의학 전문의) 의견에 따라 reframe됨. 통계 sensitivity 임계 폐기, 임상 정합성 + 모순 검출 우선. 1 commit (draft).
