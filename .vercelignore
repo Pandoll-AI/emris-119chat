@@ -1,0 +1,8 @@
+public/
+.run/
+.loopy/
+ui-audit/
+.claude/
+node_modules/
+data/raw/
+*.csv
