@@ -165,6 +165,41 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | viewCaseReadOnly | reads | CaseStore (case object) | drawer 클릭 시 |
 | enhanceRibbonScroll | called-by | buildRibbons | region/disease 두 ribbon에 화살표·드래그 wiring |
 
+## Phase 8a-2 Entities (추가, 2026-04-25) — 자문 도구
+
+| Entity | Type | Location | Description |
+|---|---|---|---|
+| Consultation Tool | rendered-html (SPA) | `prektas-consultation.html` | 응급의학 전문의 자문용 standalone 49.4KB SPA. 27 Y-code × ICD-10 prefill + 임상 결정 + 임계값 + red flags. localStorage auto-save. JSON export. |
+| Consultation State | client-state | localStorage `emris_consultation_v1` | 자문 진행 상태. y_codes (include/exclude/custom/decisions/notes/touched), thresholds, red_flags. |
+| Consultation Output | research-output (예정) | `research/consultation-{date}-{id}.json` | 자문 도구에서 export된 JSON. maintainer가 수령 후 frozen reference standard로 변환. |
+| Y-code → ICD-10 Cluster (frozen) | research-output (Phase 8a-2 완료 시) | `research/y-code-icd10-clusters.json` | Consultation Output을 변환한 final mapping. Phase 8c per-visit 라벨링의 reference standard. |
+
+## Phase 8a-2 Relations
+
+| Subject | Relation | Object | Context |
+|---|---|---|---|
+| Consultation Tool | reads | Y_CODES (inline data) | 27 Y-code × ICD-10 prefill |
+| Consultation Tool | writes | Consultation State | localStorage auto-save on every input |
+| Consultation Tool | exports | Consultation Output | JSON download/clipboard |
+| Consultation Output | converted-to | Y-code → ICD-10 Cluster (frozen) | maintainer 수령 후 commit |
+| Validation Pipeline Script | reads | Y-code → ICD-10 Cluster (frozen) | reference standard로 사용 |
+
+## Phase 8a-2 Actions (2026-04-25)
+
+| Date | Action | Actor | Target | Detail |
+|---|---|---|---|---|
+| 2026-04-25 | declare | user | role | "내가 응급의학 전문의다. 뭘 하면 되는가?" — Phase 8a-2 자문 즉시 가능 선언 |
+| 2026-04-25 | offer | claude | 작업 방식 4안 | markdown form / 대화형 Q&A / 개별 세션 / web 도구 |
+| 2026-04-25 | choose | user | web 자문 도구 빌드 | 자기 페이스 작업 + localStorage 보존 + 재사용 가능 |
+| 2026-04-25 | build | claude | `prektas-consultation.html` | 49.4KB SPA. 좌측 사이드바 + 27 Y-code 페이지 + 임계값 + red flags + export |
+| 2026-04-25 | prefill | claude | 27 Y-code × 8 ICD-10 = 216 코드 후보 + 12+ 임상 결정 옵션 | 응급의학 임상 통상 기준 default. 전문의 검토·수정 대상. |
+| 2026-04-25 | design | claude | "icd_blind" honest reporting option | Y0141/0142 등 ICD-10 분류 불가 케이스 명시 제공. 강제 분류 회피. |
+| 2026-04-25 | xss-safe | claude | DOM 조작 전체 | `el()` + textContent + createElement. innerHTML 미사용. 보안 hook 통과. |
+| 2026-04-25 | link | claude | research page nav | "전문의 자문 도구" 링크 헤더·푸터에 추가. |
+| 2026-04-25 | review | claude | post-merge audit | Quality 8.5/10. 3 informational, 0 critical. |
+| 2026-04-25 | commit | claude | `c13f582` | `feat(consultation): 응급의학 전문의 자문 도구`. |
+| 2026-04-25 | deploy | claude | Vercel production | `https://119chat.emergency-info.com/prektas-consultation.html` |
+
 ## Phase 8 Entities (추가, 2026-04-25) — 학술 검증 protocol
 
 | Entity | Type | Location | Description |

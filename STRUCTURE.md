@@ -72,6 +72,7 @@ data/prektas-codebook.json                                │
 | `prektas-hospital-recommender.html` | 약 900KB 모바일 스텝 마법사 (교육·연구용, 빌드 산출) | build script |
 | `prektas-research.html` | Phase 8 validation protocol 요약·시각화 페이지 (빌드 산출, 매거진 레이아웃, 10 chapters) | build script + protocol markdown |
 | `research/prektas-validation-protocol.md` | **Phase 8 source of truth** — 사전 등록(preregistered) 분석 계획 v1.0. STARD 2015 준수. 4 가설, 11 sub-phases, threats to validity, ethics, reproducibility. | 정본 codebook + 1차 prevalence 스캔 |
+| `prektas-consultation.html` | **Phase 8a-2 응급의학 전문의 자문 도구** — 49.4KB standalone SPA. 27 Y-code × ICD-10 prefill + 12+ 임상 결정 + 임계값 + red flags + JSON export. localStorage auto-save. | 임상 통상 기준 prefill + protocol-flagged decisions |
 | `run.sh` | 포트 3489 로컬 서버 제어 (`start\|stop\|restart`) | python3, public/ |
 | `public/index.html` (심볼릭) | → `../prektas-hospital-recommender.html` | 루트 HTML |
 | `public/research.html` (심볼릭) | → `../prektas-research.html` | 루트 HTML |
@@ -141,6 +142,28 @@ source-prektas.csv (225k visits, EUC-KR)
 - `npm run validate:phase8a-1` — 코드 crosswalk 작성
 - `npm run validate:phase8b` — source CSV 표준화
 - `npm run validate:phase8` — 전체 8b–f 파이프라인
+
+### Phase 8a-2 자문 흐름
+
+```
+prektas-consultation.html (브라우저)
+  │ 응급의학 전문의가 27 Y-code × ICD-10 + 임상 결정 + 임계값 + red flags 입력
+  │ localStorage 자동 저장 (key: emris_consultation_v1)
+  │ 진행률 사이드바 표시
+  ▼
+JSON Export (다운로드 또는 클립보드)
+  │ consultation-{date}-{id}.json
+  ▼
+maintainer 수령
+  │ 변환 + 검증
+  ▼
+research/y-code-icd10-clusters.json (frozen, commit)
+  │
+  ▼
+Phase 8c per-visit 라벨링의 reference standard로 사용
+```
+
+**자문 도구 URL**: `https://119chat.emergency-info.com/prektas-consultation.html`
 
 ## Phase 7 추가 사항 (2026-04-25)
 

@@ -1,5 +1,72 @@
 # Changelog
 
+## [2026-04-25] Phase 8a-2 (consultation tool): 응급의학 전문의 자문 도구
+
+> Phase 8a-2 ground truth 동결 작업을 효율화하는 web 자문 도구. 사용자가 응급의학 전문의 자격을 알리면서 자문 시작. 1 commit.
+
+### 변경 동기
+- Phase 8a-2: Y-code → ICD-10 cluster reference standard frozen 위해 응급의학 전문의 1인 임상 판단 필요
+- 사용자 본인이 자문자라 즉시 실행 가능
+- 효율적 작업 방식 4안 (markdown form / 대화형 Q&A / 개별 세션 / web 도구) 중 web 도구 선택
+- 27 Y-code × 평균 8 ICD-10 = 216 코드 결정을 zero-default에서 하면 6+시간 소요 → prefill로 2-3시간 단축
+
+### Commits
+| # | 작업 | Commit |
+|---|---|---|
+| 1 | Phase 8a-2 응급의학 전문의 자문 도구 + research.html 링크 추가 | `c13f582` |
+
+### Added
+- **`prektas-consultation.html`** (49.4 KB, standalone single-file SPA)
+  - 좌측 사이드바: 27 Y-code navigation + 진행률 표시 + section navigation
+  - 본문 4 영역:
+    1. **Welcome** — 자문 안내 + 시작 가이드
+    2. **Y코드 27개** — 각 Y-code별 ICD-10 cluster + 임상 결정 + 자유 메모
+    3. **가설 임계값** — H1-H4 4개 임계값 검토 + 변경 사유
+    4. **Red flags** — Critical FN 시나리오 자유 추가
+  - 각 Y-code 페이지 구성:
+    * 사전 제안 ICD-10 후보 표 (default 체크 상태) — 응급의학 임상 통상 기준 prefill
+    * 추가 ICD-10 코드 입력 (custom field)
+    * 임상 결정 사항 radio button — Y-code별 protocol-flagged decisions:
+      - Y0010 STEMI vs NSTEMI · Y0020 발병시각 · Y0031/0032 외상성 split
+      - Y0041 vs Y0042 anatomic split · Y0051/0052 담낭염 strict
+      - Y0060 췌장염 severity · Y0070·0082·0092·0172 영유아 cutoff
+      - Y0120 BSA + 호흡기 화상 · Y0131/0132 부분 절단
+      - Y0141 vs Y0142 ICD-blind · Y0150 자해 vs 정신증
+      - Y0160 각막외상 · Y0171 PE · Y0172 영유아 (총 12+ decisions)
+    * 자문 의견 자유 textarea
+  - localStorage auto-save (key: `emris_consultation_v1`)
+  - JSON export (다운로드 + 클립보드 복사)
+  - 디자인: 매거진 스타일 (모노크롬 + accent 레드 + sharp corners)
+  - 모바일 대응 (880px 미만 사이드바 하단 고정)
+  - XSS 안전: `el()` helper + textContent + createElement (innerHTML 미사용)
+
+### Changed
+- **`scripts/build-research-page.mjs`** — 헤더·푸터 nav에 "전문의 자문 도구" 링크 추가
+- **`prektas-research.html`** 재빌드 (자문 도구 링크 반영)
+
+### Honest reporting 디자인
+- Y0141/0142 등 ICD-10만으로 분류 불가한 케이스에 **"icd_blind" 옵션** 명시 제공
+- 강제 분류 강요 없음 — 전문의가 정직한 답변 가능
+- 모든 임상 결정에 default 옵션 + 자유 메모 병행 → prefill bias 최소화
+
+### Review (Pre-Landing Audit, post-merge)
+- Quality Score: **8.5/10** (3 informational, 0 critical)
+- INFO: ICD-10 prefill 정확성은 사용자(전문의) 검토·수정으로 보완 ✓
+- INFO: localStorage 단일 키 — 다중 사용자 out of scope (PoC 한 명 자문 시나리오)
+- INFO: "icd_blind" honest reporting 옵션은 옳은 디자인 결정
+
+### 배포
+- main pushed: `c13f582`
+- Vercel production: `https://119chat.emergency-info.com/prektas-consultation.html`
+- prektas-research.html 헤더에서도 접근 가능
+
+### 다음 단계
+- 사용자(응급의학 전문의)가 자문 도구로 작업 → JSON export → maintainer에게 전달
+- maintainer가 JSON → frozen `research/y-code-icd10-clusters.json`로 commit (Phase 8a-2 완료)
+- Phase 8b (데이터 표준화) 자동 파이프라인 진입
+
+---
+
 ## [2026-04-25] Phase 8 (protocol): Pre-KTAS 진단정확도 학술 검증 계획 v1.0
 
 > Pre-KTAS + 0–3 질문 시스템이 정말 중증응급환자를 가려내는가? STARD 2015 준수 사전 등록 분석 계획. 1 commit.
