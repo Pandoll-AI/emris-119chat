@@ -1191,7 +1191,8 @@
   let welcomeShown = false;
   let searchGenId = 0;       // 추천 bubble 순서 보장: 새 검색마다 증가
   let userCollapsedChips = false; // 사용자가 수동으로 chips를 접었는지
-  let aiEnabled = localStorage.getItem('emris_ai') === '1'; // AI 기본 OFF, 명시적 켜기만
+  // Phase 6 PoC 결정: AI 기본 ON (사용자가 명시적으로 OFF 한 경우만 OFF)
+  let aiEnabled = localStorage.getItem('emris_ai') !== '0';
 
   // ── DOM 헬퍼 ──────────────────────────────────
   function esc(str) {
@@ -2655,8 +2656,13 @@ JSON만 반환. 마크다운/설명 금지.`;
         try { window.CaseStore.updateActive({ hospitals_snapshot: data }); } catch (e) {}
       }
 
-      // AI ON: LLM HARNESS 해석이 메인 출력
-      if (aiEnabled && data.hospitals && data.hospitals.length > 0) {
+      // Phase 6 — 마법사 모드(prektasContext 있음)는 LLM 4임무가 필수.
+      // aiEnabled 무시하고 강제로 LLM 호출. 단 hospitals 있을 때만.
+      const forceLLM = !!prektasContext;
+      const useLLM = (forceLLM || aiEnabled) && data.hospitals && data.hospitals.length > 0;
+
+      // AI ON 또는 마법사 모드: LLM HARNESS 해석이 메인 출력
+      if (useLLM) {
         loadingEl.remove();
         const aiLoading = appendLoadingBubble();
         const llmResult = await interpretWithHarness(data, queryText, prektasContext);
