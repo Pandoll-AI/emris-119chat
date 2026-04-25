@@ -12,7 +12,9 @@
     "research:all": "npm run research:prektas-to-y-mapping && npm run research:prektas-tier-recommendation",
     "build:html:recommender": "node scripts/build-hospital-recommender.mjs",
     "build:html:research": "node scripts/build-research-page.mjs",
-    "build:html": "npm run build:html:recommender && npm run build:html:research"
+    "build:html": "npm run build:html:recommender && npm run build:html:research",
+    "build:chatbot-payload": "node scripts/build-chatbot-payload.mjs",
+    "build:all": "npm run codebook:rebuild && npm run research:all && npm run build:html && npm run build:chatbot-payload"
   },
   "devDependencies": {
     "ajv": "^8.17.1",

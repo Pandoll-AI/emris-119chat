@@ -454,6 +454,108 @@
     border: 1px dashed var(--t-line);
   }
 
+  /* Wizard 인라인 컴포넌트 (Phase 6 Step 7) */
+  .wiz-head {
+    display: flex; align-items: center; gap: 10px;
+    padding-bottom: 10px; border-bottom: 1px solid var(--t-line);
+    margin-bottom: 10px;
+  }
+  .wiz-code-strip {
+    font-family: var(--t-font-mono);
+    font-size: var(--fs-xl);
+    font-weight: 700; letter-spacing: 0.08em;
+    display: flex; gap: 3px;
+  }
+  .wiz-ch { min-width: 13px; text-align: center; color: var(--t-ink); }
+  .wiz-ch.empty { color: var(--t-line); }
+  .wiz-step {
+    font-size: var(--fs-xs); font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--t-dim); margin-left: auto;
+  }
+  .wiz-back {
+    border: 1px solid var(--t-line); background: var(--t-surface);
+    padding: 4px 10px; font-size: var(--fs-xs); cursor: pointer;
+    color: var(--t-dim); border-radius: var(--r-0);
+    font-family: inherit; letter-spacing: 0.04em;
+  }
+  .wiz-back:hover { border-color: var(--t-ink); color: var(--t-ink); }
+
+  .wiz-prompt {
+    font-size: var(--fs-base); font-weight: 700;
+    color: var(--t-ink); margin-bottom: 10px;
+    letter-spacing: -0.01em;
+  }
+  .wiz-grid { display: grid; gap: 6px; margin-bottom: 12px; }
+  .wiz-cols-1 { grid-template-columns: 1fr; }
+  .wiz-cols-2 { grid-template-columns: 1fr 1fr; }
+  .wiz-cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+  .wiz-btn {
+    display: flex; flex-direction: column; align-items: flex-start;
+    gap: 2px; padding: 10px 12px; min-height: 48px;
+    border: 1px solid var(--t-line); background: var(--t-surface);
+    text-align: left; cursor: pointer;
+    transition: border-color var(--t-fast), background var(--t-fast);
+    font-family: inherit; border-radius: var(--r-0);
+  }
+  .wiz-btn:hover { background: var(--t-bg); border-color: var(--t-ink); }
+  .wiz-btn.primary { border-color: var(--t-ink); }
+  .wiz-btn-code { font-family: var(--t-font-mono); font-size: var(--fs-xs); color: var(--t-dim); letter-spacing: 0.04em; }
+  .wiz-btn-label { font-size: var(--fs-md); font-weight: 600; line-height: 1.3; }
+  .wiz-btn-grade { font-family: var(--t-font-mono); font-size: var(--fs-xs); font-weight: 700; color: var(--t-accent); }
+
+  .wiz-ctx {
+    border: 1px solid var(--t-ink); background: var(--t-surface);
+    padding: 10px 12px; margin-bottom: 12px; display: grid; gap: 4px;
+  }
+  .wiz-ctx-title { font-size: var(--fs-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--t-dim); font-weight: 700; }
+  .wiz-ctx-code { display: flex; align-items: baseline; gap: 8px; }
+  .wiz-ctx-mono { font-family: var(--t-font-mono); font-size: var(--fs-xl); font-weight: 800; letter-spacing: 0.06em; }
+  .wiz-ctx-grade { font-family: var(--t-font-mono); font-size: var(--fs-xs); padding: 2px 6px; border: 1px solid var(--t-accent); color: var(--t-accent); font-weight: 700; }
+  .wiz-ctx-path { font-size: var(--fs-sm); color: var(--t-ink); }
+  .wiz-ctx-sub { font-size: var(--fs-xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--t-dim); font-weight: 700; margin-top: 4px; }
+  .wiz-ctx-y { display: grid; grid-template-columns: 50px 1fr; gap: 8px; font-size: var(--fs-sm); padding: 1px 0; }
+  .wiz-ctx-y .wiz-ctx-mono { font-size: var(--fs-sm); }
+  .wiz-ctx-y.dimmed { opacity: 0.4; text-decoration: line-through; }
+
+  .wiz-q { border: 1px solid var(--t-line); background: var(--t-surface); padding: 10px 12px; margin-bottom: 8px; display: grid; gap: 6px; }
+  .wiz-q-prompt { font-size: var(--fs-md); font-weight: 700; }
+  .wiz-q-purpose { font-size: var(--fs-xs); color: var(--t-dim); }
+  .wiz-q-opts { display: grid; gap: 4px; }
+  .wiz-q-opt {
+    padding: 8px 10px; border: 1px solid var(--t-line); background: var(--t-surface);
+    text-align: left; font-size: var(--fs-sm); cursor: pointer; font-family: inherit;
+    border-radius: var(--r-0);
+  }
+  .wiz-q-opt:hover { background: var(--t-bg); }
+  .wiz-q-opt.selected { background: var(--t-ink); color: #ffffff; border-color: var(--t-ink); font-weight: 700; }
+
+  .wiz-live { border-top: 1px solid var(--t-line); padding-top: 10px; margin-top: 8px; }
+  .wiz-live-lbl { font-size: var(--fs-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--t-dim); font-weight: 700; }
+  .wiz-live-tier { font-size: var(--fs-lg); font-weight: 800; margin-top: 4px; letter-spacing: -0.01em; }
+  .wiz-live-tier.regional { color: var(--t-tier-regional); }
+  .wiz-live-tier.local_center { color: var(--t-tier-local-center); }
+  .wiz-live-tier.local_institution { color: var(--t-tier-local-institution); }
+  .wiz-live-alt { font-size: var(--fs-xs); color: var(--t-dim); font-weight: 500; }
+
+  .wiz-region {
+    padding: 8px 4px; border: 1px solid var(--t-line); background: var(--t-surface);
+    font-size: var(--fs-sm); cursor: pointer; font-family: inherit;
+    border-radius: var(--r-0);
+  }
+  .wiz-region:hover { background: var(--t-bg); }
+  .wiz-region.selected { background: var(--t-ink); color: #ffffff; border-color: var(--t-ink); font-weight: 700; }
+
+  .wiz-submit {
+    width: 100%; padding: 12px; margin-top: 10px;
+    background: var(--t-ink); color: #ffffff;
+    border: none; font-weight: 700; font-size: var(--fs-base);
+    cursor: pointer; font-family: inherit; border-radius: var(--r-0);
+  }
+  .wiz-submit:disabled { background: var(--t-dim); cursor: not-allowed; }
+  .wiz-submit:hover:not(:disabled) { background: var(--t-accent); }
+
   #input-bar {
     flex-shrink: 0;
     display: flex;
@@ -677,6 +779,9 @@
     <button class="modal-btn" id="modal-save-btn">입장</button>
   </div>
 </div>
+
+<!-- 마법사 데이터 페이로드 (Phase 6 Step 7 — auto-generated) -->
+<script src="lib/chatbot-payload.js"></script>
 
 <div id="app">
 
@@ -1115,7 +1220,6 @@
     const chipsBar = document.getElementById('chips-bar');
     const wizardPanel = document.getElementById('wizard-panel');
 
-    // localStorage에서 마지막 모드 복구 (default: chat)
     const stored = localStorage.getItem('emris_input_mode') || 'chat';
     setMode(stored, true);
 
@@ -1136,12 +1240,430 @@
         inputBar.hidden = true;
         if (chipsBar) chipsBar.hidden = true;
         wizardPanel.hidden = false;
-      }
-      if (!silent) {
-        // 모드 변경 시 wizard 컴포넌트 mount/unmount는 Step 7에서 구현
+        WizardController.mount();
       }
     }
   }
+
+  /* ════════════════════════════════════════════════════════════════════
+   * WizardController — chatbot 안의 Pre-KTAS 마법사 (Phase 6 Step 7)
+   * 정본 데이터: window.PrektasData (lib/chatbot-payload.js)
+   * 단계: group → l2 → l3 → l4 → questions → submit
+   * submit 시 합류 함수 runCaseFromInput() 호출 (Step 8 구현 예정)
+   * ════════════════════════════════════════════════════════════════════ */
+  const WizardController = (function () {
+    const state = { stage: 'group', group: null, l2: null, l3: null, l4: null, code: null, answers: {}, qIndex: 0, qids: [], region: null };
+    let mounted = false;
+    let byGroup = null;
+
+    function ensureData() {
+      if (!window.PrektasData) {
+        const panel = document.getElementById('wizard-panel');
+        clearChildren(panel);
+        const err = document.createElement('div');
+        err.className = 'wizard-placeholder';
+        err.textContent = '마법사 데이터 페이로드 로딩 실패. lib/chatbot-payload.js 확인 필요.';
+        panel.appendChild(err);
+        return false;
+      }
+      if (!byGroup) {
+        byGroup = { adult: [], pediatric: [] };
+        for (const e of window.PrektasData.entries) byGroup[e.g].push(e);
+      }
+      return true;
+    }
+
+    function reset() {
+      state.stage = 'group'; state.group = state.l2 = state.l3 = state.l4 = state.code = state.region = null;
+      state.answers = {}; state.qIndex = 0; state.qids = [];
+    }
+
+    function uniqL2(es) {
+      const m = new Map();
+      for (const e of es) if (!m.has(e.l2c)) m.set(e.l2c, e.l2n);
+      return Array.from(m.entries()).sort().map(([c,n]) => ({c,n}));
+    }
+    function uniqL3(es, l2c) {
+      const m = new Map();
+      for (const e of es) { if (e.l2c !== l2c) continue; if (!m.has(e.l3c)) m.set(e.l3c, e.l3n); }
+      return Array.from(m.entries()).sort().map(([c,n]) => ({c,n}));
+    }
+    function uniqL4(es, l2c, l3c) {
+      const out = [];
+      for (const e of es) if (e.l2c === l2c && e.l3c === l3c) out.push({c: e.l4c, n: e.l4n, gr: e.gr});
+      return out.sort((a,b) => a.c.localeCompare(b.c));
+    }
+
+    function computeCode() {
+      if (state.group && state.l2 && state.l3 && state.l4) {
+        return (state.group === 'adult' ? 'C' : 'D') + state.l2 + state.l3 + state.l4;
+      }
+      return null;
+    }
+
+    function findQuestionIds(code) {
+      if (!code || !window.PrektasData.rec[code]) return [];
+      const cands = new Set(window.PrektasData.rec[code].y);
+      if (cands.size === 0) return [];
+      const qids = new Set();
+      if (cands.has('Y0010') || cands.has('Y0041')) { qids.add('chest_pain_character'); qids.add('aortic_location'); }
+      if (cands.has('Y0020') || cands.has('Y0031') || cands.has('Y0032')) { qids.add('trauma_or_spontaneous'); qids.add('onset_time_stroke'); }
+      if (cands.has('Y0111') || cands.has('Y0112') || cands.has('Y0113')) qids.add('pregnancy_status');
+      if (cands.has('Y0082') && cands.has('Y0092')) qids.add('foreign_body_site');
+      if (cands.has('Y0131') || cands.has('Y0132')) qids.add('replantation_part');
+      if (cands.has('Y0120')) qids.add('burn_severity');
+      if (cands.has('Y0141') || cands.has('Y0142')) qids.add('dialysis_indication');
+      if (cands.has('Y0150')) qids.add('psychiatric_risk');
+      if (cands.has('Y0160')) qids.add('eye_emergency_kind');
+      return Array.from(qids).slice(0, 3);
+    }
+
+    function currentCandidates() {
+      const code = state.code;
+      if (!code || !window.PrektasData.rec[code]) return { kept: [], removed: new Set() };
+      const baseline = window.PrektasData.rec[code].y;
+      const kept = new Set(baseline);
+      const removed = new Set();
+      for (const qid of Object.keys(state.answers)) {
+        const eff = window.PrektasData.questionEffects[qid] && window.PrektasData.questionEffects[qid].options[state.answers[qid]];
+        if (!eff) continue;
+        if (eff.y_keep) {
+          const keepSet = new Set(eff.y_keep);
+          for (const y of Array.from(kept)) if (!keepSet.has(y)) { kept.delete(y); removed.add(y); }
+        }
+        if (eff.y_remove) {
+          for (const y of eff.y_remove) if (kept.has(y)) { kept.delete(y); removed.add(y); }
+        }
+      }
+      return { kept: Array.from(kept), removed };
+    }
+
+    function computeTier(ycodes, grade) {
+      const D = window.PrektasData;
+      if (ycodes.length > 0) {
+        const firstOrder = D.yTier[ycodes[0]].slice();
+        let accept = new Set(firstOrder);
+        for (let i = 1; i < ycodes.length; i += 1) {
+          const s = new Set(D.yTier[ycodes[i]]);
+          accept = new Set([...accept].filter(x => s.has(x)));
+        }
+        const ordered = firstOrder.filter(x => accept.has(x));
+        return { acceptable: ordered, preferred: ordered[0] };
+      }
+      if (grade === 1 || grade === 2) return { acceptable: ['regional','local_center'], preferred: 'regional' };
+      if (grade === 3) return { acceptable: ['local_center','local_institution'], preferred: 'local_center' };
+      return { acceptable: ['local_institution','local_center'], preferred: 'local_institution' };
+    }
+
+    function makeBtn(opts) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'wiz-btn' + (opts.primary ? ' primary' : '');
+      if (opts.code) {
+        const c = document.createElement('span'); c.className = 'wiz-btn-code'; c.textContent = opts.code; b.appendChild(c);
+      }
+      const lbl = document.createElement('span'); lbl.className = 'wiz-btn-label'; lbl.textContent = opts.label; b.appendChild(lbl);
+      if (opts.grade != null) {
+        const g = document.createElement('span'); g.className = 'wiz-btn-grade'; g.textContent = 'g' + opts.grade; b.appendChild(g);
+      }
+      b.addEventListener('click', opts.onClick);
+      return b;
+    }
+
+    function renderHeader(panel) {
+      const head = document.createElement('div');
+      head.className = 'wiz-head';
+      // 코드 스트립
+      const code = computeCode();
+      const display = code || ((state.group === 'adult' ? 'C' : state.group === 'pediatric' ? 'D' : '_') + (state.l2 || '_') + (state.l3 || '_') + (state.l4 || '__'));
+      const strip = document.createElement('div');
+      strip.className = 'wiz-code-strip';
+      for (const ch of display) {
+        const sp = document.createElement('span');
+        sp.className = 'wiz-ch' + (ch === '_' ? ' empty' : '');
+        sp.textContent = ch;
+        strip.appendChild(sp);
+      }
+      head.appendChild(strip);
+      // 단계 표시
+      const labelMap = { group: '연령', l2: '대분류', l3: '주호소', l4: '세부증상', questions: '추가 질문', submit: '확인·전송' };
+      const stp = document.createElement('div');
+      stp.className = 'wiz-step';
+      stp.textContent = labelMap[state.stage] || '';
+      head.appendChild(stp);
+      // [← 이전] 버튼 (group 단계 제외)
+      if (state.stage !== 'group') {
+        const back = document.createElement('button');
+        back.type = 'button'; back.className = 'wiz-back'; back.textContent = '← 이전';
+        back.addEventListener('click', goBack);
+        head.appendChild(back);
+      }
+      panel.appendChild(head);
+    }
+
+    function goBack() {
+      if (state.stage === 'l2') state.stage = 'group';
+      else if (state.stage === 'l3') state.stage = 'l2';
+      else if (state.stage === 'l4') state.stage = 'l3';
+      else if (state.stage === 'questions') state.stage = 'l4';
+      else if (state.stage === 'submit') state.stage = 'questions';
+      render();
+    }
+
+    function renderStageGroup(panel) {
+      const prompt = document.createElement('div');
+      prompt.className = 'wiz-prompt'; prompt.textContent = '연령군을 선택하세요';
+      panel.appendChild(prompt);
+      const grid = document.createElement('div');
+      grid.className = 'wiz-grid wiz-cols-2';
+      grid.appendChild(makeBtn({ code: 'C', label: '성인', primary: true, onClick: () => { state.group = 'adult'; state.stage = 'l2'; render(); } }));
+      grid.appendChild(makeBtn({ code: 'D', label: '소아', primary: true, onClick: () => { state.group = 'pediatric'; state.stage = 'l2'; render(); } }));
+      panel.appendChild(grid);
+    }
+
+    function renderStageL2(panel) {
+      const opts = uniqL2(byGroup[state.group]);
+      const prompt = document.createElement('div');
+      prompt.className = 'wiz-prompt'; prompt.textContent = '대분류 선택 (정본 ' + opts.length + '개 카테고리)';
+      panel.appendChild(prompt);
+      const grid = document.createElement('div'); grid.className = 'wiz-grid wiz-cols-2';
+      for (const o of opts) grid.appendChild(makeBtn({ code: o.c, label: o.n, onClick: () => { state.l2 = o.c; state.stage = 'l3'; render(); } }));
+      panel.appendChild(grid);
+    }
+
+    function renderStageL3(panel) {
+      const opts = uniqL3(byGroup[state.group], state.l2);
+      const prompt = document.createElement('div');
+      prompt.className = 'wiz-prompt'; prompt.textContent = '주호소 선택 (정본 ' + opts.length + '개)';
+      panel.appendChild(prompt);
+      const grid = document.createElement('div'); grid.className = 'wiz-grid wiz-cols-2';
+      for (const o of opts) grid.appendChild(makeBtn({ code: o.c, label: o.n, onClick: () => { state.l3 = o.c; state.stage = 'l4'; render(); } }));
+      panel.appendChild(grid);
+    }
+
+    function renderStageL4(panel) {
+      const opts = uniqL4(byGroup[state.group], state.l2, state.l3);
+      const prompt = document.createElement('div');
+      prompt.className = 'wiz-prompt'; prompt.textContent = '세부증상 선택 (이 조합 정본 ' + opts.length + '개)';
+      panel.appendChild(prompt);
+      const grid = document.createElement('div'); grid.className = 'wiz-grid wiz-cols-1';
+      for (const o of opts) {
+        grid.appendChild(makeBtn({
+          code: o.c, label: o.n, grade: o.gr,
+          onClick: () => {
+            state.l4 = o.c; state.code = computeCode();
+            state.qids = findQuestionIds(state.code);
+            state.answers = {}; state.qIndex = 0;
+            state.stage = state.qids.length === 0 ? 'submit' : 'questions';
+            render();
+          },
+        }));
+      }
+      panel.appendChild(grid);
+    }
+
+    function renderStageQuestions(panel) {
+      const D = window.PrektasData;
+      const e = D.entries.find(x => x.c === state.code);
+      const grade = e ? e.gr : 0;
+      const { kept, removed } = currentCandidates();
+      const tier = computeTier(kept, grade);
+
+      // 컨텍스트 카드
+      const ctx = document.createElement('div'); ctx.className = 'wiz-ctx';
+      const title = document.createElement('div'); title.className = 'wiz-ctx-title'; title.textContent = '증상 요약';
+      ctx.appendChild(title);
+      const codeRow = document.createElement('div'); codeRow.className = 'wiz-ctx-code';
+      const cs = document.createElement('span'); cs.className = 'wiz-ctx-mono'; cs.textContent = state.code; codeRow.appendChild(cs);
+      const gs = document.createElement('span'); gs.className = 'wiz-ctx-grade'; gs.textContent = 'grade ' + grade; codeRow.appendChild(gs);
+      ctx.appendChild(codeRow);
+      const path = document.createElement('div'); path.className = 'wiz-ctx-path';
+      path.textContent = e.l2n + ' · ' + e.l3n + ' · ' + e.l4n; ctx.appendChild(path);
+      // Y 후보 row
+      const baseline = D.rec[state.code] ? D.rec[state.code].y : [];
+      if (baseline.length > 0) {
+        const sub = document.createElement('div'); sub.className = 'wiz-ctx-sub'; sub.textContent = '초기 Y후보';
+        ctx.appendChild(sub);
+        for (const y of baseline) {
+          const row = document.createElement('div'); row.className = 'wiz-ctx-y' + (removed.has(y) ? ' dimmed' : '');
+          const c = document.createElement('span'); c.className = 'wiz-ctx-mono'; c.textContent = y; row.appendChild(c);
+          const d = D.diseases.find(x => x.code === y);
+          const lbl = document.createElement('span'); lbl.textContent = d ? d.label : '(정의 없음)'; row.appendChild(lbl);
+          ctx.appendChild(row);
+        }
+      } else {
+        const none = document.createElement('div'); none.className = 'wiz-ctx-sub';
+        none.textContent = '27 Y코드 외 (grade ' + grade + ' 기반 tier 추천)';
+        ctx.appendChild(none);
+      }
+      panel.appendChild(ctx);
+
+      // 질문 카드들 (현재까지 진행된 만큼)
+      const shown = Math.min(state.qIndex + 1, state.qids.length);
+      for (let i = 0; i < shown; i += 1) {
+        const qid = state.qids[i]; const q = D.questions[qid]; if (!q) continue;
+        const card = document.createElement('div'); card.className = 'wiz-q';
+        const pp = document.createElement('div'); pp.className = 'wiz-q-prompt';
+        pp.textContent = '질문 ' + (i+1) + '/' + state.qids.length + ' · ' + q.prompt; card.appendChild(pp);
+        const pu = document.createElement('div'); pu.className = 'wiz-q-purpose'; pu.textContent = q.purpose; card.appendChild(pu);
+        const opts = document.createElement('div'); opts.className = 'wiz-q-opts';
+        q.options.forEach((opt, idx) => {
+          const btn = document.createElement('button'); btn.type = 'button';
+          btn.className = 'wiz-q-opt' + (state.answers[qid] === idx ? ' selected' : '');
+          btn.textContent = opt;
+          btn.addEventListener('click', () => {
+            state.answers[qid] = idx;
+            if (i === state.qIndex && state.qIndex < state.qids.length - 1) state.qIndex += 1;
+            render();
+          });
+          opts.appendChild(btn);
+        });
+        card.appendChild(opts);
+        panel.appendChild(card);
+      }
+
+      // Live tier preview
+      const tierDef = D.tierDefinitions[tier.preferred];
+      const live = document.createElement('div'); live.className = 'wiz-live';
+      const llbl = document.createElement('div'); llbl.className = 'wiz-live-lbl'; llbl.textContent = '현재 추천';
+      live.appendChild(llbl);
+      const tn = document.createElement('div'); tn.className = 'wiz-live-tier ' + tier.preferred;
+      tn.textContent = tierDef.label;
+      if (tier.acceptable.length > 1) {
+        const alt = document.createElement('span'); alt.className = 'wiz-live-alt';
+        alt.textContent = ' + ' + D.tierDefinitions[tier.acceptable[1]].short + ' 가능';
+        tn.appendChild(alt);
+      }
+      live.appendChild(tn);
+      panel.appendChild(live);
+
+      // 다음 단계로
+      const sub = document.createElement('button'); sub.type = 'button'; sub.className = 'wiz-submit';
+      sub.textContent = '병원 추천 받기 →';
+      sub.addEventListener('click', () => { state.stage = 'submit'; render(); });
+      panel.appendChild(sub);
+    }
+
+    function renderStageSubmit(panel) {
+      const D = window.PrektasData;
+      const e = D.entries.find(x => x.c === state.code);
+      const grade = e.gr;
+      const { kept } = currentCandidates();
+      const tier = computeTier(kept, grade);
+      const tierDef = D.tierDefinitions[tier.preferred];
+
+      const prompt = document.createElement('div');
+      prompt.className = 'wiz-prompt'; prompt.textContent = '확인·전송';
+      panel.appendChild(prompt);
+
+      const summary = document.createElement('div'); summary.className = 'wiz-ctx';
+      const sline = (txt) => { const d = document.createElement('div'); d.className = 'wiz-ctx-path'; d.textContent = txt; return d; };
+      summary.appendChild(sline('코드: ' + state.code + ' · grade ' + grade));
+      summary.appendChild(sline('경로: ' + e.l2n + ' · ' + e.l3n + ' · ' + e.l4n));
+      summary.appendChild(sline('Y후보: ' + (kept.length ? kept.join(', ') : '없음 (grade 기반 tier)')));
+      summary.appendChild(sline('권장 tier: ' + tierDef.label + (tier.acceptable.length > 1 ? ' (+ ' + D.tierDefinitions[tier.acceptable[1]].short + ' 가능)' : '')));
+      panel.appendChild(summary);
+
+      // 지역 선택
+      const rprompt = document.createElement('div'); rprompt.className = 'wiz-prompt';
+      rprompt.textContent = '지역 선택 (선택 후 EMRIS 조회)'; panel.appendChild(rprompt);
+      const rgrid = document.createElement('div'); rgrid.className = 'wiz-grid wiz-cols-3';
+      for (const r of REGIONS) {
+        const btn = document.createElement('button'); btn.type = 'button';
+        btn.className = 'wiz-region' + (state.region === r.code ? ' selected' : '');
+        btn.textContent = r.name;
+        btn.addEventListener('click', () => { state.region = r.code; render(); });
+        rgrid.appendChild(btn);
+      }
+      panel.appendChild(rgrid);
+
+      const submit = document.createElement('button'); submit.type = 'button'; submit.className = 'wiz-submit';
+      submit.disabled = !state.region;
+      submit.textContent = state.region ? '병원 추천 시작 →' : '지역을 선택하세요';
+      submit.addEventListener('click', () => {
+        if (!state.region) return;
+        // Step 8에서 합류 함수 runCaseFromInput 호출로 교체
+        const payload = buildSubmitPayload();
+        if (typeof runCaseFromInput === 'function') {
+          runCaseFromInput(payload);
+        } else {
+          alert('Step 8 합류 함수 미구현 — payload:\n' + JSON.stringify(payload, null, 2).slice(0, 500));
+        }
+      });
+      panel.appendChild(submit);
+    }
+
+    function buildSubmitPayload() {
+      const D = window.PrektasData;
+      const e = D.entries.find(x => x.c === state.code);
+      const baseline = D.rec[state.code] ? D.rec[state.code].y : [];
+      const { kept, removed } = currentCandidates();
+      const tier = computeTier(kept, e.gr);
+      const additional_qa = Object.keys(state.answers).map(qid => ({
+        question: D.questions[qid].prompt,
+        answer: D.questions[qid].options[state.answers[qid]],
+      }));
+      const y_excluded_with_reason = Array.from(removed).map(y => {
+        // 어느 답변이 제외했는지
+        const trace = Object.keys(state.answers).map(qid => ({ qid, opt: state.answers[qid] })).find(_ => true);
+        return { code: y, reason: trace ? '답변 narrowing으로 제외' : '제외됨' };
+      });
+      return {
+        mode: 'wizard',
+        region: state.region,
+        diseases: kept,
+        prektas_context: {
+          patient: {
+            group: e.g === 'adult' ? '성인' : '소아',
+            level2: e.l2n,
+            level3: e.l3n,
+            level4: e.l4n,
+            pre_code: e.c,
+            grade: e.gr,
+          },
+          additional_qa,
+          rule_based: {
+            initial_y_candidates: baseline,
+            narrowed_y_candidates: kept,
+            y_excluded_with_reason,
+            tier_recommendation: {
+              preferred: tier.preferred,
+              acceptable: tier.acceptable,
+            },
+          },
+        },
+      };
+    }
+
+    function render() {
+      const panel = document.getElementById('wizard-panel');
+      if (!panel) return;
+      clearChildren(panel);
+      if (!ensureData()) return;
+      renderHeader(panel);
+      const body = document.createElement('div'); body.className = 'wiz-body';
+      panel.appendChild(body);
+      if (state.stage === 'group') renderStageGroup(body);
+      else if (state.stage === 'l2') renderStageL2(body);
+      else if (state.stage === 'l3') renderStageL3(body);
+      else if (state.stage === 'l4') renderStageL4(body);
+      else if (state.stage === 'questions') renderStageQuestions(body);
+      else if (state.stage === 'submit') renderStageSubmit(body);
+    }
+
+    function mount() {
+      if (mounted) return;
+      mounted = true;
+      render();
+    }
+
+    function resetAndRender() {
+      reset();
+      render();
+    }
+
+    return { mount, render, reset: resetAndRender };
+  })();
 
   // 안전하게 DOM 노드 비우기 (innerHTML XSS 회피)
   function clearChildren(el) {
