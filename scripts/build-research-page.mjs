@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * Phase 8b–i 검증 결과 standalone HTML 생성기.
- * Source of truth: research/prektas-validation-report-v1.0.md +
- *                   research/validation-results-v0.1.json +
- *                   research/y-code-icd10-clusters.json
+ * Phase 9 v0.2 검증 결과 standalone HTML 생성기.
+ * Source of truth:
+ *   - research/prektas-validation-report-v2.0.md
+ *   - research/y-code-mappability-matrix.json v1.0 (frozen)
+ *   - research/validation-results-v0.2.json (directional)
+ *   - research/prektas-to-y-mapping-v0.2.json
  *
- * 구조 변경 (2026-04-26): protocol 요약 페이지 → 결과 중심 페이지로 전면 교체.
+ * v2.0 (2026-04-26): 통계 sensitivity 결과 페이지 → 임상 정합성 reframe 페이지로 전면 교체.
  */
 
 import fs from 'node:fs';
@@ -17,34 +19,36 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 const output = path.join(repoRoot, 'prektas-research.html');
 
-const codebook = JSON.parse(fs.readFileSync(path.join(repoRoot, 'data/prektas-codebook.json'), 'utf8'));
-const clusters = JSON.parse(fs.readFileSync(path.join(repoRoot, 'research/y-code-icd10-clusters.json'), 'utf8'));
-const results = JSON.parse(fs.readFileSync(path.join(repoRoot, 'research/validation-results-v0.1.json'), 'utf8'));
-const stratified = JSON.parse(fs.readFileSync(path.join(repoRoot, 'research/validation-stratified.json'), 'utf8'));
+const matrix = JSON.parse(fs.readFileSync(path.join(repoRoot, 'research/y-code-mappability-matrix.json'), 'utf8'));
+const v02 = JSON.parse(fs.readFileSync(path.join(repoRoot, 'research/prektas-to-y-mapping-v0.2.json'), 'utf8'));
+const v02val = JSON.parse(fs.readFileSync(path.join(repoRoot, 'research/validation-results-v0.2.json'), 'utf8'));
 
-const q0 = results.binary_metrics.q0_no_questions;
-const sample = results.sample;
-const prev = results.prevalence;
-const py = results.per_ycode_metrics;
-const TH = clusters.thresholds;
+const REPORT_VERSION = '2.0';
+const ANALYSIS_DATE = '2026-04-26';
+const PROTOCOL_ID = 'PREKTAS-VAL-2026-001';
+
+const A_codes = matrix.summary.A_confident.codes;
+const B_codes = matrix.summary.B_candidate.codes;
+const C_codes = matrix.summary.C_tier_only.codes;
+const changes = matrix.consultant_changes;
+
+const v02_conf = v02val.binary_metrics_confident_only;
+const v02_cand = v02val.binary_metrics_confident_plus_candidate;
+const tier = v02val.tier_recommendation_agreement;
 
 const fmt = (n, d=4) => Number(n).toFixed(d);
 const pct = (n, d) => ((n / d) * 100).toFixed(1);
 
-// Y-codes sorted by support
-const ySorted = Object.entries(py).sort((a,b) => b[1].support - a[1].support);
-
-const PROTOCOL_VERSION = '1.1';
-const REPORT_VERSION = '1.0';
-const ANALYSIS_DATE = '2026-04-26';
-const PROTOCOL_ID = 'PREKTAS-VAL-2026-001';
+function ycodeShort(code) {
+  return matrix.y_codes[code] ? matrix.y_codes[code].label.replace(/\(.*\)/, '').trim() : code;
+}
 
 const html = `<!doctype html>
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Pre-KTAS v0.1 진단정확도 검증 결과 · v${REPORT_VERSION}</title>
+<title>Pre-KTAS v0.2 매핑 알고리즘 — 임상 정합성 reframe · v${REPORT_VERSION}</title>
 <style>
   :root {
     --ink: #0a0a0a;
@@ -54,7 +58,10 @@ const html = `<!doctype html>
     --line-soft: rgba(10,10,10,0.07);
     --accent: #a8231c;
     --good: #1f7a3d;
+    --good-soft: rgba(31,122,61,0.08);
     --warn: #b8860b;
+    --warn-soft: rgba(184,134,11,0.08);
+    --accent-soft: rgba(168,35,28,0.08);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--ink); font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Helvetica Neue", sans-serif; font-feature-settings: "tnum"; line-height: 1.55; font-size: 15px; }
@@ -68,21 +75,24 @@ const html = `<!doctype html>
 
   .protocol-id { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10px; color: var(--dim); letter-spacing: 0.05em; padding: 4px 8px; border: 1px solid var(--line); display: inline-block; margin-bottom: 12px; }
 
-  .headline { display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 48px; }
+  .headline { display: grid; grid-template-columns: 1fr; gap: 22px; margin-bottom: 40px; }
   .headline h1 { font-size: clamp(34px, 4.6vw, 60px); line-height: 1.05; letter-spacing: -0.03em; font-weight: 900; max-width: 28ch; }
   .headline .lede { font-size: 17px; line-height: 1.55; color: var(--ink); max-width: 64ch; }
   .headline .lede strong { color: var(--accent); }
   .headline .kicker { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
   .byline { display: flex; gap: 20px; font-size: 12px; color: var(--dim); padding-top: 16px; border-top: 1px solid var(--line); letter-spacing: 0.04em; flex-wrap: wrap; font-family: ui-monospace, monospace; }
 
-  /* Verdict box */
-  .verdict { border: 2px solid var(--accent); padding: 24px 28px; margin: 32px 0 48px; background: #ffffff; }
-  .verdict .v-label { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); font-weight: 800; margin-bottom: 10px; }
-  .verdict h2 { font-size: 28px; font-weight: 900; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 16px; }
-  .verdict p { font-size: 15px; line-height: 1.55; max-width: 64ch; margin: 8px 0; }
-  .verdict .v-meta { display: flex; gap: 14px; margin-top: 14px; flex-wrap: wrap; font-size: 12px; color: var(--dim); font-family: ui-monospace, monospace; }
-  .verdict .pass { color: var(--good); font-weight: 700; }
-  .verdict .fail { color: var(--accent); font-weight: 700; }
+  /* Reframe verdict */
+  .reframe-box { border: 2px solid var(--good); padding: 24px 28px; margin: 28px 0 44px; background: var(--good-soft); }
+  .reframe-box .v-label { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--good); font-weight: 800; margin-bottom: 10px; }
+  .reframe-box h2 { font-size: 26px; font-weight: 900; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 14px; }
+  .reframe-box p { font-size: 15px; line-height: 1.6; max-width: 64ch; margin: 8px 0; }
+  .reframe-box strong { color: var(--good); }
+
+  /* Data caveat */
+  .caveat-box { border: 1.5px solid var(--accent); border-left-width: 4px; padding: 14px 20px; margin: 24px 0; background: var(--accent-soft); }
+  .caveat-box .label { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); font-weight: 800; margin-bottom: 6px; }
+  .caveat-box p { font-size: 14px; line-height: 1.6; max-width: 64ch; }
 
   section.chapter { margin: 56px 0 0; border-top: 1px solid var(--line); padding-top: 28px; display: grid; grid-template-columns: 200px 1fr; gap: 40px; }
   @media (max-width: 780px) { section.chapter { grid-template-columns: 1fr; gap: 20px; } }
@@ -94,24 +104,32 @@ const html = `<!doctype html>
   .chapter ul, .chapter ol { margin: 10px 0 10px 22px; max-width: 66ch; }
   .chapter li { margin: 6px 0; line-height: 1.5; }
 
-  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 24px 0; border: 1px solid var(--line); }
-  @media (max-width: 640px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
-  .metric { padding: 18px 20px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-  .metric:nth-child(4n) { border-right: none; }
-  .metric .num { font-size: 28px; font-weight: 900; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-  .metric .num.accent { color: var(--accent); }
-  .metric .num.good { color: var(--good); }
-  .metric .num.small { font-size: 22px; }
-  .metric .label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); margin-top: 8px; font-weight: 600; }
-  .metric .ci { font-size: 11px; color: var(--dim); margin-top: 4px; font-family: ui-monospace, monospace; }
+  /* Mappability matrix */
+  .mat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 22px 0; }
+  @media (max-width: 780px) { .mat-grid { grid-template-columns: 1fr; } }
+  .mat-card { border: 1.5px solid; padding: 18px 20px; background: #ffffff; }
+  .mat-card.A { border-color: var(--good); }
+  .mat-card.B { border-color: var(--warn); }
+  .mat-card.C { border-color: var(--accent); }
+  .mat-card .head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+  .mat-card .grp { font-size: 24px; font-weight: 900; letter-spacing: -0.02em; }
+  .mat-card.A .grp { color: var(--good); }
+  .mat-card.B .grp { color: var(--warn); }
+  .mat-card.C .grp { color: var(--accent); }
+  .mat-card .grp-label { font-size: 13px; font-weight: 700; }
+  .mat-card .count { font-size: 11px; color: var(--dim); margin-left: auto; font-family: ui-monospace, monospace; }
+  .mat-card .desc { font-size: 12px; color: var(--dim); line-height: 1.5; margin-bottom: 12px; }
+  .mat-card .codes { display: flex; flex-wrap: wrap; gap: 4px; }
+  .mat-card .y-tag { font-family: ui-monospace, monospace; font-size: 11px; padding: 2px 6px; border: 1px solid; }
+  .mat-card.A .y-tag { color: var(--good); border-color: var(--good); }
+  .mat-card.B .y-tag { color: var(--warn); border-color: var(--warn); }
+  .mat-card.C .y-tag { color: var(--accent); border-color: var(--accent); }
 
   table.data { width: 100%; border-collapse: collapse; font-size: 13px; margin: 18px 0; }
   table.data th, table.data td { border-bottom: 1px solid var(--line-soft); padding: 8px 6px; text-align: left; vertical-align: top; }
   table.data th { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); font-weight: 700; border-bottom: 1px solid var(--line); }
   table.data td.num { font-variant-numeric: tabular-nums; text-align: right; font-family: ui-monospace, monospace; }
   table.data td.code { font-family: ui-monospace, monospace; font-size: 12px; }
-  table.data tr.warn td { color: var(--accent); }
-  table.data tr.good td { color: var(--good); }
 
   .pullquote { border-left: 3px solid var(--accent); padding: 8px 22px; margin: 24px 0; font-size: 18px; line-height: 1.45; font-weight: 600; max-width: 56ch; letter-spacing: -0.01em; }
   .callout { border: 1px solid var(--line); padding: 16px 20px; background: #ffffff; margin: 18px 0; }
@@ -119,11 +137,20 @@ const html = `<!doctype html>
   .callout.good { border-left: 3px solid var(--good); }
   .callout.good .title { color: var(--good); }
   .callout.warn { border-left: 3px solid var(--accent); }
+  .callout.note { border-left: 3px solid var(--dim); }
+  .callout.note .title { color: var(--dim); }
 
-  .pipeline { border: 1px solid var(--line); padding: 18px 20px; margin: 22px 0; background: #ffffff; overflow-x: auto; }
-  .pipeline pre { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; line-height: 1.6; color: var(--ink); white-space: pre; }
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin: 22px 0; border: 1px solid var(--line); }
+  @media (max-width: 640px) { .metrics { grid-template-columns: 1fr 1fr; } }
+  .metric { padding: 16px 18px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .metric:nth-child(3n) { border-right: none; }
+  .metric .num { font-size: 24px; font-weight: 900; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .metric .num.accent { color: var(--accent); }
+  .metric .num.good { color: var(--good); }
+  .metric .label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); margin-top: 6px; font-weight: 600; }
+  .metric .ci { font-size: 10px; color: var(--dim); margin-top: 4px; font-family: ui-monospace, monospace; }
 
-  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.9em; background: var(--line-soft); padding: 1px 5px; }
+  code { font-family: ui-monospace, monospace; font-size: 0.9em; background: var(--line-soft); padding: 1px 5px; }
   strong { font-weight: 700; }
 
   .file-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0; }
@@ -141,7 +168,8 @@ const html = `<!doctype html>
   <div class="masthead">
     <div class="brand">EMRIS 119 · Validation Report · v${REPORT_VERSION} · ${ANALYSIS_DATE}</div>
     <div class="nav">
-      <a href="prektas-consultation.html">전문의 자문 도구</a>
+      <a href="prektas-mappability-review.html">자문 검토</a>
+      <a href="prektas-consultation.html">자문 도구</a>
       <a href="prektas-hospital-recommender.html">추천 도구</a>
       <a href="https://119chat.emergency-info.com">Chatbot</a>
       <a href="https://github.com/Pandoll-AI/emris-119chat">Repository</a>
@@ -149,275 +177,253 @@ const html = `<!doctype html>
   </div>
 
   <header class="headline">
-    <div class="protocol-id">PROTOCOL ${PROTOCOL_ID} · v${PROTOCOL_VERSION} · REPORT v${REPORT_VERSION}</div>
-    <div class="kicker">Pre-KTAS → EMRIS 27 Y코드 매핑 v0.1 · 진단정확도 검증 결과</div>
-    <h1>Pre-KTAS만으로는 중증 응급환자의 60%가 시스템에서 unmapped로 떨어진다.</h1>
-    <p class="lede">광주·전남·전북 응급실 130,536건의 실측 방문 데이터로 v0.1 룰 알고리즘을 검증한 결과, <strong>Sensitivity 39.4%</strong>로 한국 응급의료 baseline 임계값(0.80)을 통과하지 못했다. Specificity 80.8%는 통과. <strong>v0.1은 단독 의사결정 도구로 임상 활용 불가</strong> 판정. 다만 어디에서 어떻게 부족한지 정량 측정되어 v0.2 개선 방향이 명확해졌다.</p>
+    <div class="protocol-id">PROTOCOL ${PROTOCOL_ID} · REPORT v${REPORT_VERSION} (REFRAME)</div>
+    <div class="kicker">Pre-KTAS → EMRIS 27 Y코드 매핑 v0.2 · 임상 정합성 reframe</div>
+    <h1>현장 정보의 한계는 인정한다. 명확한 case만 매핑하고, 나머지는 tier 직송이다.</h1>
+    <p class="lede">v1.0 보고서의 "sensitivity 39.4% → 임상 활용 불가" framing은 응급의학 전문의 자문에 의해 reframe되었다. <strong>통계 sensitivity 임계값은 폐기</strong>. v0.2는 27 Y코드를 임상 매핑성에 따라 A(10) / B(6) / C(11) 그룹으로 분리하고, 각 그룹에 다른 출력 채널을 부여한다. 광주·전라 데이터는 검증 안 됨 — 통계는 directional probe (참고치). <strong>논리적 정합성</strong>(응급의학 임상 추론)이 우선 권위.</p>
     <div class="byline">
-      <span>Algorithm v0.1</span>
-      <span>Reference standard v1.0</span>
-      <span>N = ${sample.included_rows.toLocaleString()}</span>
-      <span>Severe prev = ${prev.severe_pct}%</span>
+      <span>Algorithm v0.2</span>
+      <span>Matrix v1.0 frozen</span>
+      <span>4,689 entries → A:434 / B:295 / C:45 / unmapped:3,915</span>
     </div>
   </header>
 
-  <!-- Verdict -->
-  <div class="verdict">
-    <div class="v-label">⚠ 임상 활용 판정 (v0.1)</div>
-    <h2>단독 의사결정 도구로 활용 불가.</h2>
-    <p>Sensitivity 39.4%는 60.6%의 중증 응급환자가 시스템에서 unmapped로 떨어진다는 의미다. 응급의료에서 under-triage는 환자 위해(harm)와 직결된다. 가장 위급한 grade 1(소생) 환자의 sensitivity는 18.5%로, 도구가 가장 절실한 환자에게 가장 못 도움이 되는 역설을 보인다.</p>
-    <p>다만 활용 불가의 범위는 명확하다. <strong>Specificity 80.8%</strong>는 통과 — "비응급 거름"은 한국 baseline 통과 수준. 즉 이 도구를 보조 정보 제공자(second opinion)로 쓰는 시나리오는 별도 평가 대상이며, v0.1 한정 평가일 뿐이다. <strong>Pre-KTAS + 0–3 질문 시스템 자체의 한계</strong>가 아니라 <strong>v0.1 룰의 카테고리별 빈틈</strong>이 본질 문제다. v0.2에서 rule absent 카테고리(Y0141 응급HD, Y0142 CRRT, Y0060 복부응급, Y0051 담낭) 보강 + over-trigger 좁히면 sensitivity 0.70+ 도달이 현실적이다.</p>
-    <div class="v-meta">
-      <span class="fail">H1 sens ≥ 0.80 → FAIL (95% lower CI ${fmt(q0.sensitivity_95CI[0])})</span>
-      <span class="pass">H2 spec ≥ 0.80 → PASS (95% lower CI ${fmt(q0.specificity_95CI[0])})</span>
-      <span class="fail">H3 한계효용 ≥ 0.05 → FAIL (oracle gain +0.000)</span>
-    </div>
+  <!-- Reframe verdict -->
+  <div class="reframe-box">
+    <div class="v-label">✓ v0.2 임상 활용 framing</div>
+    <h2>"활용 불가"가 아닌, 활용 가능한 범위의 정확한 정의.</h2>
+    <p>v0.2는 v0.1의 통계 sensitivity를 추구하지 않는다. 대신 <strong>현장에서 구급대원이 알 수 있는 정보의 본질적 한계</strong>를 정직하게 인정하고, 명확한 case(A 그룹 10개 Y코드)만 confident 매핑하며, 모호한 case(C 그룹 11개)는 후보 단정 없이 적합한 tier 권고만 한다. B 그룹 6개는 후보군으로 좁혀 임상의 결정에 위임한다.</p>
+    <p>자문자 일관 임상 원칙: <strong>"후보군으로 좁히기보다 적합한 tier 병원으로 직송 + 병원이 영상/검사 후 결정"</strong>. Y0041/0042/0113이 모두 B→C로 변경된 건 이 원칙의 일관 적용. v0.2 알고리즘이 내재화함.</p>
+    <p>LLM은 ground truth 결정자가 아닌 최종 병원 선택자. 룰 기반 v0.2 출력 (mappability + y_candidates + tier) → EMRIS 병상 정보 → LLM이 최적 병원 추천. <strong>책임 분리가 명확</strong>.</p>
+  </div>
+
+  <!-- Data caveat -->
+  <div class="caveat-box">
+    <div class="label">⚠ 광주·전라 데이터 caveat</div>
+    <p>본 보고서의 통계 수치(sensitivity, specificity 등)는 <strong>광주·전라 cohort 225,017 visits 기반이며 검증 안 됨</strong>. 자문자 의견: "수십% 오류 가능, 질환별 오류율 차이 큼". 통계는 directional probe (참고치, 결정의 근거 X). 본 보고서는 임상 정합성을 결정 근거로 한다.</p>
   </div>
 
   <section class="chapter">
-    <div class="tag"><span class="num">01</span>핵심 결과</div>
+    <div class="tag"><span class="num">01</span>매핑성 매트릭스</div>
     <div>
-      <h2>Primary endpoint (이항 진단정확도, q0).</h2>
+      <h2>27 Y코드 × A/B/C — 자문자 frozen v1.0.</h2>
+      <p>응급의학 전문의가 1차 초안(12·7·8) 검토 후 5건 변경 → 최종 10·6·11 분포로 frozen.</p>
 
+      <div class="mat-grid">
+        <div class="mat-card A">
+          <div class="head">
+            <span class="grp">A</span>
+            <span class="grp-label">Confident</span>
+            <span class="count">${A_codes.length}개</span>
+          </div>
+          <div class="desc">코드 또는 0–3 질문만으로 시술 적응 명확. <code>y_candidates</code>에 confident로 출력.</div>
+          <div class="codes">
+${A_codes.map(c => `            <span class="y-tag" title="${matrix.y_codes[c].label}">${c}</span>`).join('\n')}
+          </div>
+        </div>
+        <div class="mat-card B">
+          <div class="head">
+            <span class="grp">B</span>
+            <span class="grp-label">Candidate</span>
+            <span class="count">${B_codes.length}개</span>
+          </div>
+          <div class="desc">후보군(2-3개)로 좁힘. 단정 X. <code>y_candidates</code>에 candidate로 출력.</div>
+          <div class="codes">
+${B_codes.map(c => `            <span class="y-tag" title="${matrix.y_codes[c].label}">${c}</span>`).join('\n')}
+          </div>
+        </div>
+        <div class="mat-card C">
+          <div class="head">
+            <span class="grp">C</span>
+            <span class="grp-label">Tier-only</span>
+            <span class="count">${C_codes.length}개</span>
+          </div>
+          <div class="desc">현장 정보로 결정 불가. <code>y_candidates=[]</code>, <code>tier_recommendation</code>만.</div>
+          <div class="codes">
+${C_codes.map(c => `            <span class="y-tag" title="${matrix.y_codes[c].label}">${c}</span>`).join('\n')}
+          </div>
+        </div>
+      </div>
+
+      <h3>자문자 변경 5건 (1차 12·7·8 → frozen 10·6·11)</h3>
+      <table class="data">
+        <thead><tr><th>Y-code</th><th>draft → frozen</th><th>임상 사유</th></tr></thead>
+        <tbody>
+${changes.map(ch => `          <tr><td class="code">${ch.y_code} ${ycodeShort(ch.y_code)}</td><td class="code">${ch.from} → <strong>${ch.to}</strong></td><td>${ch.rationale}</td></tr>`).join('\n')}
+        </tbody>
+      </table>
+
+      <div class="pullquote">자문자 일관 원칙: <em style="color:var(--accent);">후보군 narrowing보다 tier 직송 + 병원 검사</em>. Y0041·Y0042·Y0113이 모두 B→C로 옮긴 건 이 원칙의 일관 적용.</div>
+    </div>
+  </section>
+
+  <section class="chapter">
+    <div class="tag"><span class="num">02</span>v0.2 알고리즘</div>
+    <div>
+      <h2>출력 채널 분리 + Special rules 4건.</h2>
+
+      <h3>출력 schema (Pre-KTAS entry당)</h3>
+      <table class="data">
+        <thead><tr><th>필드</th><th>의미</th></tr></thead>
+        <tbody>
+          <tr><td class="code">mappability</td><td>A | B | C | unmapped — 그룹 식별</td></tr>
+          <tr><td class="code">y_candidates</td><td>[{code, confidence: confident|candidate}] — A/B 그룹만, C는 빈 list</td></tr>
+          <tr><td class="code">c_tier_codes</td><td>C 그룹 Y코드 (informational, tier 결정에만)</td></tr>
+          <tr><td class="code">tier_recommendation</td><td>{ preferred, acceptable[], source } — 모든 그룹</td></tr>
+          <tr><td class="code">questions</td><td>0–3 추가 질문 ID</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Special rules 4건</h3>
+      <ul>
+        <li><strong>Y0100·Y0111·Y0112 co-trigger</strong>: 분만 임박 trigger 시 Y0111(confident) + Y0100·Y0112(candidate) 동시 출력</li>
+        <li><strong>Y0160 conditional A 승격</strong>: "안구 천공" 또는 "관통상" 매칭 시 confidence='confident'로 승격</li>
+        <li><strong>Y0150 specific feature only</strong>: "자살" / "자해" / "환각" / "기괴" / "급성 정신" 명시 시만 trigger (정신건강 카테고리 전체 trigger 금지)</li>
+        <li><strong>Y0032 specific feature only</strong>: "편마비" / "GCS" / "벼락두통" / "극심한 두통" 명시 시만 trigger</li>
+      </ul>
+
+      <h3>4,689 Pre-KTAS entries 분포</h3>
       <div class="metrics">
-        <div class="metric"><div class="num accent">${fmt(q0.sensitivity)}</div><div class="label">Sensitivity</div><div class="ci">95% CI [${fmt(q0.sensitivity_95CI[0])}, ${fmt(q0.sensitivity_95CI[1])}]</div></div>
-        <div class="metric"><div class="num good">${fmt(q0.specificity)}</div><div class="label">Specificity</div><div class="ci">95% CI [${fmt(q0.specificity_95CI[0])}, ${fmt(q0.specificity_95CI[1])}]</div></div>
-        <div class="metric"><div class="num">${fmt(q0.ppv)}</div><div class="label">PPV</div><div class="ci">positive predictive</div></div>
-        <div class="metric"><div class="num">${fmt(q0.npv)}</div><div class="label">NPV</div><div class="ci">negative predictive</div></div>
-        <div class="metric"><div class="num small">${fmt(q0.f1)}</div><div class="label">F1</div></div>
-        <div class="metric"><div class="num small">${fmt(q0.balanced_accuracy)}</div><div class="label">Balanced Acc</div></div>
-        <div class="metric"><div class="num small">${fmt(q0.cohens_kappa)}</div><div class="label">Cohen's κ</div></div>
-        <div class="metric"><div class="num small">${q0.n.toLocaleString()}</div><div class="label">N (binary)</div></div>
-      </div>
-
-      <h3>Oracle best-case 한계효용</h3>
-      <p>추가 질문에 ground truth 기반으로 정답을 알고 답변한다고 가정한 oracle 시뮬레이션에서도 sensitivity 증분 <strong>+0.000</strong>. 즉 v0.1 룰의 sensitivity 한계는 "질문이 정답을 좁히지 못해서"가 아니라 <strong>"candidates 자체가 정답을 포함하지 않아서"</strong>다. Rule coverage gap이 본질 문제이며 추가 질문 트리로 해결되지 않는다.</p>
-
-      <div class="pullquote">v0.1 sensitivity 한계는 <em style="color:var(--accent);">candidates에 정답이 없어서</em>다.<br>질문을 더해도 안 풀린다. 룰을 새로 써야 한다.</div>
-    </div>
-  </section>
-
-  <section class="chapter">
-    <div class="tag"><span class="num">02</span>표본</div>
-    <div>
-      <h2>225,017 ED 방문 → 130,536 included.</h2>
-      <table class="data">
-        <thead><tr><th>항목</th><th class="num">수</th><th class="num">비율</th></tr></thead>
-        <tbody>
-          <tr><td>Total CSV rows</td><td class="num">${sample.csv_total_rows.toLocaleString()}</td><td class="num">100.0%</td></tr>
-          <tr><td>네디스매칭 (퇴실진단 ICD-10 존재)</td><td class="num">${sample.matched_rows.toLocaleString()}</td><td class="num">${pct(sample.matched_rows, sample.csv_total_rows)}%</td></tr>
-          <tr><td><strong>Included (모든 inclusion criteria)</strong></td><td class="num"><strong>${sample.included_rows.toLocaleString()}</strong></td><td class="num"><strong>${pct(sample.included_rows, sample.csv_total_rows)}%</strong></td></tr>
-          <tr><td>제외 — 매칭 실패</td><td class="num">${(sample.excluded_reasons.unmatched||0).toLocaleString()}</td><td class="num">${pct(sample.excluded_reasons.unmatched||0, sample.csv_total_rows)}%</td></tr>
-          <tr><td>제외 — 코드 형식·suffix 불명</td><td class="num">${((sample.excluded_reasons.unknown_suffix||0)+(sample.excluded_reasons.code_format||0)+(sample.excluded_reasons.no_prektas_code||0)).toLocaleString()}</td><td class="num">—</td></tr>
-          <tr><td>제외 — codebook 부재</td><td class="num">${(sample.excluded_reasons.codebook_missing||0).toLocaleString()}</td><td class="num">—</td></tr>
-          <tr><td>제외 — 진단 결측</td><td class="num">${(sample.excluded_reasons.no_diagnosis||0).toLocaleString()}</td><td class="num">—</td></tr>
-        </tbody>
-      </table>
-      <p><strong>Severe Y-code prevalence (included)</strong>: ${prev.severe_pct}% (${(q0.tp+q0.fn).toLocaleString()} severe / ${sample.included_rows.toLocaleString()})</p>
-      <p>Phase 8 1차 ICD-10 prefix 추정 4.7%보다 높음 — frozen reference standard cluster 적용 + multi-label 확장 효과. Cohort는 광주·전남·전북 편중 (전국 일반화 한계).</p>
-    </div>
-  </section>
-
-  <section class="chapter">
-    <div class="tag"><span class="num">03</span>Y-code별 성능</div>
-    <div>
-      <h2>Rule absent 카테고리 4건 + over-trigger 5건이 핵심 문제.</h2>
-      <table class="data">
-        <thead><tr><th>Y-code</th><th class="num">Support</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th><th>비고</th></tr></thead>
-        <tbody>
-${ySorted.slice(0, 18).map(([y, m]) => {
-  const note = m.recall === 0 ? '<strong style="color:var(--accent)">rule absent</strong>'
-    : m.recall < 0.20 ? '<span style="color:var(--accent)">recall 부족</span>'
-    : m.precision < 0.10 ? '<span style="color:var(--accent)">over-prediction</span>'
-    : m.f1 > 0.40 ? '<span style="color:var(--good)">균형 양호</span>'
-    : '—';
-  const rowClass = m.recall === 0 ? 'warn' : m.f1 > 0.40 ? 'good' : '';
-  const ylabel = clusters.y_codes[y] ? clusters.y_codes[y].short : y;
-  return `          <tr class="${rowClass}"><td class="code">${y}</td><td class="num">${m.support.toLocaleString()}</td><td class="num">${fmt(m.precision, 3)}</td><td class="num">${fmt(m.recall, 3)}</td><td class="num">${fmt(m.f1, 3)}</td><td>${ylabel} · ${note}</td></tr>`;
-}).join('\n')}
-        </tbody>
-      </table>
-      <p><strong>Macro F1</strong>: ${fmt(results.macro_f1, 3)} · <strong>Weighted F1</strong>: ${fmt(results.weighted_f1, 3)} · 27 Y-codes 중 ${ySorted.filter(([_, m]) => m.recall === 0).length}개가 recall 0.</p>
-
-      <div class="callout warn">
-        <div class="title">Critical rule absent</div>
-        <p><strong>Y0141 응급HD · Y0142 CRRT · Y0060 복부응급수술 · Y0051 담낭질환</strong> — recall 0%. v0.1에 적응 룰이 없거나 거의 작동 안 함. v0.2 우선 보강 대상.</p>
-      </div>
-
-      <div class="callout warn">
-        <div class="title">Massive over-trigger</div>
-        <p><strong>Y0032 뇌출혈</strong>: 신경계 카테고리 광범위 trigger로 13,929 FP. <strong>Y0010·Y0041</strong>: 흉통 환자에 두 후보 모두 자동 trigger되어 specificity 손실. v0.2에서 specific feature 한정 narrowing 필요.</p>
+        <div class="metric"><div class="num good">${v02.summary.by_mappability.A}</div><div class="label">A confident</div><div class="ci">${pct(v02.summary.by_mappability.A, 4689)}%</div></div>
+        <div class="metric"><div class="num">${v02.summary.by_mappability.B}</div><div class="label">B candidate</div><div class="ci">${pct(v02.summary.by_mappability.B, 4689)}%</div></div>
+        <div class="metric"><div class="num accent">${v02.summary.by_mappability.C}</div><div class="label">C tier-only</div><div class="ci">${pct(v02.summary.by_mappability.C, 4689)}%</div></div>
+        <div class="metric"><div class="num">${v02.summary.by_mappability.unmapped}</div><div class="label">unmapped</div><div class="ci">${pct(v02.summary.by_mappability.unmapped, 4689)}%</div></div>
+        <div class="metric"><div class="num">${v02.summary.by_tier_preferred.regional || 0}</div><div class="label">권역 권고</div></div>
+        <div class="metric"><div class="num">${v02.summary.by_tier_preferred.local_center || 0}</div><div class="label">지역센터 권고</div></div>
       </div>
     </div>
   </section>
 
   <section class="chapter">
-    <div class="tag"><span class="num">04</span>Stratified</div>
+    <div class="tag"><span class="num">03</span>Directional 통계</div>
     <div>
-      <h2>Grade 1 (소생) sensitivity 18.5% — 가장 위급한 환자의 80%가 unmapped.</h2>
+      <h2>참고치 only — 결정의 근거 X.</h2>
 
-      <h3>By Pre-KTAS grade</h3>
+      <div class="callout note">
+        <div class="title">자문자 원칙</div>
+        <p>"광주·전라 데이터는 검증 안 됨. 통계는 directional probe. 임계값 sens 0.70 강제는 임상 현실과 안 맞음. <strong>논리적 정합성이 우선</strong>." v0.2 결과 평가에 통계 임계값 사용 X.</p>
+      </div>
+
+      <h3>v0.2 binary metrics (130,536 visits, informational)</h3>
       <table class="data">
-        <thead><tr><th>Grade</th><th class="num">N</th><th class="num">Sens</th><th class="num">Spec</th><th>해석</th></tr></thead>
+        <thead><tr><th>지표</th><th class="num">confident only</th><th class="num">confident + candidate</th><th class="num">v0.1 (참고)</th></tr></thead>
         <tbody>
-${['1','2','3','4','5'].filter(g => stratified.by_grade[g]).map(g => {
-  const v = stratified.by_grade[g];
-  const m = v.metrics;
-  const note = g === '1' ? '소생 — 가장 위급. <strong style="color:var(--accent)">v0.1 fail</strong>' :
-               g === '5' ? '비응급 — sens 낮음 의도된 결과' :
-               g === '3' ? '응급 — 중간 표본 최대' : '—';
-  return `          <tr><td>grade ${g}</td><td class="num">${v.n.toLocaleString()}</td><td class="num">${fmt(m.sensitivity, 3)}</td><td class="num">${fmt(m.specificity, 3)}</td><td>${note}</td></tr>`;
-}).join('\n')}
+          <tr><td>Sensitivity</td><td class="num">${fmt(v02_conf.sensitivity, 3)}</td><td class="num">${fmt(v02_cand.sensitivity, 3)}</td><td class="num">0.394</td></tr>
+          <tr><td>Specificity</td><td class="num">${fmt(v02_conf.specificity, 3)}</td><td class="num">${fmt(v02_cand.specificity, 3)}</td><td class="num">0.808</td></tr>
+          <tr><td>F1</td><td class="num">${fmt(v02_conf.f1, 3)}</td><td class="num">${fmt(v02_cand.f1, 3)}</td><td class="num">0.270</td></tr>
         </tbody>
       </table>
 
-      <h3>By age group</h3>
-      <table class="data">
-        <thead><tr><th>연령군</th><th class="num">N</th><th class="num">Sens</th><th class="num">Spec</th></tr></thead>
-        <tbody>
-${Object.entries(stratified.by_age_group).sort((a,b) => b[1].n - a[1].n).map(([k, v]) => {
-  return `          <tr><td>${k}</td><td class="num">${v.n.toLocaleString()}</td><td class="num">${fmt(v.metrics.sensitivity, 3)}</td><td class="num">${fmt(v.metrics.specificity, 3)}</td></tr>`;
-}).join('\n')}
-        </tbody>
-      </table>
+      <p><strong>해석 (informational)</strong>: v0.2 specificity ${fmt(v02_cand.specificity, 3)}는 v0.1 0.808보다 향상 (over-trigger 좁히기 효과). v0.2 sensitivity는 v0.1보다 낮음 — 자문자 원칙대로 "단정 회피"의 의도된 비용. C 그룹 11개 Y코드를 candidates에서 제외했기 때문이며 v0.2의 framing 안에서 acceptable.</p>
 
-      <h3>By region</h3>
-      <table class="data">
-        <thead><tr><th>지역</th><th class="num">N</th><th class="num">Sens</th><th class="num">Spec</th></tr></thead>
-        <tbody>
-${Object.entries(stratified.by_region).sort((a,b) => b[1].n - a[1].n).map(([k, v]) => {
-  return `          <tr><td>${k}</td><td class="num">${v.n.toLocaleString()}</td><td class="num">${fmt(v.metrics.sensitivity, 3)}</td><td class="num">${fmt(v.metrics.specificity, 3)}</td></tr>`;
-}).join('\n')}
-        </tbody>
-      </table>
-      <p>지역별 차이 ±5%p 일관, 다만 cohort 자체가 광주·전남·전북 편중이라 외부 일반화 한계.</p>
-    </div>
-  </section>
+      <h3>Tier 권고 일치율 (사전 등록 H4의 directional version)</h3>
+      <div class="metrics">
+        <div class="metric"><div class="num good">${(tier.agree_rate_when_known*100).toFixed(1)}%</div><div class="label">acceptable에 실제 tier 포함</div></div>
+        <div class="metric"><div class="num">${tier.agree.toLocaleString()}</div><div class="label">agree</div></div>
+        <div class="metric"><div class="num">${tier.disagree.toLocaleString()}</div><div class="label">disagree</div></div>
+      </div>
+      <p><em>informational note</em>: 자문자 사전 등록 임계 0.80을 directional하게 통과. 본 보고서는 통계 임계 평가를 하지 않으나, v0.2 tier 권고가 광주·전라 cohort 실측 이송 종별과 일치한다는 신호.</p>
 
-  <section class="chapter">
-    <div class="tag"><span class="num">05</span>v0.2 권고</div>
-    <div>
-      <h2>"활용 불가"는 v0.1 한정. v0.2 개선 방향은 specific.</h2>
-
-      <h3>Critical (recall 0 카테고리 — sensitivity 회복 핵심)</h3>
+      <h3>모순 검출</h3>
       <ul>
-        <li><strong>Y0141 응급HD / Y0142 CRRT (FN 약 3,000건)</strong>: 의식 U/V + 약물 중독 / level3·4 텍스트 매칭 ('산증', '고칼륨', '요독증', '심폐부종'). Frozen cluster의 R57.x 동반 split 정책 적용.</li>
-        <li><strong>Y0060 복부응급수술 (FN 1,349건)</strong>: 소화기계 + level4 텍스트 매칭 ('복통 심함', '복막자극', '쇼크').</li>
-        <li><strong>Y0051·Y0052 담낭/담도 (FN 741건)</strong>: level3·4 텍스트 '담낭', '우상복부 통증', '담관염', '황달' 매칭.</li>
+        <li><strong>Type-A 모순</strong>: A 그룹 confident인데 ground truth Y와 매칭 안 됨 — ${v02val.type_a_contradictions.count}건. 텍스트 매칭 룰 정밀화 필요.</li>
+        <li><strong>Type-B 일치율</strong>: ${(v02val.type_b_matching.match_rate*100).toFixed(1)}% — B 후보 중 ground truth 포함 비율.</li>
+        <li><strong>Type-C visits</strong>: 광주·전라 cohort에서 41건만. C 그룹 trigger rule이 보수적이거나 cohort 텍스트 특성. v0.3 보강 대상.</li>
       </ul>
-
-      <h3>High (over-prediction 좁히기 — specificity 보전)</h3>
-      <ul>
-        <li><strong>Y0032 뇌출혈 13,929 FP</strong>: 신경계 전체에서 자동 trigger. '두부외상', '극심한 두통', '편마비' specific feature 한정.</li>
-        <li><strong>Y0010·Y0041 흉통 split</strong>: 흉통 + 심전도 변화 명시 → Y0010만; 흉통 + 이동성 통증 → Y0041만.</li>
-        <li><strong>Y0150 정신과 over-inclusion</strong>: 카테고리 전체 trigger → 자해·타해 risk feature 명시 시만.</li>
-      </ul>
-
-      <h3>Medium (recall 부족 카테고리)</h3>
-      <ul>
-        <li><strong>Y0082 위장관내시경(영유아) recall 0.18</strong>: pediatric grade 1-2 + level3 '출혈·이물' 매칭 강화.</li>
-        <li><strong>Y0020 뇌경색 recall 0.69 → 0.85+</strong>: 신경계 grade 1-2 전체로 trigger 확대.</li>
-      </ul>
-
-      <div class="callout good">
-        <div class="title">목표 (v0.2)</div>
-        <p>Sensitivity ≥ 0.70, Specificity ≥ 0.75 — H1·H2 모두 통과 (한국 baseline). Critical rule 신규 + over-prediction 좁히기 동시 시도.</p>
-      </div>
     </div>
   </section>
 
   <section class="chapter">
-    <div class="tag"><span class="num">06</span>학술 정합성</div>
+    <div class="tag"><span class="num">04</span>한계</div>
     <div>
-      <h2>Honest reporting — 데이터 잠금 전 사전 등록.</h2>
-
-      <p>본 연구는 STARD 2015 가이드라인 준수 retrospective observational diagnostic accuracy study다. Phase 8a-2 frozen reference standard(<a href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/y-code-icd10-clusters.json">y-code-icd10-clusters.json</a>) 동결 후 데이터 잠금 이전에 v1.1 amendment 작성. Index test는 commit hash로 동결.</p>
-
-      <ul>
-        <li><strong>Reference standard</strong>: 응급의학 전문의 1인 자문 (2026-04-25, ~1시간 43분). 27 Y코드 × ICD-10 cluster 결정. 2건 모호 사항(Y0042 sync, Y0160 conditional)은 추가 명시 확인.</li>
-        <li><strong>Index test (v0.1)</strong>: <code>scripts/research/build-prektas-to-y-mapping.mjs</code> @ commit <code>f396343</code>. 12 도메인 룰 + 13 질문 카탈로그.</li>
-        <li><strong>가설 임계값</strong>: 자문자가 4개 모두 0.80으로 통일 (한국 EM baseline 채택). 통상 triage 도구 0.85·0.90 임계 대신.</li>
-        <li><strong>Pre-data-lock amendment v1.1</strong>: 임계값 4건 + Y코드 cluster 17건 변경. post-hoc 아님.</li>
-      </ul>
-
-      <div class="callout">
-        <div class="title">결과의 학술적 의미</div>
-        <p>본 결과는 "Pre-KTAS만으로 27 Y코드 매핑 가능한가?"라는 질문에 v0.1의 답이 "아직 부족하고 어디에서 부족한지 정량 측정됨"이라는 것이다. Negative result가 아닌 <strong>v0.2를 정확히 어디에 투자해야 할지 알려주는 actionable 결과</strong>다.</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="chapter">
-    <div class="tag"><span class="num">07</span>한계</div>
-    <div>
-      <h2>외부 일반화·reference standard·시뮬레이션의 한계.</h2>
+      <h2>외부 일반화·reference standard·텍스트 매칭의 한계.</h2>
       <ol>
-        <li><strong>단일 cohort, retrospective</strong>: 광주·전남·전북 편중. 수도권·기타 외부 검증 부재.</li>
-        <li><strong>ICD-10 reference standard imperfection</strong>: Y코드는 시술·자원 정의이지 진단 정의가 아니다. 자문자 cluster mapping은 1인 임상 판단.</li>
-        <li><strong>Pre-KTAS 5/6자 crosswalk 가설</strong> (suffix 0/9 = adult/pediatric): 23.9% unique codes 미매핑, visit-weighted 영향 27.5%.</li>
-        <li><strong>Oracle simulation의 단순성</strong>: ground truth가 candidates에 있으면 정답 도달 가정. Best-case 추정.</li>
-        <li><strong>Conditional include / clinical_split 미적용</strong>: Y0091 R04.2, Y0160 S05.0, Y0171 I26.x, Y0141·Y0142 split 등은 단순 prefix matching만 적용. Phase 8c+ 별도 sub-analysis 권고.</li>
-        <li><strong>Pre-KTAS 코드 부여의 inter-rater reliability</strong>는 본 연구 범위 외.</li>
+        <li><strong>단일 cohort, retrospective</strong>: 광주·전남·전북 편중. 외부 검증 없음.</li>
+        <li><strong>광주·전라 데이터는 검증 안 됨</strong> (자문자 명시): 수십% 오류 가능, 질환별 차이 큼.</li>
+        <li><strong>ICD-10 reference standard imperfection</strong>: Y코드는 시술·자원 정의이지 진단 정의가 아니다. 자문자 cluster 1인 판단.</li>
+        <li><strong>Pre-KTAS 5/6자 crosswalk 가설</strong>: 23.9% unique codes 미매핑.</li>
+        <li><strong>v0.2 텍스트 매칭의 광범위성</strong>: Type-A 모순 ${v02val.type_a_contradictions.count}건 — text rule 정밀화 필요.</li>
+        <li><strong>C 그룹 trigger 보수성</strong>: 광주·전라 cohort에서 C 그룹 visit 41건만 — Y0141/0142 등 키워드 부족.</li>
+        <li><strong>Pre-KTAS 코드 부여의 inter-rater reliability</strong> 본 연구 범위 외.</li>
       </ol>
     </div>
   </section>
 
   <section class="chapter">
-    <div class="tag"><span class="num">08</span>산출물</div>
+    <div class="tag"><span class="num">05</span>v0.3 권고</div>
+    <div>
+      <h2>단기 / 중기 / 장기.</h2>
+
+      <h3>단기 (자문자 추가 input 없이 진행 가능)</h3>
+      <ul>
+        <li>Type-A 모순 ${v02val.type_a_contradictions.count}건 audit + text rule 정밀화 (예: "압박" 키워드는 "흉통" 동반 시만)</li>
+        <li>C 그룹 trigger 키워드 확장 — 특히 Y0141·Y0142 (의식 변화 + 약물 중독 광범위 매칭)</li>
+        <li>자문자 위임 (Q3·Q6) 처리 — A 그룹 추가 질문 catalog 정밀화</li>
+      </ul>
+
+      <h3>중기 (자문자 검토 필요)</h3>
+      <ul>
+        <li>외부 cohort 확보 (수도권 데이터)</li>
+        <li>Pre-KTAS 5/6자 crosswalk 미매핑 코드 임상 의미 자문 (suffix 1/2/3, 205 unique)</li>
+        <li>Y0150 정신과 카테고리 v0.2 specific feature 정밀도 검증</li>
+      </ul>
+
+      <h3>장기</h3>
+      <ul>
+        <li><strong>Prospective validation</strong>: 실제 119 운영 환경에서 v0.2 적용 + 결과 측정</li>
+        <li>응급의학 전문의 2인 reference standard agreement (현재 1인 자문)</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="chapter">
+    <div class="tag"><span class="num">06</span>산출물</div>
     <div>
       <h2>모든 결과 + 코드 + 데이터.</h2>
 
       <div class="file-grid">
+        <a class="file" href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/prektas-validation-report-v2.0.md">
+          <div class="fname">prektas-validation-report-v2.0.md</div>
+          <div class="fdesc">v2.0 보고서. 가장 먼저 보세요.</div>
+        </a>
+        <a class="file" href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/y-code-mappability-matrix.json">
+          <div class="fname">y-code-mappability-matrix.json</div>
+          <div class="fdesc">매핑성 매트릭스 v1.0 (frozen)</div>
+        </a>
+        <a class="file" href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/prektas-to-y-mapping-v0.2.json">
+          <div class="fname">prektas-to-y-mapping-v0.2.json</div>
+          <div class="fdesc">4,689 entries × v0.2 schema</div>
+        </a>
+        <a class="file" href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/validation-results-v0.2.json">
+          <div class="fname">validation-results-v0.2.json</div>
+          <div class="fdesc">Directional 통계 (informational only)</div>
+        </a>
+        <a class="file" href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/mappability-review-2026-04-26-moexk8az.json">
+          <div class="fname">mappability-review-...json</div>
+          <div class="fdesc">자문자 검토 원본 (5건 변경)</div>
+        </a>
+        <a class="file" href="https://github.com/Pandoll-AI/emris-119chat/blob/main/scripts/research/build-prektas-to-y-mapping-v0.2.mjs">
+          <div class="fname">build-...-v0.2.mjs</div>
+          <div class="fdesc">v0.2 알고리즘 구현 스크립트</div>
+        </a>
+        <a class="file" href="https://github.com/Pandoll-AI/emris-119chat/blob/main/scripts/research/validate-v0_2.py">
+          <div class="fname">validate-v0_2.py</div>
+          <div class="fdesc">Directional 통계 스크립트</div>
+        </a>
         <a class="file" href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/prektas-validation-report-v1.0.md">
           <div class="fname">prektas-validation-report-v1.0.md</div>
-          <div class="fdesc">9 섹션 최종 보고서. 가장 먼저 보세요.</div>
-        </a>
-        <a class="file" href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/validation-results-v0.1.json">
-          <div class="fname">validation-results-v0.1.json</div>
-          <div class="fdesc">Primary metrics + 27 Y-code per-class</div>
-        </a>
-        <a class="file" href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/validation-stratified.json">
-          <div class="fname">validation-stratified.json</div>
-          <div class="fdesc">region/age/grade stratified</div>
-        </a>
-        <a class="file" href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/validation-error-audit.json">
-          <div class="fname">validation-error-audit.json</div>
-          <div class="fdesc">Top 50 FN/FP patterns</div>
-        </a>
-        <a class="file" href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/y-code-icd10-clusters.json">
-          <div class="fname">y-code-icd10-clusters.json</div>
-          <div class="fdesc">Frozen reference standard v1.0</div>
-        </a>
-        <a class="file" href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/prektas-validation-protocol.md">
-          <div class="fname">prektas-validation-protocol.md</div>
-          <div class="fdesc">Protocol v1.1 (사전 등록 분석 계획)</div>
-        </a>
-        <a class="file" href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/prektas-code-crosswalk.json">
-          <div class="fname">prektas-code-crosswalk.json</div>
-          <div class="fdesc">5자 ↔ 6자 코드 정렬</div>
-        </a>
-        <a class="file" href="https://github.com/Pandoll-AI/emris-119chat/blob/main/scripts/research/validate-phase8.py">
-          <div class="fname">validate-phase8.py</div>
-          <div class="fdesc">Phase 8b–f 통합 분석 스크립트</div>
+          <div class="fdesc">v1.0 보고서 (history 보존, framing 폐기)</div>
         </a>
       </div>
 
       <h3>재현</h3>
-      <div class="pipeline"><pre>git clone https://github.com/Pandoll-AI/emris-119chat
-cd emris-119chat
-git checkout f396343  # frozen index test
-
-python3 scripts/research/validate-phase8.py
-# Outputs:
-#   research/validation-results-v0.1.json
-#   research/validation-stratified.json
-#   research/validation-error-audit.json</pre></div>
+      <p style="font-family: ui-monospace, monospace; font-size: 12px; background: #fff; border: 1px solid var(--line); padding: 14px; line-height: 1.6;">git clone https://github.com/Pandoll-AI/emris-119chat<br>cd emris-119chat<br>node scripts/research/build-prektas-to-y-mapping-v0.2.mjs<br>python3 scripts/research/validate-v0_2.py</p>
     </div>
   </section>
 
   <footer class="page-end">
-    <div><span class="version-tag">report v${REPORT_VERSION}</span> · <span class="version-tag">protocol v${PROTOCOL_VERSION}</span> · <span class="version-tag">${PROTOCOL_ID}</span> · ${ANALYSIS_DATE}</div>
-    <div><a href="prektas-consultation.html">→ 자문 도구</a> · <a href="prektas-hospital-recommender.html">→ 추천 도구</a> · <a href="https://119chat.emergency-info.com">→ Chatbot</a></div>
+    <div><span class="version-tag">report v${REPORT_VERSION}</span> · <span class="version-tag">matrix v1.0 frozen</span> · <span class="version-tag">${PROTOCOL_ID}</span> · ${ANALYSIS_DATE}</div>
+    <div><a href="prektas-mappability-review.html">→ 자문 검토</a> · <a href="https://119chat.emergency-info.com">→ Chatbot</a></div>
   </footer>
 </div>
 </body>

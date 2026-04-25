@@ -1,0 +1,760 @@
+{
+  "protocol_id": "PREKTAS-VAL-2026-001",
+  "algorithm_version": "v0.2",
+  "reference_standard": "research/y-code-icd10-clusters.json v1.0",
+  "mappability_matrix": "research/y-code-mappability-matrix.json v1.0 (frozen)",
+  "analysis_at": "2026-04-25T23:31:20Z",
+  "data_caveat": "광주·전라 데이터는 검증 안 됨. 본 결과는 directional probe (informational only). 결정의 근거가 아니다.",
+  "sample": {
+    "total_rows": 225017,
+    "matched": 179924,
+    "included": 130536,
+    "excluded": {
+      "unmatched": 45093,
+      "no_v02_mapping": 48697,
+      "no_code": 149,
+      "no_dx": 542
+    }
+  },
+  "mappability_distribution": {
+    "unmapped": 105838,
+    "B": 14548,
+    "A": 10109,
+    "C": 41
+  },
+  "binary_metrics_confident_only": {
+    "tp": 1957,
+    "fp": 7655,
+    "tn": 108276,
+    "fn": 12648,
+    "n": 130536,
+    "sensitivity": 0.134,
+    "sensitivity_95CI": [
+      0.1286,
+      0.1396
+    ],
+    "specificity": 0.934,
+    "specificity_95CI": [
+      0.9325,
+      0.9354
+    ],
+    "ppv": 0.2036,
+    "npv": 0.8954,
+    "f1": 0.1616
+  },
+  "binary_metrics_confident_plus_candidate": {
+    "tp": 4807,
+    "fp": 17993,
+    "tn": 97938,
+    "fn": 9798,
+    "n": 130536,
+    "sensitivity": 0.3291,
+    "sensitivity_95CI": [
+      0.3216,
+      0.3368
+    ],
+    "specificity": 0.8448,
+    "specificity_95CI": [
+      0.8427,
+      0.8469
+    ],
+    "ppv": 0.2108,
+    "npv": 0.9091,
+    "f1": 0.257
+  },
+  "comparison_with_v01": {
+    "v01_sensitivity": 0.3935,
+    "v01_specificity": 0.8077,
+    "v02_sensitivity_confident": 0.134,
+    "v02_specificity_confident": 0.934,
+    "v02_sensitivity_with_candidate": 0.3291,
+    "v02_specificity_with_candidate": 0.8448,
+    "note": "자문자 원칙에 따라 sens 0.70 같은 임계값 평가는 폐기. 본 비교는 directional only."
+  },
+  "type_a_contradictions": {
+    "count": 200,
+    "note": "A 그룹(confident)인데 ground truth Y와 매칭 안 됨. v0.2 룰 결함 또는 ICD-10 cluster 정의 한계 가능.",
+    "sample": [
+      {
+        "code": "CIDAI",
+        "dx": "A418",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0142"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "COECC",
+        "dx": "F100",
+        "confident_y": [
+          "Y0120"
+        ],
+        "gt_y": [
+          "Y0150"
+        ],
+        "level2": "환경손상",
+        "level3": "화학물질 노출"
+      },
+      {
+        "code": "DBECA",
+        "dx": "T509",
+        "confident_y": [
+          "Y0150"
+        ],
+        "gt_y": [
+          "Y0141"
+        ],
+        "level2": "정신건강",
+        "level3": "우울증/자살/자해"
+      },
+      {
+        "code": "CIDBA",
+        "dx": "R579",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0142"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "CJICC",
+        "dx": "N178",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0141",
+          "Y0142"
+        ],
+        "level2": "소화기계",
+        "level3": "토혈"
+      },
+      {
+        "code": "CIDBB",
+        "dx": "I7102",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "CICCA",
+        "dx": "K830",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0052"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)"
+      },
+      {
+        "code": "DJICC",
+        "dx": "A419",
+        "confident_y": [
+          "Y0082"
+        ],
+        "gt_y": [
+          "Y0142"
+        ],
+        "level2": "소화기계",
+        "level3": "토혈"
+      },
+      {
+        "code": "CICCA",
+        "dx": "I7103",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)"
+      },
+      {
+        "code": "CIDBB",
+        "dx": "I7102",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "CJJCB",
+        "dx": "K5722",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0060"
+        ],
+        "level2": "소화기계",
+        "level3": "혈변/흑색변"
+      },
+      {
+        "code": "CJJAD",
+        "dx": "K5733",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0060"
+        ],
+        "level2": "소화기계",
+        "level3": "혈변/흑색변"
+      },
+      {
+        "code": "CIDBB",
+        "dx": "K922",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0081",
+          "Y0082"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "CIDBB",
+        "dx": "I7102",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "CIDBB",
+        "dx": "I7109",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "CJJAD",
+        "dx": "N179",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0141",
+          "Y0142"
+        ],
+        "level2": "소화기계",
+        "level3": "혈변/흑색변"
+      },
+      {
+        "code": "CJICB",
+        "dx": "R571",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0142"
+        ],
+        "level2": "소화기계",
+        "level3": "토혈"
+      },
+      {
+        "code": "CIDBE",
+        "dx": "I7103",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "CICCA",
+        "dx": "I612",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0032"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)"
+      },
+      {
+        "code": "CICCA",
+        "dx": "K922",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0081",
+          "Y0082"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)"
+      },
+      {
+        "code": "CJIAD",
+        "dx": "N178",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0141",
+          "Y0142"
+        ],
+        "level2": "소화기계",
+        "level3": "토혈"
+      },
+      {
+        "code": "CIDBC",
+        "dx": "N185",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0141"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "CICCA",
+        "dx": "I7103",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)"
+      },
+      {
+        "code": "CJFCF",
+        "dx": "F100",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0150"
+        ],
+        "level2": "소화기계",
+        "level3": "구토/구역"
+      },
+      {
+        "code": "DJJAJ",
+        "dx": "N185",
+        "confident_y": [
+          "Y0082"
+        ],
+        "gt_y": [
+          "Y0141"
+        ],
+        "level2": "소화기계",
+        "level3": "혈변/흑색변"
+      },
+      {
+        "code": "CIDBB",
+        "dx": "I7102",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "CJJCA",
+        "dx": "R579",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0142"
+        ],
+        "level2": "소화기계",
+        "level3": "혈변/흑색변"
+      },
+      {
+        "code": "CICCA",
+        "dx": "K8500",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0060"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)"
+      },
+      {
+        "code": "DICCA",
+        "dx": "I7103",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)"
+      },
+      {
+        "code": "DICCA",
+        "dx": "I7103",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)"
+      },
+      {
+        "code": "CIDBB",
+        "dx": "I7105",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "CIDBB",
+        "dx": "I7105",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "CICCA",
+        "dx": "K830",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0052"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)"
+      },
+      {
+        "code": "CIDBB",
+        "dx": "K8031",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0052"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "DIDBE",
+        "dx": "F100",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0150"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "CJJAJ",
+        "dx": "K810",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0051"
+        ],
+        "level2": "소화기계",
+        "level3": "혈변/흑색변"
+      },
+      {
+        "code": "CIDBA",
+        "dx": "I7102",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "CJFCF",
+        "dx": "K810",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0051"
+        ],
+        "level2": "소화기계",
+        "level3": "구토/구역"
+      },
+      {
+        "code": "CIDBB",
+        "dx": "K839",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0052"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "CJICC",
+        "dx": "N185",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0141"
+        ],
+        "level2": "소화기계",
+        "level3": "토혈"
+      },
+      {
+        "code": "CICCA",
+        "dx": "K8040",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0052"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)"
+      },
+      {
+        "code": "CBECD",
+        "dx": "T391",
+        "confident_y": [
+          "Y0150"
+        ],
+        "gt_y": [
+          "Y0141"
+        ],
+        "level2": "정신건강",
+        "level3": "우울증/자살/자해"
+      },
+      {
+        "code": "CJFCF",
+        "dx": "F100",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0150"
+        ],
+        "level2": "소화기계",
+        "level3": "구토/구역"
+      },
+      {
+        "code": "CJIAJ",
+        "dx": "F100",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0150"
+        ],
+        "level2": "소화기계",
+        "level3": "토혈"
+      },
+      {
+        "code": "DJJCA",
+        "dx": "K2501",
+        "confident_y": [
+          "Y0082"
+        ],
+        "gt_y": [
+          "Y0081"
+        ],
+        "level2": "소화기계",
+        "level3": "혈변/흑색변"
+      },
+      {
+        "code": "DIDAJ",
+        "dx": "I639",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0020"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)"
+      },
+      {
+        "code": "DJIAJ",
+        "dx": "A419",
+        "confident_y": [
+          "Y0082"
+        ],
+        "gt_y": [
+          "Y0142"
+        ],
+        "level2": "소화기계",
+        "level3": "토혈"
+      },
+      {
+        "code": "CJJCA",
+        "dx": "I619",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0032"
+        ],
+        "level2": "소화기계",
+        "level3": "혈변/흑색변"
+      },
+      {
+        "code": "CICCA",
+        "dx": "K8599",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0060"
+        ],
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)"
+      },
+      {
+        "code": "CJFCF",
+        "dx": "F100",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0150"
+        ],
+        "level2": "소화기계",
+        "level3": "구토/구역"
+      }
+    ]
+  },
+  "type_b_matching": {
+    "matched": 2843,
+    "missed": 1367,
+    "match_rate": 0.6753,
+    "note": "B 그룹 후보가 ground truth와 일치하는 비율. 후보군 정의의 적절성 평가."
+  },
+  "type_c_ground_truth_distribution": {
+    "Y0052": 2,
+    "Y0082": 1,
+    "Y0081": 1,
+    "Y0150": 1,
+    "Y0141": 1,
+    "Y0142": 1
+  },
+  "type_d_unmapped_gt_distribution": {
+    "Y0060": 1537,
+    "Y0141": 1452,
+    "Y0142": 1225,
+    "Y0020": 961,
+    "Y0052": 653,
+    "Y0051": 540,
+    "Y0081": 439,
+    "Y0150": 421,
+    "Y0082": 340,
+    "Y0032": 331,
+    "Y0010": 294,
+    "Y0031": 275,
+    "Y0070": 51,
+    "Y0041": 50,
+    "Y0113": 49,
+    "Y0091": 47,
+    "Y0092": 47,
+    "Y0042": 34,
+    "Y0120": 33,
+    "Y0112": 30
+  },
+  "tier_recommendation_agreement": {
+    "agree": 111870,
+    "disagree": 18666,
+    "no_tier_info": 0,
+    "agree_rate_when_known": 0.857,
+    "note": "tier_recommendation.acceptable에 실제 이송 종별이 포함되는 비율. (사전 등록 H4와 다른 directional 정의)"
+  },
+  "severe_prevalence": {
+    "count": 16839,
+    "pct": 11.19,
+    "per_y": {
+      "Y0020": 3258,
+      "Y0081": 1723,
+      "Y0141": 1703,
+      "Y0060": 1615,
+      "Y0142": 1598,
+      "Y0082": 1485,
+      "Y0032": 1336,
+      "Y0010": 920,
+      "Y0052": 732,
+      "Y0150": 621,
+      "Y0051": 584,
+      "Y0031": 471,
+      "Y0120": 151,
+      "Y0041": 128,
+      "Y0113": 118,
+      "Y0091": 66,
+      "Y0092": 66,
+      "Y0112": 59,
+      "Y0070": 57,
+      "Y0042": 39,
+      "Y0160": 36,
+      "Y0171": 32,
+      "Y0131": 25,
+      "Y0172": 12,
+      "Y0132": 3,
+      "Y0111": 1
+    }
+  }
+}
