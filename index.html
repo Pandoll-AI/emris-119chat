@@ -1999,12 +1999,84 @@
       }
       m.appendChild(status);
       li.appendChild(m);
-      // TODO Step 5+: 클릭 시 read-only 보기. 현재는 로그만.
+      // 클릭 시 read-only 케이스 보기
       li.addEventListener('click', () => {
-        console.log('[CaseStore] view case', c);
+        viewCaseReadOnly(c);
       });
       list.appendChild(li);
     }
+  }
+
+  // Phase 7+ — 기록 패널 클릭 시 읽기 전용 케이스 보기
+  function viewCaseReadOnly(c) {
+    if (!c) return;
+    // drawer 닫기 (setupCaseControls 클로저 밖이므로 DOM 직접 조작)
+    const drawer = document.getElementById('drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+    if (drawer) {
+      drawer.classList.remove('open');
+      drawer.setAttribute('aria-hidden', 'true');
+    }
+    if (backdrop) backdrop.classList.remove('open');
+
+    const chat = document.getElementById('chat');
+    if (!chat) return;
+    clearChildren(chat);
+
+    const activeId = (window.CaseStore && window.CaseStore.getActive() || {}).id;
+    const isActive = c.id === activeId;
+    const status = isActive ? '진행 중' : (c.ts_closed ? '마감' : '미상');
+
+    // 헤더 배너
+    const banner = el('div', { className: 'msg bot' });
+    const bb = el('div', { className: 'bubble' });
+    bb.style.borderLeft = '3px solid var(--t-accent)';
+    bb.style.fontSize = 'var(--fs-sm)';
+    bb.style.color = 'var(--t-dim)';
+    bb.style.background = 'var(--t-surface)';
+    bb.textContent = '📋 케이스 보기 (' + status + ') — ' + (c.summary || c.id) + ' · ' + fmtTimestamp(c.ts_started);
+    banner.appendChild(bb);
+    chat.appendChild(banner);
+
+    const msgs = Array.isArray(c.messages) ? c.messages : [];
+    let printed = 0;
+    for (const m of msgs) {
+      if (!m || !m.content) continue;
+      const role = m.role === 'user' ? 'user' : 'bot';
+      const div = el('div', { className: 'msg ' + role });
+      const b = el('div', { className: 'bubble' });
+      b.style.whiteSpace = 'pre-wrap';
+      b.textContent = m.content;
+      div.appendChild(b);
+      chat.appendChild(div);
+      printed++;
+    }
+
+    if (printed === 0) {
+      const empty = el('div', { className: 'msg bot' });
+      const eb = el('div', { className: 'bubble' });
+      eb.style.color = 'var(--t-dim)';
+      eb.style.fontSize = 'var(--fs-sm)';
+      eb.textContent = '이 케이스에는 저장된 메시지가 없습니다.';
+      empty.appendChild(eb);
+      chat.appendChild(empty);
+    }
+
+    // 활성과 다르면 안내 (사용자가 새 메시지 입력 시 어디로 가는지 모호하지 않게)
+    if (!isActive) {
+      const note = el('div', { className: 'msg bot' });
+      const nb = el('div', { className: 'bubble' });
+      nb.style.background = 'var(--t-surface)';
+      nb.style.borderLeft = '3px solid var(--t-line)';
+      nb.style.color = 'var(--t-dim)';
+      nb.style.fontSize = 'var(--fs-xs)';
+      nb.textContent = '※ 마감된 케이스를 보고 있습니다. 새 메시지를 입력하면 활성 케이스에 추가됩니다. 새 케이스로 시작하려면 헤더의 [🆕 새 케이스]를 누르세요.';
+      note.appendChild(nb);
+      chat.appendChild(note);
+    }
+
+    // 스크롤은 가장 최근 메시지로
+    if (typeof scrollChat === 'function') scrollChat();
   }
 
   // ── 리본 ──────────────────────────────────
@@ -2116,8 +2188,20 @@
       // 1단계: 키워드 매칭 시도 (즉시, LLM 불필요)
       let parsed = keywordFallback(text);
 
-      // 2단계: 키워드 실패 + AI on → LLM 파싱
+      // Phase 7+ — Follow-up 라우팅:
+      // 활성 케이스에 직전 추천(hospitals_snapshot)이 있고, 새 입력에 명시적 region+disease가
+      // 보이지 않으면 follow-up 모드로 LLM에 컨텍스트 보존 답변을 위임한다.
+      // (사용자가 다시 region·disease를 명시하면 새 검색으로 흐른다.)
       const kwFailed = !parsed.region || !parsed.diseases || !parsed.diseases.length;
+      const active = window.CaseStore && window.CaseStore.getActive();
+      const isFollowUpContext = !!(active && active.hospitals_snapshot && Array.isArray(active.messages) && active.messages.length > 1);
+      if (kwFailed && aiEnabled && isFollowUpContext) {
+        const handled = await runFollowUp(text);
+        if (handled) return;
+        // handled === false (case 컨텍스트 비어있음)이면 기존 파싱 흐름으로 떨어짐
+      }
+
+      // 2단계: 키워드 실패 + AI on → LLM 파싱
       if (kwFailed && aiEnabled) {
         parsed = await parseWithLLM(text);
         // Phase 7 — LLM 실패 시 폴백 없이 에러 카드 노출
@@ -2335,6 +2419,29 @@ required_capabilities 에 다음 패턴으로 답하라:
 prektas_context 없으면 prektas_review 필드 자체 생략.
 
 JSON만 반환. 마크다운/설명 금지.`;
+
+  // Phase 7+ — Follow-up 시스템 프롬프트 (직전 케이스 컨텍스트 위에서 후속 질문 답변)
+  const HARNESS_FOLLOWUP_PROMPT = `당신은 119 구급대원의 응급의료 보조 AI다. 사용자는 직전 대화에서 환자 평가와 병원 추천을 받은 상태이고, 지금은 그 결과에 대한 후속 질문을 하고 있다.
+
+대화 컨텍스트:
+- 이전 user 메시지에는 환자 정보(연령·증상·중증도·지역) 또는 마법사 평가 요약이 들어있다.
+- 이전 assistant 메시지에는 EMRIS 실데이터 기반 권역·지역응급의료센터 분석 결과가 들어있다.
+- 마지막 user 메시지가 후속 질문이다.
+
+답변 가이드:
+- 평문 한국어로 간결하게 답하라 (대략 100~400자). JSON·마크다운 헤더 사용 금지.
+- 이전 환자 컨텍스트를 잊지 마라. region·증상·중증도는 그대로 유효하다.
+- "인근 시도/권역 찾아줘" 류 질문이면: 직전 환자 region을 기준으로 인접 광역(예: 대구→경북·경남·울산, 서울→경기·인천)을 짚고, 그 광역에서 동일 시술이 가능한 권역응급의료센터를 일반론적으로 안내하라. 단, 실제 가용 여부는 EMRIS 재조회가 필요하므로 "재조회 필요" 한 줄을 명시하라.
+- "지역센터로 가도 되나" 류면 직전 추천의 acceptable tier 안에서 답하라. 직전 추천이 권역 우선이었다면 지역센터의 trade-off(거리 vs 역량)를 짚어라.
+- 시간 임계(골든타임), 헬기 이송 가능성, 거리 vs 역량 트레이드오프를 도움이 되면 짚어라.
+- 추가 EMRIS 조회가 필요하면 사용자에게 그 이유를 명확히 말하라.
+
+안전 가드:
+- 새로운 의학적 결정을 단독으로 내리지 마라. 직전 추천 결과를 존중하라.
+- 사용자에게 보일 메시지에는 의료 식별 코드(Y코드 등)를 직접 노출하지 말 것. "심근경색 시술", "뇌출혈 응급수술"처럼 평이한 한국어로 표현.
+- 응답을 모르거나 데이터가 부족하면 "확실치 않음 — 추가 정보 필요"라고 정직하게 말하라.
+
+출력은 JSON이 아닌 평문이다.`;
 
   // ── LLM 파싱 ──────────────────────────────────
 
@@ -3489,6 +3596,75 @@ JSON만 반환. 마크다운/설명 금지.`;
     if (result.ok) return result.data;
     if (result.kind === 'rate_limit') return { _rateLimit: true };
     return { _llmError: true, kind: result.kind || 'unknown', status: result.status || null, message: result.message || '' };
+  }
+
+  // Phase 7+ — Follow-up: 활성 케이스에 직전 추천이 있으면 컨텍스트 보존 답변
+  // case.messages를 LLM contents로 직렬화. 에러 카드는 복원 시 LLM 입력에서 제외.
+  function buildFollowUpMessages(activeCase) {
+    const msgs = Array.isArray(activeCase.messages) ? activeCase.messages : [];
+    const out = [];
+    for (const m of msgs) {
+      if (!m || !m.content) continue;
+      const role = m.role === 'assistant' ? 'assistant' : 'user';
+      const content = String(m.content);
+      // Phase 7 에러 카드 텍스트는 LLM 입력에서 제외 (잡음 방지)
+      if (role === 'assistant' && content.indexOf('AI 분석을 불러오지 못했습니다') === 0) continue;
+      // 너무 짧거나 typing 흔적 제외
+      if (content.length < 2) continue;
+      out.push({ role, content: content.slice(0, 4000) });
+    }
+    return out;
+  }
+
+  async function runFollowUp(text) {
+    const active = window.CaseStore && window.CaseStore.getActive();
+    if (!active || !active.hospitals_snapshot) return false;
+
+    const messages = buildFollowUpMessages(active);
+    if (!messages.length) return false;
+
+    const aiLoading = appendLoadingBubble();
+    const result = await callLLMWithRetry(async function() {
+      let resp;
+      try {
+        resp = await fetch(LLM_PROXY, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-emris-token': EMRIS_API_KEY },
+          body: JSON.stringify({
+            messages: messages,
+            system: HARNESS_FOLLOWUP_PROMPT,
+            type: 'recommend',
+          }),
+        });
+      } catch (e) {
+        return { ok: false, kind: 'network', message: String(e && e.message ? e.message : e), retryable: true };
+      }
+      if (resp.status === 429) return { ok: false, kind: 'rate_limit', status: 429, retryable: false };
+      if (resp.status === 401 || resp.status === 403) return { ok: false, kind: 'auth', status: resp.status, retryable: false };
+      if (resp.status >= 500) return { ok: false, kind: '5xx', status: resp.status, retryable: true };
+      if (!resp.ok) return { ok: false, kind: '4xx', status: resp.status, retryable: false };
+      let data;
+      try { data = await resp.json(); }
+      catch (e) { return { ok: false, kind: 'parse', message: 'JSON 응답 파싱 실패', retryable: true }; }
+      const txt = (data.content?.[0]?.text || '').trim();
+      if (!txt) return { ok: false, kind: 'parse', message: '빈 LLM 응답', retryable: true };
+      return { ok: true, data: txt };
+    });
+    aiLoading.remove();
+
+    if (result.ok) {
+      const wrap = el('div', { className: 'bubble' });
+      wrap.style.whiteSpace = 'pre-wrap';
+      wrap.style.lineHeight = '1.55';
+      wrap.textContent = result.data;
+      appendBotNode(wrap);
+    } else {
+      appendBotNode(renderLLMError({
+        error: result,
+        onRetry: function() { runFollowUp(text); },
+      }));
+    }
+    return true;
   }
 
   // Phase 7 — 폴백 옵션 제거. "AI 재시도"만 노출.
