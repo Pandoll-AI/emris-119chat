@@ -70,7 +70,8 @@ data/prektas-codebook.json                                │
 | `lib/chatbot-payload.js` | 정본 코드북·매핑·tier·question effects 합본 (671KB) | `data/`, `research/` JSON |
 | `scripts/build-chatbot-payload.mjs` | 페이로드 빌드 스크립트 | 정본 JSON 4개 |
 | `prektas-hospital-recommender.html` | 약 900KB 모바일 스텝 마법사 (교육·연구용, 빌드 산출) | build script |
-| `prektas-research.html` | 15KB 연구 노트 HTML (빌드 산출) | build script |
+| `prektas-research.html` | Phase 8 validation protocol 요약·시각화 페이지 (빌드 산출, 매거진 레이아웃, 10 chapters) | build script + protocol markdown |
+| `research/prektas-validation-protocol.md` | **Phase 8 source of truth** — 사전 등록(preregistered) 분석 계획 v1.0. STARD 2015 준수. 4 가설, 11 sub-phases, threats to validity, ethics, reproducibility. | 정본 codebook + 1차 prevalence 스캔 |
 | `run.sh` | 포트 3489 로컬 서버 제어 (`start\|stop\|restart`) | python3, public/ |
 | `public/index.html` (심볼릭) | → `../prektas-hospital-recommender.html` | 루트 HTML |
 | `public/research.html` (심볼릭) | → `../prektas-research.html` | 루트 HTML |
@@ -80,6 +81,66 @@ data/prektas-codebook.json                                │
 | `vercel.json` | SPA rewrites 설정 (`/` → `/index.html`, `api/llm.js` maxDuration 30s) | — |
 | `.vercelignore` | `public/`, `data/raw/`, `*.csv` 등 배포 제외. chatbot이 루트 index로 정확히 서빙되게 함 | — |
 | `test-llm.mjs` | LLM 연동 smoke test (initial commit 산출물) | `.env` |
+
+## Phase 8 추가 사항 (2026-04-25) — 학술 검증 protocol
+
+### Phase 8 산출물 위치 (예정 + 현재)
+
+```
+research/
+├── prektas-validation-protocol.md          ✓ Phase 8 (커밋됨, source of truth)
+├── prektas-code-crosswalk.json             ⏳ Phase 8a-1 (5자 ↔ 6자 정렬)
+├── y-code-icd10-clusters.json              ⏳ Phase 8a-2 (전문의 자문)
+├── validation-results-v0.1.json            ⏳ Phase 8e (per-Y-code metrics)
+├── validation-stratified.json              ⏳ Phase 8f
+├── error-audit-v0.1.md                     ⏳ Phase 8g
+├── prektas-validation-report-v1.0.md       ⏳ Phase 8i
+└── replication/                            ⏳ Phase 8j
+    ├── README.md
+    ├── data-hash.txt
+    └── run.sh
+
+data/derived/                                ⏳ gitignored, hash만 commit
+├── visits.parquet                           Phase 8b
+├── visits-with-yref.parquet                 Phase 8c
+└── visits-with-prediction-q{0..3}.parquet   Phase 8d
+
+scripts/research/
+├── build-prektas-to-y-mapping.mjs           ✓ frozen at study start (Phase 3)
+├── build-prektas-tier-recommendation.mjs    ✓ frozen
+└── validate-phase8.mjs                      ⏳ Phase 8b–f 통합 실행 스크립트
+```
+
+### Phase 8 dependency graph
+
+```
+source-prektas.csv (225k visits, EUC-KR)
+  │
+  └─ [Phase 8a-1] 5자/6자 crosswalk 작성 ────┐
+  └─ [Phase 8a-2] Y → ICD-10 cluster 자문 ──┤
+  └─ [Phase 8b]  표준화 (UTF-8, parquet) ───┤
+                                            ▼
+        per-visit ground truth label (Phase 8c)
+                                            │
+        Index test (Phase 3 frozen) — 4 시나리오 (q0-q3) (Phase 8d)
+                                            │
+                                            ▼
+        Confusion matrix + metrics + bootstrap (Phase 8e)
+                                            │
+                                            ├─ Stratified analyses (Phase 8f)
+                                            └─ Top 100 FN audit (Phase 8g)
+                                            │
+                                            ▼
+        v0.2 개선 (조건부, Phase 8h) → 평가 재실행
+                                            │
+                                            ▼
+        Final report + replication (Phase 8i, 8j)
+```
+
+### Phase 8 npm scripts (예정)
+- `npm run validate:phase8a-1` — 코드 crosswalk 작성
+- `npm run validate:phase8b` — source CSV 표준화
+- `npm run validate:phase8` — 전체 8b–f 파이프라인
 
 ## Phase 7 추가 사항 (2026-04-25)
 

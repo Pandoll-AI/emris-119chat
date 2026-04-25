@@ -1,5 +1,66 @@
 # Changelog
 
+## [2026-04-25] Phase 8 (protocol): Pre-KTAS 진단정확도 학술 검증 계획 v1.0
+
+> Pre-KTAS + 0–3 질문 시스템이 정말 중증응급환자를 가려내는가? STARD 2015 준수 사전 등록 분석 계획. 1 commit.
+
+### 변경 동기
+- Phase 1-7 산출물(v0.1 룰 19% coverage)은 정확도 지표가 아님
+- 응급의료 도메인에서 sensitivity·specificity 측정 없이 알고리즘 배포 불가
+- `source-prektas.csv` 225,017 visits에 퇴실진단 ICD-10 ground truth 가용 → retrospective observational diagnostic accuracy study 가능
+- 학술적 정합성 (사전 등록·동결된 분석 계획)으로 honest reporting 보장
+
+### Commits
+| # | 작업 | Commit |
+|---|---|---|
+| 1 | Phase 8 protocol v1.0 + research.html 전면 교체 | `6755041` |
+
+### Added
+- **`research/prektas-validation-protocol.md`** (437 lines) — 사전 등록된 분석 계획 (Protocol ID: PREKTAS-VAL-2026-001)
+  - 4 가설: H1 sensitivity≥0.85, H2 specificity≥0.90, H3 한계효용≥0.03, H4 tier 일치≥0.70
+  - Index test (frozen commit hash) ↔ Reference standard (Y-code → ICD-10 cluster, 응급의학 전문의 1인 자문)
+  - Phase 8 sub-phases 11개 (8a-1 코드 crosswalk → 8a-2 ICD-10 cluster → 8b 표준화 → 8c 라벨링 → 8d 적용 → 8e-f 분석 → 8g audit → 8h v0.2 → 8i 보고 → 8j 재현성 패키지)
+  - Sample size 정당화 (예상 TP ~11,250, primary endpoint CI 폭 ≤0.015)
+  - Sensitivity analyses (cluster strict/inclusive, complete case vs imputation, bootstrap seed=20260425)
+  - Threats to validity 표 + 완화책 (10 항목)
+  - 윤리·재현성·한계 명시
+- 1차 데이터 스캔 결과 (protocol에 사전 반영):
+  - Total 225,017 visits, 99.2% 매칭률, 추정 severe prevalence ~5%
+  - Y-code별 ICD-10 prefix 매칭 추정 표 (Y0010 심근경색 987건, Y0020 뇌경색 3,378건 등)
+
+### Changed
+- **`prektas-research.html` 전면 교체** — 기존 v0.1 룰 설명 페이지 → validation protocol 요약·시각화 페이지
+  - 매거진 레이아웃 유지 (모노크롬 + accent 레드 + sharp corners)
+  - 10 chapters: 배경 / 가설 카드 4개 / 설계 / 데이터 정합성 (5자↔6자 crosswalk 경고 ⚠) / 분석 계획 / 타당성 위협 표 / Phase 8 로드맵 / 재현성·윤리 / 한계 / 참고문헌
+- **`scripts/build-research-page.mjs` 재작성** — protocol 요약 렌더 (codebook stats 일부 임베드)
+- 본문 protocol markdown은 source of truth, HTML은 그 요약 시각화 임을 명시
+
+### 데이터 정합성 핵심 발견 (Phase 8a-1 우선 격리)
+- 정본 codebook: 5자 (예: `CAAAA`, group prefix C/D)
+- 실측 CSV `최초KTAS분류과정`: 6자 (예: `AIACA0`, A prefix)
+- 첫 글자 A=175,237/225,017 = **77.9%**
+- → 두 코드 체계의 crosswalk(`research/prektas-code-crosswalk.json`)이 분석 전제 조건
+- → protocol §4.6 + 페이지 §04 ⚠ 경고 박스로 명시
+- → 분석을 시작한 뒤 발견했다면 표본 손실 + post-hoc bias로 이어질 risk를 사전 차단
+
+### Review (Pre-Landing Audit, post-merge)
+- Quality Score: **9/10** (3 informational, 0 critical)
+- INFO: protocol markdown ↔ build-script content 동기화 — 둘 다 수정 시 누락 위험 (현재 PoC acceptable, KNOWLEDGE에 명시)
+- INFO: 1차 prevalence는 ICD-10 prefix raw 추정. Final cluster 적용 후 재산출 예정 ✓
+- INFO: 5자/6자 정합성 발견의 사전 격리는 honest reporting 위해 옳은 결정
+
+### 배포
+- main pushed: `6755041`
+- Vercel production: `https://119chat.emergency-info.com/prektas-research.html` 마커 검증 완료
+- protocol page는 STARD 2015 항목 (preregistered, frozen index test, frozen reference standard, sensitivity analyses, threats to validity, sample size justification) 모두 충족
+
+### Out of Scope (다음 phase 진입 시 결정 필요)
+- Phase 8a-1 5자/6자 crosswalk 작성 (자체 가능, ~1주)
+- Phase 8a-2 응급의학 전문의 자문 섭외 (사람 자원, ~1-2주)
+- Phase 8b-f 자동 분석 파이프라인 (코드 작업, ~1-2주)
+
+---
+
 ## [2026-04-25] Phase 7: AI 모드 폴백 제거 + follow-up 컨텍스트 + 용어 통일 + 리본 UX
 
 > Phase 6 직후 PoC 데모 피드백 라운드. 5개 atomic commits.

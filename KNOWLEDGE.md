@@ -165,6 +165,70 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | viewCaseReadOnly | reads | CaseStore (case object) | drawer 클릭 시 |
 | enhanceRibbonScroll | called-by | buildRibbons | region/disease 두 ribbon에 화살표·드래그 wiring |
 
+## Phase 8 Entities (추가, 2026-04-25) — 학술 검증 protocol
+
+| Entity | Type | Location | Description |
+|---|---|---|---|
+| Validation Protocol v1.0 | research-protocol | `research/prektas-validation-protocol.md` | 사전 등록(preregistered) 분석 계획. STARD 2015 준수. 4 가설(H1-H4), 11 sub-phases, threats to validity, ethics, reproducibility. Source of truth. |
+| Validation Protocol Page | rendered-html | `prektas-research.html` | protocol 요약·시각화. 매거진 레이아웃. 10 chapters. `scripts/build-research-page.mjs` 산출. |
+| Source ED Visits CSV | external-dataset | `/Users/sjlee/Projects/prektas-research/source-prektas.csv` | 225,017 ED visits, EUC-KR, 24 cols. 퇴실진단 ICD-10 ground truth 포함. 99.2% 매칭률. Phase 8b에서 표준화 예정. |
+| Pre-KTAS Code Crosswalk | research-output (Phase 8a-1, 예정) | `research/prektas-code-crosswalk.json` | 5자(codebook) ↔ 6자(실측 CSV) 매핑. 분석 전제 조건. 매핑 실패율 ≥10% 시 별도 sensitivity. |
+| Y-code → ICD-10 Cluster | research-output (Phase 8a-2, 예정) | `research/y-code-icd10-clusters.json` | 27 Y코드별 ICD-10 cluster. 응급의학 전문의 1인 자문 후 frozen. Reference standard 정의. |
+| Validation Pipeline Script | script (Phase 8b-f, 예정) | `scripts/research/validate-phase8.mjs` | source CSV → 표준화 → ground truth 라벨링 → index test 4 시나리오 적용 → metrics + bootstrap. |
+| Validation Results | research-output (Phase 8e, 예정) | `research/validation-results-v0.1.json` | per-Y-code precision·recall·F1 + 이항 sensitivity·specificity 95% Wilson CI. 익명화. |
+| Error Audit Report | research-output (Phase 8g, 예정) | `research/error-audit-v0.1.md` | top 100 false negative case audit + 응급의학 전문의 검토. v0.2 우선순위 도출. |
+
+## Phase 8 Relations
+
+| Subject | Relation | Object | Context |
+|---|---|---|---|
+| Validation Protocol | references | Source ED Visits CSV | reference standard 입력 |
+| Validation Protocol | references | Mapping Generator (Phase 3) | index test (frozen commit hash) |
+| Pre-KTAS Code Crosswalk | required-by | Validation Pipeline Script | 5자/6자 정합성 사전 해결 |
+| Y-code → ICD-10 Cluster | required-by | Validation Pipeline Script | reference standard 정의 |
+| Validation Pipeline Script | reads | Source ED Visits CSV | input 데이터 |
+| Validation Pipeline Script | writes | Validation Results | per-visit prediction + metrics |
+| Validation Results | informs | Error Audit Report | top FN/FP 케이스 추출 근거 |
+| Validation Protocol | renders-as | Validation Protocol Page | source of truth → 페이지 요약 |
+| Validation Protocol Page | rendered-by | scripts/build-research-page.mjs | HTML 빌드 |
+
+## Phase 8 Actions (2026-04-25) — 검증 protocol 동결
+
+| Date | Action | Actor | Target | Detail |
+|---|---|---|---|---|
+| 2026-04-25 | request | user | research planning | "학술적으로 증명을 계획하자. Pre-KTAS + 몇가지 질문으로 중증질환 매핑 가능한가/얼마나 정확한가." 기존 /research.html 대체 지시. |
+| 2026-04-25 | scan | claude | source-prektas.csv | 1차 prevalence 추정 (Y0010-Y0120 ICD-10 prefix), 99.2% 매칭률 확인, **5자/6자 코드 정합성 불일치 77.9% 발견**. |
+| 2026-04-25 | design | claude | protocol v1.0 | STARD 2015 가이드라인 기반 사전 등록 분석 계획 작성. 4 가설(sensitivity·specificity·한계효용·tier 일치). |
+| 2026-04-25 | create | claude | `research/prektas-validation-protocol.md` | 437 lines. Protocol ID PREKTAS-VAL-2026-001. Source of truth. |
+| 2026-04-25 | rewrite | claude | `scripts/build-research-page.mjs` | 기존 v0.1 룰 설명 → protocol 요약 페이지 빌드. 매거진 레이아웃 유지. |
+| 2026-04-25 | rebuild | claude | `prektas-research.html` | 10 chapters, 가설 카드, 데이터 정합성 ⚠ 경고, Phase 8 로드맵, 위협·완화 표. |
+| 2026-04-25 | review | claude | post-merge audit | Quality 9/10. 3 informational (protocol↔script 동기화 / prevalence raw 추정 / 5자6자 격리 결정 valid). 0 critical. |
+| 2026-04-25 | commit | claude | `6755041` | `feat(research): Phase 8 진단정확도 검증 protocol v1.0 + research.html 전면 교체`. |
+| 2026-04-25 | deploy | claude | Vercel production | `https://119chat.emergency-info.com/prektas-research.html` 배포 + 마커 검증. |
+
+## Phase 8 1차 데이터 스캔 결과 (사전 추정)
+
+| 측정 | 값 | 출처 |
+|---|---|---|
+| Total visits | 225,017 | source-prektas.csv 행 수 |
+| 네디스매칭률 | 99.2% (223,115 / 225,017) | `네디스매칭여부 = 매칭` |
+| Pre-KTAS 코드 첫문자 A | 77.9% (175,237) | `최초KTAS분류과정` 첫 글자 — 6자 형식 |
+| Pre-KTAS 코드 첫문자 C/D | 0% | codebook 5자 형식과 직접 매칭 X |
+| 비공란 (코드 없음 또는 다른 형식) | 22.1% (49,780) | 별도 처리 필요 |
+| Y0010 심근경색 (I21/I22) | 987 (0.44%) | ICD-10 prefix raw |
+| Y0020 뇌경색 (I63) | 3,378 (1.50%) | ICD-10 prefix raw |
+| Y0031 거미막하 (I60) | 512 (0.23%) | ICD-10 prefix raw |
+| Y0032 뇌출혈 (I61/I62) | 1,415 (0.63%) | ICD-10 prefix raw |
+| Y0041/0042 대동맥 (I71) | 175 (0.08%) | ICD-10 prefix raw |
+| Y005x 담낭담관 (K80-K83) | 1,495 (0.66%) | ICD-10 prefix raw |
+| Y0060 복부응급 (selected K) | 2,087 (0.93%) | ICD-10 prefix raw |
+| Y0111-3 산부인과 (O) | 161 (0.07%) | ICD-10 prefix raw |
+| Y0120 화상 (T2x) | 348 (0.15%) | ICD-10 prefix raw |
+| **추정 severe prevalence** | **~4.7% (10,500/225,017)** | **overlap 무시 1차 추정** |
+| 표본 sufficient for primary endpoint | 예 | 예상 TP ~11,250, CI 폭 ≤0.015 |
+
+> 위 prevalence는 ICD-10 prefix만 기준한 raw 추정. Phase 8a-2의 frozen Y-code → ICD-10 cluster 적용 후 재산출 예정.
+
 ## Next Phase Candidates
 
 Phase 4 리포트 §7에서 승계.
