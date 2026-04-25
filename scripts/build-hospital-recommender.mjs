@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Pre-KTAS 병원 추천 standalone HTML (모바일 스텝 마법사 v2).
+ * Pre-KTAS 병원 추천 standalone HTML (모바일 스텝 v2).
  *
  * 3 단계:
  *   1. Pre-KTAS 입력 — 연령 → 대분류 → 3단계 → 4단계 버튼 스텝.
