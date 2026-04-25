@@ -2355,6 +2355,27 @@ JSON만 반환. 마크다운/설명 금지.`;
 
   // ── 채팅 UI ──────────────────────────────────
 
+  // ── CaseStore 연결 (Phase 6 Step 5) ──
+  // user/bot 메시지가 추가될 때마다 active case에 자동 append.
+  // active case가 없으면 자동 startNew (input_mode='chat').
+
+  function ensureActiveCase(seedSummary) {
+    if (!window.CaseStore) return null;
+    let active = window.CaseStore.getActive();
+    if (active) return active;
+    const summary = (seedSummary || '').slice(0, 80) || '새 케이스';
+    return window.CaseStore.startNew({ input_mode: 'chat', summary });
+  }
+
+  function recordChatMessage(role, content) {
+    if (!window.CaseStore || !content) return;
+    try {
+      window.CaseStore.appendMessage({ role, content });
+    } catch (e) {
+      console.warn('[CaseStore] appendMessage failed:', e);
+    }
+  }
+
   function appendUserBubble(text) {
     const chat = document.getElementById('chat');
     const msgDiv = el('div', { className: 'msg user' });
@@ -2363,6 +2384,13 @@ JSON만 반환. 마크다운/설명 금지.`;
     msgDiv.appendChild(bubble);
     chat.appendChild(msgDiv);
     scrollChat();
+    // CaseStore: user 첫 메시지로 case 시작·기록
+    const active = ensureActiveCase(text);
+    if (active && (!active.summary || active.summary === '새 케이스')) {
+      // 첫 user 메시지를 summary로 (이미 startNew에서 채웠을 수 있음, 보강)
+      window.CaseStore.updateActive({ summary: text.slice(0, 80) });
+    }
+    recordChatMessage('user', text);
   }
 
   function appendBotNode(contentNode) {
@@ -2371,6 +2399,9 @@ JSON만 반환. 마크다운/설명 금지.`;
     msgDiv.appendChild(contentNode);
     chat.appendChild(msgDiv);
     scrollChat();
+    // CaseStore: bot 메시지의 텍스트만 보존 (DOM 노드는 휘발). 추후 read-only 보기는 텍스트 기반.
+    const text = (contentNode && contentNode.textContent || '').trim();
+    if (text) recordChatMessage('assistant', text);
   }
 
   function appendLoadingBubble() {
