@@ -541,6 +541,166 @@
 </div>
 
 <script>
+/* ════════════════════════════════════════════════════════════════════
+ * CaseStore — 케이스 단위 localStorage 저장소 (브라우저 독립)
+ * 데모 동시 접속자 간 동기화 없음. 각 브라우저 자체 history.
+ * Step 3 (Phase 6 리팩터). 사용은 Step 5에서 sendMessage에 연결.
+ * ════════════════════════════════════════════════════════════════════ */
+(function initCaseStore() {
+  'use strict';
+
+  const KEY_CASES = 'emris_cases_v1';
+  const KEY_ACTIVE = 'emris_active_case_id';
+  const CAP = 50;
+
+  function nowMs() { return Date.now(); }
+  function newId() {
+    const d = new Date();
+    const stamp = d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0')
+                + '-' + String(d.getHours()).padStart(2,'0') + String(d.getMinutes()).padStart(2,'0');
+    const rand = Math.random().toString(36).slice(2, 8);
+    return 'case-' + stamp + '-' + rand;
+  }
+
+  function safeParse(raw, fallback) {
+    if (!raw) return fallback;
+    try { return JSON.parse(raw); } catch (e) { return fallback; }
+  }
+
+  function loadAll() {
+    const arr = safeParse(localStorage.getItem(KEY_CASES), []);
+    return Array.isArray(arr) ? arr : [];
+  }
+  function saveAll(arr) {
+    // FIFO eviction: cap 초과 시 가장 오래된 closed case부터 제거
+    if (arr.length > CAP) {
+      const sortedClosed = arr.filter(c => c.ts_closed).sort((a,b) => (a.ts_closed||0) - (b.ts_closed||0));
+      const toRemove = arr.length - CAP;
+      const removeIds = new Set(sortedClosed.slice(0, toRemove).map(c => c.id));
+      arr = arr.filter(c => !removeIds.has(c.id));
+    }
+    try { localStorage.setItem(KEY_CASES, JSON.stringify(arr)); }
+    catch (e) { console.warn('[CaseStore] localStorage write failed:', e); }
+  }
+  function getActiveId() {
+    return localStorage.getItem(KEY_ACTIVE) || null;
+  }
+  function setActiveId(id) {
+    if (id) localStorage.setItem(KEY_ACTIVE, id);
+    else localStorage.removeItem(KEY_ACTIVE);
+  }
+
+  // ── Public API ──
+  const CaseStore = {
+
+    /** 모든 케이스 (최신 시작순) */
+    list() {
+      return loadAll().slice().sort((a,b) => (b.ts_started||0) - (a.ts_started||0));
+    },
+
+    /** id로 단일 케이스 read-only */
+    get(id) {
+      return loadAll().find(c => c.id === id) || null;
+    },
+
+    /** 현재 진행 중 active case (없으면 null) */
+    getActive() {
+      const id = getActiveId();
+      if (!id) return null;
+      return this.get(id);
+    },
+
+    /**
+     * 새 케이스 시작.
+     * 기존 active가 있으면 자동 archive (ts_closed 찍음).
+     * @param {{input_mode:'wizard'|'chat', summary?:string, patient?:object, region?:string}} opts
+     * @returns {object} 새 case
+     */
+    startNew(opts = {}) {
+      const all = loadAll();
+      // 기존 active mark closed
+      const prevId = getActiveId();
+      if (prevId) {
+        const prev = all.find(c => c.id === prevId);
+        if (prev && !prev.ts_closed) prev.ts_closed = nowMs();
+      }
+      const c = {
+        id: newId(),
+        ts_started: nowMs(),
+        ts_closed: null,
+        input_mode: opts.input_mode || 'chat',
+        summary: opts.summary || '',
+        patient: opts.patient || null,
+        assessment: opts.assessment || null,
+        region: opts.region || null,
+        messages: [],
+        hospitals_snapshot: null,
+      };
+      all.push(c);
+      saveAll(all);
+      setActiveId(c.id);
+      return c;
+    },
+
+    /** active case의 messages에 append. {role,content,...meta} */
+    appendMessage(message) {
+      const id = getActiveId();
+      if (!id) return false;
+      const all = loadAll();
+      const c = all.find(x => x.id === id);
+      if (!c) return false;
+      if (!Array.isArray(c.messages)) c.messages = [];
+      c.messages.push(Object.assign({ ts: nowMs() }, message));
+      saveAll(all);
+      return true;
+    },
+
+    /** active case 일부 필드 갱신 (summary/patient/assessment/region/hospitals_snapshot 등) */
+    updateActive(patch) {
+      const id = getActiveId();
+      if (!id) return false;
+      const all = loadAll();
+      const c = all.find(x => x.id === id);
+      if (!c) return false;
+      Object.assign(c, patch);
+      saveAll(all);
+      return true;
+    },
+
+    /** 현재 active를 마감 (ts_closed 찍고 active_id 해제) */
+    closeActive() {
+      const id = getActiveId();
+      if (!id) return false;
+      const all = loadAll();
+      const c = all.find(x => x.id === id);
+      if (c && !c.ts_closed) c.ts_closed = nowMs();
+      saveAll(all);
+      setActiveId(null);
+      return true;
+    },
+
+    /** 사용자 명시 삭제 */
+    remove(caseId) {
+      let all = loadAll();
+      all = all.filter(c => c.id !== caseId);
+      saveAll(all);
+      if (getActiveId() === caseId) setActiveId(null);
+      return true;
+    },
+
+    /** 디버그: 모든 데이터 삭제 */
+    _wipe() {
+      localStorage.removeItem(KEY_CASES);
+      localStorage.removeItem(KEY_ACTIVE);
+    },
+
+    /** 메타 */
+    _meta: { keyCases: KEY_CASES, keyActive: KEY_ACTIVE, cap: CAP },
+  };
+
+  window.CaseStore = CaseStore;
+})();
+
 (function () {
   'use strict';
 
