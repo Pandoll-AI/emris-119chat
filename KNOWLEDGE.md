@@ -95,6 +95,32 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | 2026-04-24 | fix | claude | tier 1.0 → 1.1 | 권역 전용 12→7, 공동 커버 15→20. 복합 Y후보 교집합 규칙 도입. tier_strategy 4범주 분류. |
 | 2026-04-24 | run | claude | tier 추천 v1.1 | regional_only=210(4.5%), 공동=2,529(53.9%), local_center_preferred=1,218(26%), local_institution_preferred=732(15.6%). |
 
+## Phase 6 Actions (2026-04-25) — 챗봇 통합 완료
+
+| Date | Action | Actor | Target | Detail |
+|---|---|---|---|---|
+| 2026-04-25 | refactor | claude | `index.html` | 디자인 토큰 v2 도입 + 모노크롬·sharp corners 갱신 (Step 1-2). |
+| 2026-04-25 | create | claude | CaseStore 모듈 | localStorage 기반 케이스 저장소 + drawer UI (Step 3-4). |
+| 2026-04-25 | integrate | claude | sendMessage ↔ CaseStore | 자유 채팅 메시지 자동 case 보존 (Step 5). |
+| 2026-04-25 | create | claude | 입력 모드 토글 + 마법사 inline | Pre-KTAS 4단계 + 추가 질문 narrowing UI (Step 6-7). |
+| 2026-04-25 | create | claude | `lib/chatbot-payload.js` | 정본 데이터 페이로드 (671KB) 빌드 스크립트. |
+| 2026-04-25 | merge | claude | runCaseFromInput | 자유 채팅·마법사 합류 함수. searchAndShow 시그니처 확장 (Step 8). |
+| 2026-04-25 | extend | claude | HARNESS_INTERPRET_PROMPT | 마법사 4임무 addendum (Y코드 검토 + 자원 요건) (Step 9). |
+| 2026-04-25 | render | claude | prektas_review 카드 + override 재조회 | LLM 응답 UI (Step 11-12). |
+| 2026-04-25 | label | claude | recommender 페이지 교육·연구용 배너 | 챗봇과 별도 도구 명시 (Step 14). |
+| 2026-04-25 | document | claude | `ui-audit/phase6-e2e-scenarios.md` | 7개 통합 테스트 시나리오. |
+
+## Phase 6 Entities (추가)
+
+| Entity | Type | Location | Description |
+|---|---|---|---|
+| Chatbot Payload | data | `lib/chatbot-payload.js` | 정본 코드북·매핑·tier·questions·diseases 합본. window.PrektasData expose. |
+| Chatbot Payload Builder | script | `scripts/build-chatbot-payload.mjs` | 4 JSON 합쳐 lite payload 생성. |
+| WizardController | js-module | `index.html` (script) | 챗봇 인라인 마법사 state machine (group → l2 → l3 → l4 → questions → submit). |
+| runCaseFromInput | js-function | `index.html` (script) | 자유 채팅·마법사 합류 함수. EMRIS 호출 + LLM 4임무 호출 통합. |
+| prektas_review (UI) | render-component | `index.html` (script) | LLM Y코드 검토 카드 + 자원 요건 박스 + override 재조회 버튼. |
+| E2E Test Scenarios | doc | `ui-audit/phase6-e2e-scenarios.md` | 7개 manual test scenarios (PoC 데모용). |
+
 ## Next Phase Candidates
 
 Phase 4 리포트 §7에서 승계.

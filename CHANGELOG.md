@@ -1,9 +1,60 @@
 # Changelog
 
-## [2026-04-25] Phase 6 (진행 중): 챗봇 통합 — Pre-KTAS 마법사를 챗봇 입력 모드로 흡수
+## [2026-04-25] Phase 6 (완료): 챗봇 통합 — Pre-KTAS 마법사를 챗봇 입력 모드로 흡수
 
-> 16단계 대규모 리팩터. Step 1–3 완료 (foundation). 나머지 13단계 진행 예정.
-> 자세한 plan: `~/.claude/plans/mighty-herding-sutton.md`.
+> 16단계 대규모 리팩터 **전부 완료**. 자세한 plan: `~/.claude/plans/mighty-herding-sutton.md`.
+
+### 핵심 통합
+- **두 입력 경로가 한 챗봇에서 합류**:
+  - 자유 채팅: 자유 텍스트 → LLM 파싱(HARNESS_PARSE_PROMPT, 1회) → EMRIS 조회 → LLM 추천(1회).
+  - 마법사: 결정론 4단계(group/L2/L3/L4) + 추가 질문 narrowing → EMRIS 조회 → LLM 추천+Y코드 검토(1회).
+- **LLM 중복 호출 제거**: 추천·설명 단계에서만 호출. 마법사가 룰 기반 결과를 LLM에 ground truth로 넘김. LLM은 4임무 동시 수행 (Y코드 검토 / 자원 요건 / 병원 추천 / 후속 가이드).
+- **케이스 기반 history**: localStorage에 case 단위 보존. 새 케이스, 기록 drawer, follow-up Q&A 컨텍스트 보존.
+- **동시 접속자 독립**: PoC 데모용 — 각 브라우저 독립 localStorage. 동기화 없음.
+
+### Step별 commits
+| # | 작업 | Commit |
+|---|---|---|
+| 1 | 디자인 토큰 layer | `b8402c4` |
+| 2 | 디자인 갱신 (모노크롬+sharp) | `4ac33a8` |
+| 3 | CaseStore localStorage 모듈 | `747e326` |
+| 4 | 헤더 [새 케이스] [기록] + drawer | `df3ffbc` |
+| 5 | sendMessage ↔ CaseStore | `339a072` |
+| 6 | 입력 모드 토글 | `a266208` |
+| 7 | 마법사 inline 통합 + 페이로드 빌더 | `2f948ee` |
+| 8 | 합류 함수 runCaseFromInput | `6f2aafd` |
+| 9 | LLM 4임무 prompt addendum | `45915d2` |
+| 10 | LLM 페이로드 빌더 (Step 8 통합) | — |
+| 11 | prektas_review 카드 렌더 | `0119a91` |
+| 12 | Override 재조회 버튼 | `325698f` |
+| 13 | Follow-up Q&A (CaseStore 자동) | — |
+| 14 | recommender 교육·연구용 라벨 | `497df67` |
+| 15 | e2e 시나리오 문서 | (이 commit) |
+| 16 | docs wrap | (이 commit) |
+
+### Added
+- `lib/chatbot-payload.js` — 정본 데이터 페이로드 (codebook 4,689 + Y매핑 + tier + question effects). 671KB.
+- `scripts/build-chatbot-payload.mjs` — 페이로드 빌드 스크립트.
+- `public/chatbot.html`, `public/lib` — dev 서버용 심볼릭 링크.
+- `ui-audit/phase6-e2e-scenarios.md` — 7개 통합 테스트 시나리오 (자유 채팅 회귀, 마법사 단독, override 재조회, follow-up, 새 케이스, 다중 브라우저, 모바일).
+
+### Changed
+- `index.html` 2,320 → ~3,200 lines:
+  - CSS: 디자인 토큰 v2 + 마법사 인라인 컴포넌트 + drawer + prektas_review 카드.
+  - JS: CaseStore 모듈 + WizardController IIFE + 합류 함수 + 입력 모드 토글 + override 재조회.
+- `index.html`의 `HARNESS_INTERPRET_PROMPT`에 마법사 4임무 addendum 추가 (조건부, prektas_context 있을 때만).
+- `searchAndShow(queryText, region, diseases, prektasContext?)` — 4번째 optional 인자 추가, 기존 5개 호출자 무영향.
+- `interpretWithHarness(apiData, userText, prektasContext?)` — LLM prompt JSON에 prektas_context inject.
+- `prektas-hospital-recommender.html` 헤더 위에 "📚 교육·연구용" 배너 + 챗봇 링크.
+- `package.json` — `build:chatbot-payload`, `build:all` scripts.
+
+### Out of Scope (다음 phase)
+- v0.2 mapping rule 개선 (Y0010 단독 분기 등).
+- false negative rate 측정 (`source-prektas.csv` 225k 실측).
+- 응급의학 전문의 임상 리뷰.
+- prektas-hospital-recommender 완전 deprecate (현재 교육용 보존).
+
+
 
 ### Context
 - PoC. 데모 동시 접속자 간 동기화 없음 (각 브라우저 localStorage 독립).

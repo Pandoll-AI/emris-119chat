@@ -44,6 +44,8 @@ data/prektas-codebook.json                                │
 - `npm run build:html:recommender` — 추천 도구 HTML 생성
 - `npm run build:html:research` — 연구 설명 HTML 생성
 - `npm run build:html` — 두 HTML을 순차 빌드
+- `npm run build:chatbot-payload` — 챗봇용 정본 데이터 페이로드 (lib/chatbot-payload.js) 생성
+- `npm run build:all` — codebook → research → html → chatbot-payload 전체 빌드
 
 ## Key Files
 
@@ -64,7 +66,10 @@ data/prektas-codebook.json                                │
 | `research/prektas-tier-recommendation-report.md` | 권역 세이브율·분포 분석 서술 | tier-recommendation.json |
 | `scripts/build-hospital-recommender.mjs` | 정본 JSON embed → recommender HTML | 4개 JSON |
 | `scripts/build-research-page.mjs` | 연구 설명 standalone HTML 생성 | codebook.json, tier·mapping |
-| `prektas-hospital-recommender.html` | 약 900KB 모바일 스텝 마법사 (빌드 산출) | build script |
+| `index.html` | EMRIS 챗봇 통합 페이지 (Phase 6): 자유 채팅 + Pre-KTAS 마법사 + LLM 4임무 + CaseStore + drawer | `api/llm.js`, `lib/chatbot-payload.js`, EMRIS API |
+| `lib/chatbot-payload.js` | 정본 코드북·매핑·tier·question effects 합본 (671KB) | `data/`, `research/` JSON |
+| `scripts/build-chatbot-payload.mjs` | 페이로드 빌드 스크립트 | 정본 JSON 4개 |
+| `prektas-hospital-recommender.html` | 약 900KB 모바일 스텝 마법사 (교육·연구용, 빌드 산출) | build script |
 | `prektas-research.html` | 15KB 연구 노트 HTML (빌드 산출) | build script |
 | `run.sh` | 포트 3489 로컬 서버 제어 (`start\|stop\|restart`) | python3, public/ |
 | `public/index.html` (심볼릭) | → `../prektas-hospital-recommender.html` | 루트 HTML |
