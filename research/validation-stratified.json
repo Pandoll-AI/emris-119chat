@@ -1,0 +1,439 @@
+{
+  "protocol_id": "PREKTAS-VAL-2026-001",
+  "analysis_at": "2026-04-25T16:17:41Z",
+  "by_region": {
+    "광주": {
+      "n": 27923,
+      "metrics": {
+        "tp": 1249,
+        "fp": 4833,
+        "tn": 20161,
+        "fn": 1680,
+        "n": 27923,
+        "sensitivity": 0.4264,
+        "sensitivity_95CI": [
+          0.4086,
+          0.4444
+        ],
+        "specificity": 0.8066,
+        "specificity_95CI": [
+          0.8017,
+          0.8115
+        ],
+        "ppv": 0.2054,
+        "ppv_95CI": [
+          0.1954,
+          0.2157
+        ],
+        "npv": 0.9231,
+        "npv_95CI": [
+          0.9195,
+          0.9265
+        ],
+        "f1": 0.2772,
+        "balanced_accuracy": 0.6165,
+        "cohens_kappa": 0.158
+      }
+    },
+    "전북": {
+      "n": 53174,
+      "metrics": {
+        "tp": 2199,
+        "fp": 9438,
+        "tn": 37779,
+        "fn": 3758,
+        "n": 53174,
+        "sensitivity": 0.3691,
+        "sensitivity_95CI": [
+          0.357,
+          0.3815
+        ],
+        "specificity": 0.8001,
+        "specificity_95CI": [
+          0.7965,
+          0.8037
+        ],
+        "ppv": 0.189,
+        "ppv_95CI": [
+          0.182,
+          0.1962
+        ],
+        "npv": 0.9095,
+        "npv_95CI": [
+          0.9067,
+          0.9122
+        ],
+        "f1": 0.25,
+        "balanced_accuracy": 0.5846,
+        "cohens_kappa": 0.1195
+      }
+    },
+    "전남": {
+      "n": 49439,
+      "metrics": {
+        "tp": 2299,
+        "fp": 8024,
+        "tn": 35696,
+        "fn": 3420,
+        "n": 49439,
+        "sensitivity": 0.402,
+        "sensitivity_95CI": [
+          0.3894,
+          0.4148
+        ],
+        "specificity": 0.8165,
+        "specificity_95CI": [
+          0.8128,
+          0.8201
+        ],
+        "ppv": 0.2227,
+        "ppv_95CI": [
+          0.2148,
+          0.2308
+        ],
+        "npv": 0.9126,
+        "npv_95CI": [
+          0.9097,
+          0.9153
+        ],
+        "f1": 0.2866,
+        "balanced_accuracy": 0.6092,
+        "cohens_kappa": 0.1618
+      }
+    }
+  },
+  "by_age_group": {
+    "adult_18_64": {
+      "n": 50286,
+      "metrics": {
+        "tp": 1901,
+        "fp": 9390,
+        "tn": 36281,
+        "fn": 2714,
+        "n": 50286,
+        "sensitivity": 0.4119,
+        "sensitivity_95CI": [
+          0.3978,
+          0.4262
+        ],
+        "specificity": 0.7944,
+        "specificity_95CI": [
+          0.7907,
+          0.7981
+        ],
+        "ppv": 0.1684,
+        "ppv_95CI": [
+          0.1616,
+          0.1754
+        ],
+        "npv": 0.9304,
+        "npv_95CI": [
+          0.9278,
+          0.9329
+        ],
+        "f1": 0.239,
+        "balanced_accuracy": 0.6032,
+        "cohens_kappa": 0.125
+      }
+    },
+    "elderly_65+": {
+      "n": 78643,
+      "metrics": {
+        "tp": 3837,
+        "fp": 12664,
+        "tn": 56061,
+        "fn": 6081,
+        "n": 78643,
+        "sensitivity": 0.3869,
+        "sensitivity_95CI": [
+          0.3773,
+          0.3965
+        ],
+        "specificity": 0.8157,
+        "specificity_95CI": [
+          0.8128,
+          0.8186
+        ],
+        "ppv": 0.2325,
+        "ppv_95CI": [
+          0.2261,
+          0.239
+        ],
+        "npv": 0.9021,
+        "npv_95CI": [
+          0.8998,
+          0.9045
+        ],
+        "f1": 0.2905,
+        "balanced_accuracy": 0.6013,
+        "cohens_kappa": 0.1578
+      }
+    },
+    "adolescent_12_17": {
+      "n": 1577,
+      "metrics": {
+        "tp": 9,
+        "fp": 234,
+        "tn": 1271,
+        "fn": 63,
+        "n": 1577,
+        "sensitivity": 0.125,
+        "sensitivity_95CI": [
+          0.0672,
+          0.2208
+        ],
+        "specificity": 0.8445,
+        "specificity_95CI": [
+          0.8253,
+          0.8619
+        ],
+        "ppv": 0.037,
+        "ppv_95CI": [
+          0.0196,
+          0.0689
+        ],
+        "npv": 0.9528,
+        "npv_95CI": [
+          0.94,
+          0.9629
+        ],
+        "f1": 0.0571,
+        "balanced_accuracy": 0.4848,
+        "cohens_kappa": -0.0143
+      }
+    },
+    "pediatric_<12": {
+      "n": 23,
+      "metrics": {
+        "tp": 0,
+        "fp": 5,
+        "tn": 18,
+        "fn": 0,
+        "n": 23,
+        "sensitivity": 0,
+        "sensitivity_95CI": [
+          0,
+          0
+        ],
+        "specificity": 0.7826,
+        "specificity_95CI": [
+          0.581,
+          0.9034
+        ],
+        "ppv": 0.0,
+        "ppv_95CI": [
+          -0.0,
+          0.4345
+        ],
+        "npv": 1.0,
+        "npv_95CI": [
+          0.8241,
+          1.0
+        ],
+        "f1": 0,
+        "balanced_accuracy": 0.3913,
+        "cohens_kappa": 0.0
+      }
+    },
+    "unknown": {
+      "n": 7,
+      "metrics": {
+        "tp": 0,
+        "fp": 2,
+        "tn": 5,
+        "fn": 0,
+        "n": 7,
+        "sensitivity": 0,
+        "sensitivity_95CI": [
+          0,
+          0
+        ],
+        "specificity": 0.7143,
+        "specificity_95CI": [
+          0.3589,
+          0.9178
+        ],
+        "ppv": 0.0,
+        "ppv_95CI": [
+          0.0,
+          0.6576
+        ],
+        "npv": 1.0,
+        "npv_95CI": [
+          0.5655,
+          1.0
+        ],
+        "f1": 0,
+        "balanced_accuracy": 0.3571,
+        "cohens_kappa": 0.0
+      }
+    }
+  },
+  "by_grade": {
+    "5": {
+      "n": 5706,
+      "metrics": {
+        "tp": 41,
+        "fp": 248,
+        "tn": 5149,
+        "fn": 268,
+        "n": 5706,
+        "sensitivity": 0.1327,
+        "sensitivity_95CI": [
+          0.0993,
+          0.1751
+        ],
+        "specificity": 0.954,
+        "specificity_95CI": [
+          0.9481,
+          0.9593
+        ],
+        "ppv": 0.1419,
+        "ppv_95CI": [
+          0.1063,
+          0.1868
+        ],
+        "npv": 0.9505,
+        "npv_95CI": [
+          0.9444,
+          0.956
+        ],
+        "f1": 0.1371,
+        "balanced_accuracy": 0.5434,
+        "cohens_kappa": 0.0895
+      }
+    },
+    "1": {
+      "n": 6129,
+      "metrics": {
+        "tp": 123,
+        "fp": 516,
+        "tn": 4950,
+        "fn": 540,
+        "n": 6129,
+        "sensitivity": 0.1855,
+        "sensitivity_95CI": [
+          0.1578,
+          0.2169
+        ],
+        "specificity": 0.9056,
+        "specificity_95CI": [
+          0.8976,
+          0.9131
+        ],
+        "ppv": 0.1925,
+        "ppv_95CI": [
+          0.1638,
+          0.2249
+        ],
+        "npv": 0.9016,
+        "npv_95CI": [
+          0.8935,
+          0.9092
+        ],
+        "f1": 0.1889,
+        "balanced_accuracy": 0.5456,
+        "cohens_kappa": 0.0926
+      }
+    },
+    "3": {
+      "n": 65388,
+      "metrics": {
+        "tp": 3605,
+        "fp": 11628,
+        "tn": 45695,
+        "fn": 4460,
+        "n": 65388,
+        "sensitivity": 0.447,
+        "sensitivity_95CI": [
+          0.4362,
+          0.4579
+        ],
+        "specificity": 0.7971,
+        "specificity_95CI": [
+          0.7938,
+          0.8004
+        ],
+        "ppv": 0.2367,
+        "ppv_95CI": [
+          0.23,
+          0.2435
+        ],
+        "npv": 0.9111,
+        "npv_95CI": [
+          0.9086,
+          0.9135
+        ],
+        "f1": 0.3095,
+        "balanced_accuracy": 0.6221,
+        "cohens_kappa": 0.1767
+      }
+    },
+    "2": {
+      "n": 42342,
+      "metrics": {
+        "tp": 1595,
+        "fp": 8727,
+        "tn": 28956,
+        "fn": 3064,
+        "n": 42342,
+        "sensitivity": 0.3423,
+        "sensitivity_95CI": [
+          0.3289,
+          0.3561
+        ],
+        "specificity": 0.7684,
+        "specificity_95CI": [
+          0.7641,
+          0.7726
+        ],
+        "ppv": 0.1545,
+        "ppv_95CI": [
+          0.1477,
+          0.1616
+        ],
+        "npv": 0.9043,
+        "npv_95CI": [
+          0.901,
+          0.9075
+        ],
+        "f1": 0.2129,
+        "balanced_accuracy": 0.5554,
+        "cohens_kappa": 0.0723
+      }
+    },
+    "4": {
+      "n": 10971,
+      "metrics": {
+        "tp": 383,
+        "fp": 1176,
+        "tn": 8886,
+        "fn": 526,
+        "n": 10971,
+        "sensitivity": 0.4213,
+        "sensitivity_95CI": [
+          0.3896,
+          0.4537
+        ],
+        "specificity": 0.8831,
+        "specificity_95CI": [
+          0.8767,
+          0.8893
+        ],
+        "ppv": 0.2457,
+        "ppv_95CI": [
+          0.2249,
+          0.2676
+        ],
+        "npv": 0.9441,
+        "npv_95CI": [
+          0.9393,
+          0.9486
+        ],
+        "f1": 0.3104,
+        "balanced_accuracy": 0.6522,
+        "cohens_kappa": 0.2297
+      }
+    }
+  }
+}

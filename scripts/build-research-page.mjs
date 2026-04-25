@@ -132,7 +132,7 @@ const html = `<!doctype html>
     <div class="protocol-id">PROTOCOL ${PROTOCOL_ID} · PREREGISTERED</div>
     <div class="kicker">진단정확도 검증 프로토콜 — STARD 2015 준수</div>
     <h1>Pre-KTAS + 0–3 질문은 정말 중증응급환자를 가려내는가?</h1>
-    <p class="lede">본 프로젝트의 v0.1 룰 알고리즘이 EMRIS 27 중증응급질환을 식별하는 능력을, 광주 지역 ED 225,017건의 실측 방문 데이터와 사전 등록된 통계 분석 계획으로 측정한다. 정답은 "Y코드 1개 확정"이 아니라 <strong>이항 sensitivity·specificity</strong>다. 본 문서는 데이터 잠금 이전에 동결된 사전 분석 계획이다.</p>
+    <p class="lede">본 프로젝트의 v0.1 룰 알고리즘이 EMRIS 27 중증응급질환을 식별하는 능력을, 광주·전남·전북 ED 225,017건의 실측 방문 데이터와 사전 등록된 통계 분석 계획으로 측정한다. 정답은 "Y코드 1개 확정"이 아니라 <strong>이항 sensitivity·specificity</strong>다. <strong>v1.0 결과: Sensitivity 39.4% (H1 FAIL), Specificity 80.8% (H2 PASS).</strong> 보고서: <a href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/prektas-validation-report-v1.0.md">prektas-validation-report-v1.0.md</a>.</p>
     <div class="byline">
       <span>Protocol v${PROTOCOL_VERSION}</span>
       <span>Frozen: ${PROTOCOL_DATE}</span>

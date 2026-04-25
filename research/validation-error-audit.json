@@ -1,0 +1,379 @@
+{
+  "protocol_id": "PREKTAS-VAL-2026-001",
+  "analysis_at": "2026-04-25T16:17:41Z",
+  "note": "Top FN: 시스템이 unmapped로 처리했으나 ICD-10 ground truth가 severe Y코드. Top FP: 시스템이 severe로 예측했으나 ICD-10 ground truth는 not-severe.",
+  "top_fn_patterns": [
+    {
+      "level2": "소화기계",
+      "ground_truth_ycode": "Y0060",
+      "count": 1349
+    },
+    {
+      "level2": "신경계",
+      "ground_truth_ycode": "Y0020",
+      "count": 661
+    },
+    {
+      "level2": "신경계",
+      "ground_truth_ycode": "Y0142",
+      "count": 419
+    },
+    {
+      "level2": "심혈관계",
+      "ground_truth_ycode": "Y0141",
+      "count": 387
+    },
+    {
+      "level2": "소화기계",
+      "ground_truth_ycode": "Y0051",
+      "count": 385
+    },
+    {
+      "level2": "심혈관계",
+      "ground_truth_ycode": "Y0142",
+      "count": 374
+    },
+    {
+      "level2": "소화기계",
+      "ground_truth_ycode": "Y0052",
+      "count": 356
+    },
+    {
+      "level2": "물질오용",
+      "ground_truth_ycode": "Y0141",
+      "count": 330
+    },
+    {
+      "level2": "신경계",
+      "ground_truth_ycode": "Y0141",
+      "count": 311
+    },
+    {
+      "level2": "일반",
+      "ground_truth_ycode": "Y0142",
+      "count": 299
+    },
+    {
+      "level2": "호흡기계",
+      "ground_truth_ycode": "Y0141",
+      "count": 269
+    },
+    {
+      "level2": "소화기계",
+      "ground_truth_ycode": "Y0081",
+      "count": 243
+    },
+    {
+      "level2": "호흡기계",
+      "ground_truth_ycode": "Y0142",
+      "count": 232
+    },
+    {
+      "level2": "심혈관계",
+      "ground_truth_ycode": "Y0020",
+      "count": 213
+    },
+    {
+      "level2": "소화기계",
+      "ground_truth_ycode": "Y0142",
+      "count": 212
+    },
+    {
+      "level2": "일반",
+      "ground_truth_ycode": "Y0052",
+      "count": 197
+    },
+    {
+      "level2": "소화기계",
+      "ground_truth_ycode": "Y0141",
+      "count": 173
+    },
+    {
+      "level2": "일반",
+      "ground_truth_ycode": "Y0141",
+      "count": 155
+    },
+    {
+      "level2": "신경계",
+      "ground_truth_ycode": "Y0032",
+      "count": 152
+    },
+    {
+      "level2": "신경계",
+      "ground_truth_ycode": "Y0150",
+      "count": 142
+    },
+    {
+      "level2": "물질오용",
+      "ground_truth_ycode": "Y0150",
+      "count": 141
+    },
+    {
+      "level2": "소화기계",
+      "ground_truth_ycode": "Y0082",
+      "count": 130
+    },
+    {
+      "level2": "심혈관계",
+      "ground_truth_ycode": "Y0081",
+      "count": 113
+    },
+    {
+      "level2": "소화기계",
+      "ground_truth_ycode": "Y0150",
+      "count": 112
+    },
+    {
+      "level2": "심혈관계",
+      "ground_truth_ycode": "Y0010",
+      "count": 104
+    },
+    {
+      "level2": "신경계",
+      "ground_truth_ycode": "Y0031",
+      "count": 103
+    },
+    {
+      "level2": "신경계",
+      "ground_truth_ycode": "Y0081",
+      "count": 101
+    },
+    {
+      "level2": "심혈관계",
+      "ground_truth_ycode": "Y0052",
+      "count": 101
+    },
+    {
+      "level2": "호흡기계",
+      "ground_truth_ycode": "Y0010",
+      "count": 94
+    },
+    {
+      "level2": "심혈관계",
+      "ground_truth_ycode": "Y0082",
+      "count": 94
+    },
+    {
+      "level2": "신경계",
+      "ground_truth_ycode": "Y0082",
+      "count": 88
+    },
+    {
+      "level2": "일반",
+      "ground_truth_ycode": "Y0060",
+      "count": 88
+    },
+    {
+      "level2": "일반",
+      "ground_truth_ycode": "Y0051",
+      "count": 82
+    },
+    {
+      "level2": "심혈관계",
+      "ground_truth_ycode": "Y0060",
+      "count": 80
+    },
+    {
+      "level2": "심혈관계",
+      "ground_truth_ycode": "Y0031",
+      "count": 68
+    },
+    {
+      "level2": "일반",
+      "ground_truth_ycode": "Y0150",
+      "count": 64
+    },
+    {
+      "level2": "신경계",
+      "ground_truth_ycode": "Y0010",
+      "count": 58
+    },
+    {
+      "level2": "심혈관계",
+      "ground_truth_ycode": "Y0051",
+      "count": 56
+    },
+    {
+      "level2": "심혈관계",
+      "ground_truth_ycode": "Y0032",
+      "count": 54
+    },
+    {
+      "level2": "심혈관계",
+      "ground_truth_ycode": "Y0150",
+      "count": 50
+    },
+    {
+      "level2": "소화기계",
+      "ground_truth_ycode": "Y0010",
+      "count": 48
+    },
+    {
+      "level2": "일반",
+      "ground_truth_ycode": "Y0020",
+      "count": 46
+    },
+    {
+      "level2": "소화기계",
+      "ground_truth_ycode": "Y0070",
+      "count": 43
+    },
+    {
+      "level2": "신경계",
+      "ground_truth_ycode": "Y0052",
+      "count": 42
+    },
+    {
+      "level2": "호흡기계",
+      "ground_truth_ycode": "Y0081",
+      "count": 39
+    },
+    {
+      "level2": "일반",
+      "ground_truth_ycode": "Y0081",
+      "count": 34
+    },
+    {
+      "level2": "호흡기계",
+      "ground_truth_ycode": "Y0082",
+      "count": 34
+    },
+    {
+      "level2": "신경계",
+      "ground_truth_ycode": "Y0060",
+      "count": 33
+    },
+    {
+      "level2": "임신/여성생식계",
+      "ground_truth_ycode": "Y0112",
+      "count": 30
+    },
+    {
+      "level2": "일반",
+      "ground_truth_ycode": "Y0082",
+      "count": 30
+    }
+  ],
+  "top_fp_patterns": [
+    {
+      "level2": "신경계",
+      "predicted_ycode": "Y0032",
+      "count": 13929
+    },
+    {
+      "level2": "신경계",
+      "predicted_ycode": "Y0031",
+      "count": 7889
+    },
+    {
+      "level2": "신경계",
+      "predicted_ycode": "Y0020",
+      "count": 6653
+    },
+    {
+      "level2": "심혈관계",
+      "predicted_ycode": "Y0041",
+      "count": 5483
+    },
+    {
+      "level2": "심혈관계",
+      "predicted_ycode": "Y0010",
+      "count": 5483
+    },
+    {
+      "level2": "소화기계",
+      "predicted_ycode": "Y0081",
+      "count": 1198
+    },
+    {
+      "level2": "정신건강",
+      "predicted_ycode": "Y0150",
+      "count": 929
+    },
+    {
+      "level2": "소화기계",
+      "predicted_ycode": "Y0082",
+      "count": 223
+    },
+    {
+      "level2": "눈",
+      "predicted_ycode": "Y0160",
+      "count": 131
+    },
+    {
+      "level2": "호흡기계",
+      "predicted_ycode": "Y0091",
+      "count": 97
+    },
+    {
+      "level2": "임신/여성생식계",
+      "predicted_ycode": "Y0113",
+      "count": 64
+    },
+    {
+      "level2": "임신/여성생식계",
+      "predicted_ycode": "Y0112",
+      "count": 64
+    },
+    {
+      "level2": "피부",
+      "predicted_ycode": "Y0120",
+      "count": 63
+    },
+    {
+      "level2": "근골격계",
+      "predicted_ycode": "Y0132",
+      "count": 61
+    },
+    {
+      "level2": "근골격계",
+      "predicted_ycode": "Y0131",
+      "count": 61
+    },
+    {
+      "level2": "심혈관계",
+      "predicted_ycode": "Y0042",
+      "count": 55
+    },
+    {
+      "level2": "환경손상",
+      "predicted_ycode": "Y0120",
+      "count": 39
+    },
+    {
+      "level2": "소화기계",
+      "predicted_ycode": "Y0052",
+      "count": 36
+    },
+    {
+      "level2": "소화기계",
+      "predicted_ycode": "Y0051",
+      "count": 36
+    },
+    {
+      "level2": "몸통외상",
+      "predicted_ycode": "Y0132",
+      "count": 27
+    },
+    {
+      "level2": "몸통외상",
+      "predicted_ycode": "Y0131",
+      "count": 27
+    },
+    {
+      "level2": "호흡기계",
+      "predicted_ycode": "Y0092",
+      "count": 12
+    },
+    {
+      "level2": "소화기계",
+      "predicted_ycode": "Y0092",
+      "count": 3
+    },
+    {
+      "level2": "임신/여성생식계",
+      "predicted_ycode": "Y0111",
+      "count": 3
+    }
+  ]
+}

@@ -1,0 +1,485 @@
+{
+  "protocol_id": "PREKTAS-VAL-2026-001",
+  "protocol_version": "1.1",
+  "algorithm_version": "v0.1",
+  "analysis_at": "2026-04-25T16:17:41Z",
+  "reference_standard": "research/y-code-icd10-clusters.json v1.0",
+  "sample": {
+    "csv_total_rows": 225017,
+    "matched_rows": 179924,
+    "included_rows": 130536,
+    "excluded_reasons": {
+      "unmatched": 45093,
+      "code_format": 6376,
+      "codebook_missing": 41469,
+      "no_prektas_code": 149,
+      "unknown_suffix": 852,
+      "no_diagnosis": 542
+    },
+    "crosswalk_visit_weighted": {
+      "unknown_suffix_visits": 852,
+      "codebook_missing_visits": 41469,
+      "code_format_visits": 6376
+    }
+  },
+  "prevalence": {
+    "severe_count": 16839,
+    "severe_unique_visits": 14605,
+    "severe_pct": 11.19,
+    "per_ycode": {
+      "Y0020": 3258,
+      "Y0081": 1723,
+      "Y0141": 1703,
+      "Y0060": 1615,
+      "Y0142": 1598,
+      "Y0082": 1485,
+      "Y0032": 1336,
+      "Y0010": 920,
+      "Y0052": 732,
+      "Y0150": 621,
+      "Y0051": 584,
+      "Y0031": 471,
+      "Y0120": 151,
+      "Y0041": 128,
+      "Y0113": 118,
+      "Y0092": 66,
+      "Y0091": 66,
+      "Y0112": 59,
+      "Y0070": 57,
+      "Y0042": 39,
+      "Y0160": 36,
+      "Y0171": 32,
+      "Y0131": 25,
+      "Y0172": 12,
+      "Y0132": 3,
+      "Y0111": 1
+    }
+  },
+  "binary_metrics": {
+    "q0_no_questions": {
+      "tp": 5747,
+      "fp": 22295,
+      "tn": 93636,
+      "fn": 8858,
+      "n": 130536,
+      "sensitivity": 0.3935,
+      "sensitivity_95CI": [
+        0.3856,
+        0.4014
+      ],
+      "specificity": 0.8077,
+      "specificity_95CI": [
+        0.8054,
+        0.8099
+      ],
+      "ppv": 0.2049,
+      "ppv_95CI": [
+        0.2003,
+        0.2097
+      ],
+      "npv": 0.9136,
+      "npv_95CI": [
+        0.9118,
+        0.9153
+      ],
+      "f1": 0.2695,
+      "balanced_accuracy": 0.6006,
+      "cohens_kappa": 0.1435
+    },
+    "q_oracle_best_case": {
+      "tp": 5747,
+      "fp": 22295,
+      "tn": 93636,
+      "fn": 8858,
+      "n": 130536,
+      "sensitivity": 0.3935,
+      "sensitivity_95CI": [
+        0.3856,
+        0.4014
+      ],
+      "specificity": 0.8077,
+      "specificity_95CI": [
+        0.8054,
+        0.8099
+      ],
+      "ppv": 0.2049,
+      "ppv_95CI": [
+        0.2003,
+        0.2097
+      ],
+      "npv": 0.9136,
+      "npv_95CI": [
+        0.9118,
+        0.9153
+      ],
+      "f1": 0.2695,
+      "balanced_accuracy": 0.6006,
+      "cohens_kappa": 0.1435
+    },
+    "marginal_gain_oracle_vs_q0_sensitivity": 0.0
+  },
+  "hypothesis_tests": {
+    "h1_sensitivity_q0": {
+      "threshold": 0.8,
+      "lower_ci": 0.3856,
+      "pass": false
+    },
+    "h2_specificity_q0": {
+      "threshold": 0.8,
+      "lower_ci": 0.8054,
+      "pass": true
+    },
+    "h1_sensitivity_q_oracle": {
+      "threshold": 0.8,
+      "lower_ci": 0.3856,
+      "pass": false
+    },
+    "h2_specificity_q_oracle": {
+      "threshold": 0.8,
+      "lower_ci": 0.8054,
+      "pass": true
+    }
+  },
+  "per_ycode_metrics": {
+    "Y0031": {
+      "support": 471,
+      "tp": 276,
+      "fp": 9503,
+      "fn": 195,
+      "precision": 0.0282,
+      "recall": 0.586,
+      "f1": 0.0539,
+      "recall_95CI": [
+        0.541,
+        0.6296
+      ]
+    },
+    "Y0032": {
+      "support": 1336,
+      "tp": 1061,
+      "fp": 17242,
+      "fn": 275,
+      "precision": 0.058,
+      "recall": 0.7942,
+      "f1": 0.1081,
+      "recall_95CI": [
+        0.7717,
+        0.815
+      ]
+    },
+    "Y0020": {
+      "support": 3258,
+      "tp": 2261,
+      "fp": 8413,
+      "fn": 997,
+      "precision": 0.2118,
+      "recall": 0.694,
+      "f1": 0.3246,
+      "recall_95CI": [
+        0.6779,
+        0.7096
+      ]
+    },
+    "Y0142": {
+      "support": 1598,
+      "tp": 0,
+      "fp": 0,
+      "fn": 1598,
+      "precision": 0,
+      "recall": 0.0,
+      "f1": 0,
+      "recall_95CI": [
+        0.0,
+        0.0024
+      ]
+    },
+    "Y0091": {
+      "support": 66,
+      "tp": 9,
+      "fp": 103,
+      "fn": 57,
+      "precision": 0.0804,
+      "recall": 0.1364,
+      "f1": 0.1011,
+      "recall_95CI": [
+        0.0734,
+        0.2393
+      ]
+    },
+    "Y0041": {
+      "support": 128,
+      "tp": 67,
+      "fp": 6275,
+      "fn": 61,
+      "precision": 0.0106,
+      "recall": 0.5234,
+      "f1": 0.0207,
+      "recall_95CI": [
+        0.4375,
+        0.608
+      ]
+    },
+    "Y0010": {
+      "support": 920,
+      "tp": 591,
+      "fp": 5751,
+      "fn": 329,
+      "precision": 0.0932,
+      "recall": 0.6424,
+      "f1": 0.1628,
+      "recall_95CI": [
+        0.6109,
+        0.6727
+      ]
+    },
+    "Y0150": {
+      "support": 621,
+      "tp": 64,
+      "fp": 955,
+      "fn": 557,
+      "precision": 0.0628,
+      "recall": 0.1031,
+      "f1": 0.078,
+      "recall_95CI": [
+        0.0815,
+        0.1295
+      ]
+    },
+    "Y0141": {
+      "support": 1703,
+      "tp": 0,
+      "fp": 0,
+      "fn": 1703,
+      "precision": 0,
+      "recall": 0.0,
+      "f1": 0,
+      "recall_95CI": [
+        0.0,
+        0.0023
+      ]
+    },
+    "Y0132": {
+      "support": 3,
+      "tp": 2,
+      "fp": 104,
+      "fn": 1,
+      "precision": 0.0189,
+      "recall": 0.6667,
+      "f1": 0.0367,
+      "recall_95CI": [
+        0.2077,
+        0.9385
+      ]
+    },
+    "Y0082": {
+      "support": 1485,
+      "tp": 266,
+      "fp": 295,
+      "fn": 1219,
+      "precision": 0.4742,
+      "recall": 0.1791,
+      "f1": 0.26,
+      "recall_95CI": [
+        0.1605,
+        0.1994
+      ]
+    },
+    "Y0081": {
+      "support": 1723,
+      "tp": 904,
+      "fp": 1314,
+      "fn": 819,
+      "precision": 0.4076,
+      "recall": 0.5247,
+      "f1": 0.4588,
+      "recall_95CI": [
+        0.5011,
+        0.5482
+      ]
+    },
+    "Y0120": {
+      "support": 151,
+      "tp": 111,
+      "fp": 106,
+      "fn": 40,
+      "precision": 0.5115,
+      "recall": 0.7351,
+      "f1": 0.6033,
+      "recall_95CI": [
+        0.6595,
+        0.799
+      ]
+    },
+    "Y0113": {
+      "support": 118,
+      "tp": 68,
+      "fp": 89,
+      "fn": 50,
+      "precision": 0.4331,
+      "recall": 0.5763,
+      "f1": 0.4945,
+      "recall_95CI": [
+        0.4861,
+        0.6616
+      ]
+    },
+    "Y0112": {
+      "support": 59,
+      "tp": 22,
+      "fp": 135,
+      "fn": 37,
+      "precision": 0.1401,
+      "recall": 0.3729,
+      "f1": 0.2037,
+      "recall_95CI": [
+        0.2608,
+        0.5005
+      ]
+    },
+    "Y0060": {
+      "support": 1615,
+      "tp": 0,
+      "fp": 0,
+      "fn": 1615,
+      "precision": 0,
+      "recall": 0.0,
+      "f1": 0,
+      "recall_95CI": [
+        0.0,
+        0.0024
+      ]
+    },
+    "Y0092": {
+      "support": 66,
+      "tp": 8,
+      "fp": 21,
+      "fn": 58,
+      "precision": 0.2759,
+      "recall": 0.1212,
+      "f1": 0.1684,
+      "recall_95CI": [
+        0.0627,
+        0.2214
+      ]
+    },
+    "Y0052": {
+      "support": 732,
+      "tp": 2,
+      "fp": 39,
+      "fn": 730,
+      "precision": 0.0488,
+      "recall": 0.0027,
+      "f1": 0.0052,
+      "recall_95CI": [
+        0.0007,
+        0.0099
+      ]
+    },
+    "Y0160": {
+      "support": 36,
+      "tp": 18,
+      "fp": 144,
+      "fn": 18,
+      "precision": 0.1111,
+      "recall": 0.5,
+      "f1": 0.1818,
+      "recall_95CI": [
+        0.3447,
+        0.6553
+      ]
+    },
+    "Y0051": {
+      "support": 584,
+      "tp": 0,
+      "fp": 41,
+      "fn": 584,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0,
+      "recall_95CI": [
+        -0.0,
+        0.0065
+      ]
+    },
+    "Y0131": {
+      "support": 25,
+      "tp": 16,
+      "fp": 90,
+      "fn": 9,
+      "precision": 0.1509,
+      "recall": 0.64,
+      "f1": 0.2443,
+      "recall_95CI": [
+        0.4452,
+        0.7975
+      ]
+    },
+    "Y0042": {
+      "support": 39,
+      "tp": 0,
+      "fp": 58,
+      "fn": 39,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0,
+      "recall_95CI": [
+        0.0,
+        0.0897
+      ]
+    },
+    "Y0172": {
+      "support": 12,
+      "tp": 0,
+      "fp": 0,
+      "fn": 12,
+      "precision": 0,
+      "recall": 0.0,
+      "f1": 0,
+      "recall_95CI": [
+        0.0,
+        0.2425
+      ]
+    },
+    "Y0171": {
+      "support": 32,
+      "tp": 0,
+      "fp": 0,
+      "fn": 32,
+      "precision": 0,
+      "recall": 0.0,
+      "f1": 0,
+      "recall_95CI": [
+        0.0,
+        0.1072
+      ]
+    },
+    "Y0070": {
+      "support": 57,
+      "tp": 0,
+      "fp": 0,
+      "fn": 57,
+      "precision": 0,
+      "recall": 0.0,
+      "f1": 0,
+      "recall_95CI": [
+        0.0,
+        0.0631
+      ]
+    },
+    "Y0111": {
+      "support": 1,
+      "tp": 1,
+      "fp": 10,
+      "fn": 0,
+      "precision": 0.0909,
+      "recall": 1.0,
+      "f1": 0.1667,
+      "recall_95CI": [
+        0.2065,
+        1.0
+      ]
+    }
+  },
+  "macro_f1": 0.1413,
+  "weighted_f1": 0.1663
+}
