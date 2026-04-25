@@ -404,6 +404,56 @@
   .ribbon-btn:hover { background: var(--t-bg); color: var(--t-ink); }
   .ribbon-btn.selected { background: var(--t-ink); color: #ffffff; font-weight: 700; }
 
+  /* 입력 모드 토글 (Phase 6 Step 6) */
+  .mode-toggle {
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--t-line);
+    background: var(--t-bg);
+  }
+  .mode-btn {
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--t-dim);
+    cursor: pointer;
+    transition: background var(--t-fast), color var(--t-fast);
+    font-family: inherit;
+    letter-spacing: 0.02em;
+    border-bottom: 2px solid transparent;
+  }
+  .mode-btn:hover { background: var(--t-surface); }
+  .mode-btn.active {
+    background: var(--t-surface);
+    color: var(--t-ink);
+    border-bottom-color: var(--t-accent);
+    font-weight: 700;
+  }
+
+  /* 마법사 패널 placeholder */
+  #wizard-panel {
+    flex-shrink: 0;
+    border-top: 1px solid var(--t-line);
+    background: var(--t-surface);
+    padding: 14px 16px;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  #wizard-panel[hidden] { display: none !important; }
+
+  /* hidden 속성 우선 — display:flex/grid 오버라이드 */
+  #input-bar[hidden], #chips-bar[hidden], #wizard-panel[hidden] { display: none !important; }
+  .wizard-placeholder {
+    color: var(--t-dim);
+    font-size: var(--fs-sm);
+    text-align: center;
+    padding: 24px;
+    border: 1px dashed var(--t-line);
+  }
+
   #input-bar {
     flex-shrink: 0;
     display: flex;
@@ -666,9 +716,20 @@
   <div id="chips-list"></div>
 </div>
 
+<!-- 입력 모드 토글 (Phase 6 Step 6) -->
+<div id="input-mode-toggle" class="mode-toggle">
+  <button class="mode-btn active" data-mode="chat" id="mode-chat-btn">⌨ 자유 채팅</button>
+  <button class="mode-btn" data-mode="wizard" id="mode-wizard-btn">📋 Pre-KTAS 마법사</button>
+</div>
+
 <div id="input-bar">
   <textarea id="user-input" rows="1" placeholder="어디서, 어떤 응급 상황인지 알려주세요..." maxlength="200"></textarea>
   <button id="send-btn" title="전송">&#x2191;</button>
+</div>
+
+<!-- 마법사 패널 (Phase 6 Step 7+에서 채워짐) -->
+<div id="wizard-panel" hidden>
+  <div class="wizard-placeholder">마법사 컴포넌트 로딩 중…</div>
 </div>
 
 </div>
@@ -1040,6 +1101,46 @@
 
     // ── 케이스 컨트롤 (Step 4) ──
     setupCaseControls();
+
+    // ── 입력 모드 토글 (Step 6) ──
+    setupInputModeToggle();
+  }
+
+  // 입력 모드 토글 (Phase 6 Step 6) — 자유 채팅 vs Pre-KTAS 마법사
+  let currentInputMode = 'chat';
+  function setupInputModeToggle() {
+    const chatBtn = document.getElementById('mode-chat-btn');
+    const wizBtn = document.getElementById('mode-wizard-btn');
+    const inputBar = document.getElementById('input-bar');
+    const chipsBar = document.getElementById('chips-bar');
+    const wizardPanel = document.getElementById('wizard-panel');
+
+    // localStorage에서 마지막 모드 복구 (default: chat)
+    const stored = localStorage.getItem('emris_input_mode') || 'chat';
+    setMode(stored, true);
+
+    chatBtn.addEventListener('click', () => setMode('chat'));
+    wizBtn.addEventListener('click', () => setMode('wizard'));
+
+    function setMode(mode, silent) {
+      if (mode !== 'chat' && mode !== 'wizard') mode = 'chat';
+      currentInputMode = mode;
+      localStorage.setItem('emris_input_mode', mode);
+      chatBtn.classList.toggle('active', mode === 'chat');
+      wizBtn.classList.toggle('active', mode === 'wizard');
+      if (mode === 'chat') {
+        inputBar.hidden = false;
+        if (chipsBar) chipsBar.hidden = false;
+        wizardPanel.hidden = true;
+      } else {
+        inputBar.hidden = true;
+        if (chipsBar) chipsBar.hidden = true;
+        wizardPanel.hidden = false;
+      }
+      if (!silent) {
+        // 모드 변경 시 wizard 컴포넌트 mount/unmount는 Step 7에서 구현
+      }
+    }
   }
 
   // 안전하게 DOM 노드 비우기 (innerHTML XSS 회피)
