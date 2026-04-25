@@ -121,6 +121,7 @@ const html = `<!doctype html>
   <div class="masthead">
     <div class="brand">EMRIS 119 · Validation Protocol · v${PROTOCOL_VERSION} · ${PROTOCOL_DATE}</div>
     <div class="nav">
+      <a href="prektas-consultation.html">전문의 자문 도구</a>
       <a href="prektas-hospital-recommender.html">추천 도구</a>
       <a href="https://119chat.emergency-info.com">Chatbot</a>
       <a href="https://github.com/Pandoll-AI/emris-119chat">Repository</a>
@@ -438,7 +439,7 @@ open research/validation-results-v0.1.json</pre></div>
 
   <footer class="page-end">
     <div><span class="version-tag">protocol v${PROTOCOL_VERSION}</span> · <span class="version-tag">${PROTOCOL_ID}</span> · ${PROTOCOL_DATE} · preregistered</div>
-    <div><a href="prektas-hospital-recommender.html">→ 추천 도구</a> · <a href="https://119chat.emergency-info.com">→ Chatbot</a></div>
+    <div><a href="prektas-consultation.html">→ 전문의 자문 도구</a> · <a href="prektas-hospital-recommender.html">→ 추천 도구</a> · <a href="https://119chat.emergency-info.com">→ Chatbot</a></div>
   </footer>
 </div>
 </body>

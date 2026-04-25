@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pre-KTAS Validation — 응급의학 전문의 자문 (Phase 8a-2)</title>
+<style>
+  :root {
+    --ink: #0a0a0a;
+    --bg: #fafaf8;
+    --surface: #ffffff;
+    --dim: #6b6b68;
+    --muted: #94948f;
+    --line: rgba(10,10,10,0.14);
+    --line-soft: rgba(10,10,10,0.07);
+    --accent: #a8231c;
+    --accent-soft: rgba(168,35,28,0.08);
+    --good: #1f7a3d;
+    --warn: #b8860b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { background: var(--bg); color: var(--ink); font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Helvetica Neue", sans-serif; font-feature-settings: "tnum"; line-height: 1.55; font-size: 15px; }
+
+  .app { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+  @media (max-width: 880px) { .app { grid-template-columns: 1fr; } .sidebar { position: fixed; bottom: 0; left: 0; right: 0; max-height: 50vh; overflow-y: auto; z-index: 10; border-top: 2px solid var(--ink); background: var(--surface); } .main { padding-bottom: 50vh; } }
+
+  .sidebar { border-right: 1px solid var(--line); background: var(--surface); padding: 24px 0; overflow-y: auto; max-height: 100vh; position: sticky; top: 0; }
+  .sidebar h1 { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; padding: 0 24px; margin-bottom: 6px; font-weight: 800; }
+  .sidebar .sub { font-size: 11px; color: var(--dim); padding: 0 24px 18px; border-bottom: 1px solid var(--line); }
+  .sidebar nav { padding: 12px 0; }
+  .nav-section { padding: 14px 24px 6px; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 7px 24px; cursor: pointer; font-size: 13px; border-left: 2px solid transparent; transition: background 0.1s, border-color 0.1s; }
+  .nav-item:hover { background: var(--accent-soft); }
+  .nav-item.active { border-left-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+  .nav-item .nav-code { font-family: ui-monospace, monospace; font-size: 11px; color: var(--dim); flex-shrink: 0; width: 50px; }
+  .nav-item.active .nav-code { color: var(--accent); }
+  .nav-item .nav-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-item .nav-status { font-size: 11px; color: var(--good); }
+  .nav-item.touched .nav-status::before { content: '●'; color: var(--good); }
+  .nav-item:not(.touched) .nav-status::before { content: '○'; color: var(--line); }
+
+  .sidebar .progress-bar { padding: 16px 24px; border-top: 1px solid var(--line); margin-top: 12px; }
+  .progress-bar .bar-bg { width: 100%; height: 4px; background: var(--line-soft); position: relative; }
+  .progress-bar .bar-fill { position: absolute; left: 0; top: 0; height: 100%; background: var(--accent); transition: width 0.2s; }
+  .progress-bar .bar-text { font-size: 11px; color: var(--dim); margin-top: 6px; font-family: ui-monospace, monospace; }
+
+  .sidebar .actions { padding: 12px 24px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); }
+  .btn { padding: 8px 14px; border: 1px solid var(--accent); background: var(--surface); color: var(--accent); font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px; text-align: center; transition: background 0.1s, color 0.1s; }
+  .btn:hover { background: var(--accent); color: #fff; }
+  .btn.secondary { border-color: var(--line); color: var(--ink); }
+  .btn.secondary:hover { background: var(--ink); color: #fff; }
+  .btn.danger { border-color: var(--accent); color: var(--accent); }
+
+  .main { padding: 40px 48px 80px; max-width: 980px; }
+  @media (max-width: 880px) { .main { padding: 24px 20px 60px; } }
+
+  .preamble { padding-bottom: 32px; border-bottom: 2px solid var(--ink); margin-bottom: 32px; }
+  .preamble .kicker { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 8px; }
+  .preamble h1 { font-size: clamp(28px, 4vw, 42px); line-height: 1.1; letter-spacing: -0.02em; font-weight: 900; margin-bottom: 14px; }
+  .preamble .lede { font-size: 16px; color: var(--dim); max-width: 64ch; line-height: 1.6; }
+  .preamble .meta { display: flex; gap: 18px; margin-top: 16px; font-size: 12px; color: var(--dim); flex-wrap: wrap; font-family: ui-monospace, monospace; }
+
+  section.ycode { display: none; padding: 20px 0; }
+  section.ycode.active { display: block; }
+  section.ycode .y-header { display: flex; align-items: baseline; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 22px; flex-wrap: wrap; }
+  section.ycode .y-code-tag { font-family: ui-monospace, monospace; font-size: 14px; font-weight: 700; color: var(--accent); }
+  section.ycode h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+  section.ycode .y-meta { font-size: 12px; color: var(--dim); margin-left: auto; }
+
+  .field-group { margin-bottom: 28px; }
+  .field-group h3 { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); font-weight: 700; margin-bottom: 4px; }
+  .field-group .help { font-size: 12px; color: var(--dim); margin-bottom: 12px; line-height: 1.5; max-width: 64ch; }
+
+  .icd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; margin-top: 4px; }
+  @media (max-width: 640px) { .icd-grid { grid-template-columns: 1fr; } }
+  .icd-row { display: flex; align-items: flex-start; gap: 10px; padding: 6px 8px; cursor: pointer; border: 1px solid transparent; transition: background 0.1s; }
+  .icd-row:hover { background: var(--surface); border-color: var(--line-soft); }
+  .icd-row input[type="checkbox"] { margin-top: 3px; cursor: pointer; accent-color: var(--accent); }
+  .icd-row .icd-code { font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: var(--ink); width: 56px; flex-shrink: 0; }
+  .icd-row .icd-label { font-size: 13px; color: var(--ink); line-height: 1.4; }
+  .icd-row.checked { background: var(--accent-soft); }
+  .icd-row.checked .icd-code { color: var(--accent); }
+
+  .custom-icd-row { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+  .custom-icd-row input[type="text"] { flex: 1; padding: 7px 10px; border: 1px solid var(--line); font-family: ui-monospace, monospace; font-size: 13px; }
+  .custom-icd-row .add-btn { padding: 7px 12px; border: 1px solid var(--ink); background: var(--surface); cursor: pointer; font-family: inherit; font-size: 12px; }
+  .custom-label { font-size: 12px; color: var(--dim); flex-shrink: 0; }
+
+  .decision-block { border: 1px solid var(--line); padding: 14px 16px; background: var(--surface); margin-top: 14px; }
+  .decision-block .d-question { font-weight: 700; margin-bottom: 8px; font-size: 14px; line-height: 1.5; }
+  .decision-block .d-options { display: flex; flex-direction: column; gap: 6px; }
+  .decision-block label { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; padding: 4px 6px; font-size: 13px; line-height: 1.4; }
+  .decision-block label:hover { background: var(--accent-soft); }
+  .decision-block input[type="radio"] { margin-top: 3px; cursor: pointer; accent-color: var(--accent); }
+  .decision-block label.selected { background: var(--accent-soft); }
+
+  textarea.notes { width: 100%; padding: 10px 12px; border: 1px solid var(--line); font-family: inherit; font-size: 13px; line-height: 1.5; min-height: 80px; resize: vertical; }
+  textarea.notes:focus { outline: 2px solid var(--accent); }
+
+  .nav-buttons { display: flex; justify-content: space-between; gap: 12px; margin-top: 32px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .nav-buttons .btn { flex: 0 1 auto; min-width: 120px; }
+
+  section.thresholds, section.red-flags, section.export-section, section.welcome { display: none; padding: 20px 0; }
+  section.thresholds.active, section.red-flags.active, section.export-section.active, section.welcome.active { display: block; }
+
+  .threshold-card { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 14px 16px; border: 1px solid var(--line); margin: 10px 0; background: var(--surface); align-items: start; }
+  @media (max-width: 640px) { .threshold-card { grid-template-columns: 1fr; } }
+  .threshold-card .t-id { font-weight: 900; color: var(--accent); font-size: 22px; }
+  .threshold-card .t-q { font-size: 13px; line-height: 1.5; }
+  .threshold-card .t-input { display: flex; flex-direction: column; gap: 6px; }
+  .threshold-card input[type="number"] { padding: 7px 10px; border: 1px solid var(--line); font-family: ui-monospace, monospace; font-size: 14px; width: 100%; }
+  .threshold-card .t-current { font-size: 11px; color: var(--dim); font-family: ui-monospace, monospace; }
+  .threshold-card .t-input textarea { width: 100%; padding: 7px 10px; border: 1px solid var(--line); font-size: 12px; min-height: 50px; resize: vertical; font-family: inherit; }
+  .threshold-card .t-q strong { display: block; margin-bottom: 6px; }
+
+  .red-flag-input { display: flex; gap: 8px; margin-top: 12px; }
+  .red-flag-input input[type="text"] { flex: 1; padding: 9px 12px; border: 1px solid var(--line); font-family: inherit; font-size: 14px; }
+  .red-flag-list { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+  .red-flag-item { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border: 1px solid var(--line-soft); background: var(--surface); }
+  .red-flag-item .rf-text { flex: 1; font-size: 13px; line-height: 1.5; }
+  .red-flag-item .rf-remove { padding: 3px 8px; border: 1px solid var(--line); background: transparent; cursor: pointer; font-size: 11px; color: var(--dim); }
+  .red-flag-item .rf-remove:hover { color: var(--accent); border-color: var(--accent); }
+
+  .export-preview { background: var(--surface); border: 1px solid var(--line); padding: 14px; margin: 16px 0; max-height: 400px; overflow: auto; font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
+  .export-actions { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+
+  .callout { padding: 14px 16px; background: var(--surface); border-left: 3px solid var(--accent); margin: 16px 0; font-size: 13px; line-height: 1.5; }
+  .callout strong { font-weight: 700; }
+
+  .welcome ul { padding-left: 20px; margin: 14px 0; }
+  .welcome li { margin: 8px 0; line-height: 1.6; }
+
+  h2.section-title { font-size:24px; font-weight:800; margin-bottom:14px; letter-spacing:-0.02em; }
+  p.section-help { color:var(--dim); margin-bottom:16px; max-width:64ch; line-height:1.6; }
+  h3.welcome-h3 { margin-top:24px; font-size:14px; letter-spacing:0.06em; text-transform:uppercase; color:var(--accent); font-weight:700; }
+  .custom-chip { padding:3px 8px; border:1px solid var(--accent); background:var(--accent-soft); color:var(--accent); font-size:11px; font-family:ui-monospace,monospace; cursor:pointer; }
+  .custom-chip-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  code { font-family: ui-monospace, monospace; font-size: 0.9em; background: var(--line-soft); padding: 1px 5px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <h1>Phase 8a-2 자문</h1>
+    <div class="sub">EMRIS 27 Y코드 → ICD-10 reference standard</div>
+
+    <div class="progress-bar">
+      <div class="bar-bg"><div class="bar-fill" id="progress-fill"></div></div>
+      <div class="bar-text" id="progress-text">0 / 32 답변 완료</div>
+    </div>
+
+    <nav id="nav-list"></nav>
+
+    <div class="actions">
+      <button class="btn secondary" id="nav-welcome">📖 안내</button>
+      <button class="btn secondary" id="nav-thresholds">📐 가설 임계값</button>
+      <button class="btn secondary" id="nav-red-flags">🚨 Red flags</button>
+      <button class="btn" id="nav-export">⬇ 결과 내보내기</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="preamble">
+      <div class="kicker">Pre-KTAS Validation Study · Phase 8a-2</div>
+      <h1>응급의학 전문의 자문 — Y코드 ground truth 동결</h1>
+      <p class="lede">본 도구는 EMRIS 27 중증응급질환 Y코드 각각에 대해 어떤 ICD-10 코드(들)이 "이 Y코드 시술/입원 적응 환자"의 ground truth로 인정되는지 결정합니다. 응급의학 전문의의 임상 판단이 필요하며, 결과는 본 검증 연구의 reference standard로 frozen됩니다. 진행 상황은 자동 저장되며 자기 페이스대로 작업할 수 있습니다.</p>
+      <div class="meta">
+        <span>Protocol: PREKTAS-VAL-2026-001</span>
+        <span>Session: <span id="session-id">―</span></span>
+        <span>Last saved: <span id="last-saved">―</span></span>
+      </div>
+    </div>
+
+    <section class="welcome active" data-section="welcome" id="section-welcome"></section>
+
+    <div id="ycode-sections"></div>
+
+    <section class="thresholds" data-section="thresholds" id="section-thresholds"></section>
+
+    <section class="red-flags" data-section="red-flags" id="section-red-flags"></section>
+
+    <section class="export-section" data-section="export-section" id="section-export"></section>
+  </main>
+</div>
+
+<script>
+'use strict';
+
+// ─────────────────────────────────────────────────────────────────────
+// DOM 헬퍼
+// ─────────────────────────────────────────────────────────────────────
+function el(tag, attrs, children) {
+  const e = document.createElement(tag);
+  if (attrs) {
+    for (const k in attrs) {
+      if (k === 'class') e.className = attrs[k];
+      else if (k === 'style') e.style.cssText = attrs[k];
+      else if (k === 'text') e.textContent = attrs[k];
+      else if (k.indexOf('data-') === 0) e.setAttribute(k, attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    }
+  }
+  if (children) {
+    children.forEach(c => {
+      if (c == null) return;
+      if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+      else e.appendChild(c);
+    });
+  }
+  return e;
+}
+function clearChildren(node) {
+  while (node && node.firstChild) node.removeChild(node.firstChild);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// 데이터: 27 Y코드 + ICD-10 후보 + open decisions
+// ─────────────────────────────────────────────────────────────────────
+const Y_CODES = [
+  {code:'Y0010',label:'심근경색의 재관류중재술',short:'심근경색',group:'cardio',age:'any',
+   icd:[{c:'I21.0',l:'STEMI 전벽 (V1-V6)',d:1},{c:'I21.1',l:'STEMI 하벽 (II/III/aVF)',d:1},{c:'I21.2',l:'STEMI 기타 부위',d:1},{c:'I21.3',l:'STEMI 부위 미상',d:1},{c:'I21.4',l:'NSTEMI',d:1},{c:'I21.9',l:'급성 심근경색 미상',d:1},{c:'I22.0',l:'후속 STEMI 전벽',d:1},{c:'I22.1',l:'후속 STEMI 하벽',d:1},{c:'I22.8',l:'후속 STEMI 기타',d:1},{c:'I22.9',l:'후속 심근경색 미상',d:1}],
+   decisions:[{id:'stemi_nstemi',q:'NSTEMI(I21.4)도 본 Y코드 적응에 포함?',opts:[{v:'include_both',l:'STEMI + NSTEMI 모두 포함 (재관류 적응)'},{v:'stemi_only',l:'STEMI만 (I21.0-3)'},{v:'case_by_case',l:'케이스별 — 심전도/troponin 기반'}],def:'include_both'}]},
+  {code:'Y0020',label:'뇌경색의 재관류중재술',short:'뇌경색',group:'neuro',age:'any',
+   icd:[{c:'I63.0',l:'추골동맥 혈전증',d:1},{c:'I63.1',l:'추골동맥 색전증',d:1},{c:'I63.2',l:'추골동맥 폐색·협착',d:1},{c:'I63.3',l:'대뇌동맥 혈전증',d:1},{c:'I63.4',l:'대뇌동맥 색전증',d:1},{c:'I63.5',l:'대뇌동맥 폐색·협착',d:1},{c:'I63.6',l:'대뇌정맥동 혈전증',d:0},{c:'I63.8',l:'기타 뇌경색',d:1},{c:'I63.9',l:'미상 뇌경색',d:1},{c:'G45.x',l:'TIA (일과성 뇌허혈)',d:0}],
+   decisions:[{id:'onset_window',q:'발병시각 미상 환자도 ground truth Y0020에 포함?',opts:[{v:'include',l:'포함 (DAWN/DEFUSE 영상기반 적응)'},{v:'exclude',l:'제외 (4.5시간 IV-tPA 기준 엄격)'},{v:'mri_dependent',l:'MRI mismatch 있을 시 포함'}],def:'include'}]},
+  {code:'Y0031',label:'뇌출혈수술 (거미막하 출혈)',short:'거미막하출혈',group:'neuro',age:'any',
+   icd:[{c:'I60.0',l:'경동맥 사이폰·분기부 SAH',d:1},{c:'I60.1',l:'중뇌동맥 SAH',d:1},{c:'I60.2',l:'전교통동맥 SAH',d:1},{c:'I60.3',l:'후교통동맥 SAH',d:1},{c:'I60.4',l:'기저동맥 SAH',d:1},{c:'I60.5',l:'추골동맥 SAH',d:1},{c:'I60.6',l:'기타 두개내 동맥 SAH',d:1},{c:'I60.7',l:'두개내 동맥 미상 SAH',d:1},{c:'I60.8',l:'기타 SAH',d:1},{c:'I60.9',l:'SAH 미상',d:1},{c:'S06.6',l:'외상성 SAH',d:0}],
+   decisions:[{id:'traumatic_sah',q:'외상성 SAH(S06.6)는 별도 Y코드 또는 본 Y0031에 포함?',opts:[{v:'separate',l:'외상성은 별도 (Y0031은 자발성 SAH만)'},{v:'include',l:'외상성도 본 Y코드에 포함'},{v:'context_dependent',l:'동맥류 파열에 의한 외상이면 포함'}],def:'separate'}]},
+  {code:'Y0032',label:'뇌출혈수술 (거미막하 출혈 외)',short:'뇌내출혈',group:'neuro',age:'any',
+   icd:[{c:'I61.0',l:'심부 ICH (피각·시상)',d:1},{c:'I61.1',l:'피질 ICH',d:1},{c:'I61.2',l:'미상 부위 ICH',d:1},{c:'I61.3',l:'뇌간 ICH',d:1},{c:'I61.4',l:'소뇌 ICH',d:1},{c:'I61.5',l:'뇌실내 IVH',d:1},{c:'I61.6',l:'다발성 ICH',d:1},{c:'I61.8',l:'기타 ICH',d:1},{c:'I61.9',l:'ICH 미상',d:1},{c:'I62.0',l:'경막하 출혈 (비외상성)',d:1},{c:'I62.1',l:'비외상성 경막외 출혈',d:1},{c:'I62.9',l:'두개내 출혈 미상',d:1},{c:'S06.4',l:'외상성 경막외 출혈',d:0},{c:'S06.5',l:'외상성 경막하 출혈',d:0}],
+   decisions:[{id:'traumatic_ich',q:'외상성 두개내 출혈(S06.x)은 본 Y코드에 포함?',opts:[{v:'separate',l:'외상성은 별도 (Y0032는 자발성만)'},{v:'include',l:'외상성도 포함 (수술 적응 동일)'},{v:'surgical_only',l:'수술 적응 명시 케이스만'}],def:'separate'}]},
+  {code:'Y0041',label:'대동맥응급 (흉부)',short:'흉부대동맥응급',group:'cardio',age:'any',
+   icd:[{c:'I71.0',l:'대동맥 박리 (모든 부위)',d:1},{c:'I71.1',l:'흉부 대동맥 동맥류 파열',d:1},{c:'I71.2',l:'흉부 대동맥 동맥류 미파열',d:1},{c:'I71.5',l:'흉복부 대동맥 동맥류 파열',d:1},{c:'I71.6',l:'흉복부 대동맥 동맥류 미파열',d:1}],
+   decisions:[{id:'aortic_split',q:'I71.0(박리)은 anatomic site에 따라 Y0041/Y0042로 어떻게 split?',opts:[{v:'all_to_y0041',l:'I71.0 박리는 모두 Y0041 (흉부)에'},{v:'icd_unsplittable',l:'ICD-10에서 split 불가 — 임상 정보 별도 필요'},{v:'duplicate',l:'I71.0은 Y0041과 Y0042 둘 다 ground truth'}],def:'all_to_y0041'}]},
+  {code:'Y0042',label:'대동맥응급 (복부)',short:'복부대동맥응급',group:'cardio',age:'any',
+   icd:[{c:'I71.3',l:'복부 대동맥 동맥류 파열',d:1},{c:'I71.4',l:'복부 대동맥 동맥류 미파열',d:1},{c:'I71.8',l:'대동맥 동맥류 부위미상 파열',d:0},{c:'I71.9',l:'대동맥 동맥류 미상',d:0}],
+   decisions:[{id:'unspecified',q:'I71.8/I71.9 (부위미상)은 ground truth에 포함?',opts:[{v:'exclude',l:'제외 (부위 모름 → 분류 불가)'},{v:'include_both',l:'Y0041+Y0042 둘 다 ground truth'},{v:'sensitivity_only',l:'sensitivity 분석에만 포함'}],def:'sensitivity_only'}]},
+  {code:'Y0051',label:'담낭담관질환 (담낭질환)',short:'담낭질환',group:'gi',age:'any',
+   icd:[{c:'K80.0',l:'담낭결석 + 급성 담낭염',d:1},{c:'K80.1',l:'담낭결석 + 기타 담낭염',d:1},{c:'K80.2',l:'담낭결석 (담낭염 없음)',d:0},{c:'K81.0',l:'급성 담낭염',d:1},{c:'K81.1',l:'만성 담낭염',d:0},{c:'K81.8',l:'기타 담낭염',d:1},{c:'K81.9',l:'담낭염 미상',d:1},{c:'K82.A',l:'담낭 천공·괴저',d:1}],
+   decisions:[{id:'k80_2_inclusion',q:'담낭염 없는 K80.2 (단순 담낭결석)은 응급 시술 적응?',opts:[{v:'exclude',l:'제외 (응급 X)'},{v:'context',l:'담관석 동반·복통 심한 케이스만'},{v:'include',l:'포함'}],def:'exclude'}]},
+  {code:'Y0052',label:'담낭담관질환 (담도포함질환)',short:'담도질환',group:'gi',age:'any',
+   icd:[{c:'K80.3',l:'담관결석 + 담관염',d:1},{c:'K80.4',l:'담관결석 + 담낭염',d:1},{c:'K80.5',l:'담관결석 (담관염 없음)',d:0},{c:'K83.0',l:'담관염',d:1},{c:'K83.1',l:'담관 폐색',d:1},{c:'K83.2',l:'담관 천공',d:1},{c:'K83.3',l:'담관 누공',d:0},{c:'K83.4',l:'오디 괄약근 경련',d:0},{c:'K83.8',l:'기타 담관 질환',d:0},{c:'K83.9',l:'담관 질환 미상',d:0}],
+   decisions:[{id:'cholangitis_severity',q:'급성 담관염은 모두 ERCP 응급 적응으로 인정?',opts:[{v:'all',l:'K83.0 + K80.3 모두 포함'},{v:'severe',l:'중증(Tokyo grade II/III) 임상 명시 시만'},{v:'context',l:'sepsis·shock 동반 시만'}],def:'all'}]},
+  {code:'Y0060',label:'복부응급수술 (비외상)',short:'복부응급수술',group:'gi',age:'any',
+   icd:[{c:'K35.2',l:'급성 충수염 + 복막염',d:1},{c:'K35.3',l:'급성 충수염 + 국한성 복막염',d:1},{c:'K35.8',l:'급성 충수염 미상',d:1},{c:'K35.9',l:'급성 충수염 미상',d:1},{c:'K40.3',l:'서혜 헤르니아 + 폐색 (감돈)',d:1},{c:'K40.4',l:'서혜 헤르니아 + 괴저',d:1},{c:'K56.0',l:'장폐색 (마비성)',d:1},{c:'K56.1',l:'장중첩',d:1},{c:'K56.2',l:'염전 (volvulus)',d:1},{c:'K56.5',l:'장 유착으로 인한 폐색',d:1},{c:'K56.6',l:'기타 장폐색',d:1},{c:'K56.7',l:'장폐색 미상',d:1},{c:'K65.0',l:'급성 복막염',d:1},{c:'K65.8',l:'기타 복막염',d:1},{c:'K65.9',l:'복막염 미상',d:1},{c:'K85.x',l:'급성 췌장염 (모든 type)',d:1},{c:'K57.x',l:'게실염 (천공·복막염 동반)',d:1}],
+   decisions:[{id:'pancreatitis_severity',q:'급성 췌장염(K85)은 모두 응급 수술 ground truth?',opts:[{v:'all',l:'모두 포함 (중환자실 입원·시술 가능)'},{v:'necrotizing',l:'괴사·중증만 (K85.0 etc)'},{v:'exclude',l:'제외 (대부분 수술 X)'}],def:'necrotizing'}]},
+  {code:'Y0070',label:'장중첩/폐색 (유아)',short:'장중첩/폐색',group:'gi',age:'pediatric',
+   icd:[{c:'K56.1',l:'장중첩 (영유아)',d:1},{c:'K56.2',l:'장 염전 (영유아)',d:1},{c:'K56.0',l:'장폐색 마비성 (영유아)',d:1},{c:'P76.x',l:'신생아 장폐색',d:1},{c:'Q41.x',l:'선천성 소장 폐색',d:1},{c:'Q42.x',l:'선천성 대장 폐색',d:1}],
+   decisions:[{id:'age_cutoff',q:'영유아 정의 — 나이 cutoff?',opts:[{v:'2',l:'≤ 2세'},{v:'5',l:'< 5세 (소아 응급)'},{v:'18',l:'< 18세'}],def:'5'}]},
+  {code:'Y0081',label:'위장관 응급내시경 (성인)',short:'위장관내시경(성인)',group:'gi',age:'adult',
+   icd:[{c:'K92.0',l:'토혈 (hematemesis)',d:1},{c:'K92.1',l:'흑색변 (melena)',d:1},{c:'K92.2',l:'위장관 출혈 미상',d:1},{c:'K25.x',l:'위 궤양 (출혈·천공)',d:1},{c:'K26.x',l:'십이지장 궤양 (출혈·천공)',d:1},{c:'K22.6',l:'식도 정맥류 출혈',d:1},{c:'I85.0',l:'식도 정맥류 (출혈)',d:1},{c:'T18.x',l:'소화관 이물',d:1},{c:'K62.5',l:'항문·직장 출혈',d:0}],
+   decisions:[{id:'lower_gi',q:'대장 출혈 (K62.5)도 응급내시경 적응?',opts:[{v:'include',l:'포함 (응급 대장내시경)'},{v:'context',l:'대량 출혈·혈역학 불안정 시만'},{v:'exclude',l:'제외 (Y0081은 상부위장관 한정)'}],def:'context'}]},
+  {code:'Y0082',label:'위장관 응급내시경 (영유아)',short:'위장관내시경(영유아)',group:'gi',age:'pediatric',
+   icd:[{c:'K92.0',l:'토혈 (영유아)',d:1},{c:'K92.1',l:'흑색변 (영유아)',d:1},{c:'K92.2',l:'위장관 출혈 미상 (영유아)',d:1},{c:'T18.x',l:'소화관 이물 (영유아)',d:1},{c:'P54.x',l:'신생아 위장관 출혈',d:1}],
+   decisions:[{id:'pediatric_cutoff',q:'영유아 정의?',opts:[{v:'2',l:'≤ 2세'},{v:'5',l:'< 5세'},{v:'18',l:'< 18세'}],def:'18'}]},
+  {code:'Y0091',label:'기관지 응급내시경 (성인)',short:'기관지내시경(성인)',group:'airway',age:'adult',
+   icd:[{c:'T17.0',l:'코·부비동 이물',d:0},{c:'T17.1',l:'비강 이물',d:0},{c:'T17.2',l:'인두 이물',d:1},{c:'T17.3',l:'후두 이물',d:1},{c:'T17.4',l:'기관 이물',d:1},{c:'T17.5',l:'기관지 이물',d:1},{c:'T17.8',l:'호흡기 이물 기타',d:1},{c:'T17.9',l:'호흡기 이물 미상',d:1},{c:'R04.2',l:'각혈 (massive)',d:1}],
+   decisions:[{id:'hemoptysis',q:'대량 각혈 (R04.2)도 응급 기관지내시경 적응?',opts:[{v:'include',l:'포함 (지혈·시술 적응)'},{v:'massive_only',l:'대량 (>200ml/24h) 명시 시만'},{v:'exclude',l:'제외 (Y0091은 이물 한정)'}],def:'massive_only'}]},
+  {code:'Y0092',label:'기관지 응급내시경 (영유아)',short:'기관지내시경(영유아)',group:'airway',age:'pediatric',
+   icd:[{c:'T17.2',l:'인두 이물 (영유아)',d:1},{c:'T17.3',l:'후두 이물 (영유아)',d:1},{c:'T17.4',l:'기관 이물 (영유아)',d:1},{c:'T17.5',l:'기관지 이물 (영유아)',d:1},{c:'T17.8',l:'호흡기 이물 기타 (영유아)',d:1},{c:'T17.9',l:'호흡기 이물 미상 (영유아)',d:1}],
+   decisions:[{id:'pediatric_cutoff',q:'영유아 정의?',opts:[{v:'2',l:'≤ 2세'},{v:'5',l:'< 5세 (이물 흔함)'},{v:'18',l:'< 18세'}],def:'5'}]},
+  {code:'Y0100',label:'저체중출생아',short:'저체중출생아',group:'neonatal',age:'pediatric',
+   icd:[{c:'P07.0',l:'극저체중출생아 (<1000g)',d:1},{c:'P07.1',l:'기타 저체중출생아 (1000-2499g)',d:1},{c:'P07.2',l:'극단 미숙아 (<28주)',d:1},{c:'P07.3',l:'기타 미숙아 (28-37주)',d:1},{c:'P05.0',l:'저체중 small-for-date',d:1},{c:'P05.1',l:'small-for-date with low weight',d:1}],
+   decisions:[{id:'weight_cutoff',q:'저체중 cutoff — 중증 정의?',opts:[{v:'2500',l:'<2500g 모두 (WHO)'},{v:'1500',l:'<1500g VLBW만 (NICU 적응)'},{v:'1000',l:'<1000g ELBW만 (권역만)'}],def:'1500'}]},
+  {code:'Y0111',label:'산부인과 응급 (분만)',short:'분만',group:'obgyn',age:'adult',
+   icd:[{c:'O80.x',l:'정상 분만',d:0},{c:'O81.x',l:'겸자·진공 분만',d:1},{c:'O82.x',l:'제왕절개 분만',d:1},{c:'O83.x',l:'기타 보조 분만',d:1},{c:'O84.x',l:'다태아 분만',d:1},{c:'O75.x',l:'분만 합병증 (자궁파열·태반 등)',d:1}],
+   decisions:[{id:'normal_birth',q:'정상 분만 (O80)도 응급 ground truth?',opts:[{v:'exclude',l:'제외 (정상 분만은 응급 X)'},{v:'include',l:'포함 (응급실 도착 임박 분만)'},{v:'context',l:'산부인과 미존재 병원 도착 시만'}],def:'context'}]},
+  {code:'Y0112',label:'산부인과 응급 (산과수술)',short:'산과수술',group:'obgyn',age:'adult',
+   icd:[{c:'O00.x',l:'자궁외 임신',d:1},{c:'O01.x',l:'포상기태',d:1},{c:'O03.x',l:'유산 (자연)',d:0},{c:'O04.x',l:'유산 (의료적)',d:0},{c:'O20.0',l:'위협유산 (출혈)',d:0},{c:'O44.x',l:'전치태반',d:1},{c:'O45.x',l:'태반조기박리',d:1},{c:'O46.x',l:'기타 임신 출혈',d:1},{c:'O60.x',l:'조기진통',d:0},{c:'O72.x',l:'산후 출혈',d:1},{c:'O15.x',l:'자간증',d:1},{c:'O14.x',l:'중증 전자간증',d:1}],
+   decisions:[{id:'preeclampsia',q:'중증 전자간증(O14)은 산과수술 적응 ground truth?',opts:[{v:'include',l:'포함 (응급 분만 적응 가능성 高)'},{v:'severe_only',l:'O14.1/O14.2만 (HELLP 등)'},{v:'exclude',l:'제외 (내과적 관리 위주)'}],def:'include'}]},
+  {code:'Y0113',label:'산부인과 응급 (부인과수술)',short:'부인과수술',group:'obgyn',age:'adult',
+   icd:[{c:'N70.x',l:'난관·난소 염증',d:1},{c:'N73.x',l:'기타 골반 염증성 질환',d:1},{c:'N80.x',l:'자궁내막증',d:0},{c:'N83.4',l:'난소 염전',d:1},{c:'N83.5',l:'난소·난관 염전',d:1},{c:'N93.x',l:'비정상 자궁출혈',d:1},{c:'N98.x',l:'난소 과자극증후군 등',d:1}],
+   decisions:[{id:'pid_severity',q:'PID(N70)는 모두 ground truth?',opts:[{v:'all',l:'모두 포함'},{v:'tubo_ovarian',l:'난관난소농양만'},{v:'sepsis',l:'sepsis 동반 시만'}],def:'tubo_ovarian'}]},
+  {code:'Y0120',label:'중증화상',short:'중증화상',group:'burn',age:'any',
+   icd:[{c:'T20.x',l:'두경부 화상',d:1},{c:'T21.x',l:'몸통 화상',d:1},{c:'T22.x',l:'어깨·상지 화상',d:1},{c:'T23.x',l:'손목·손 화상',d:1},{c:'T24.x',l:'고관절·하지 화상',d:1},{c:'T25.x',l:'발목·발 화상',d:1},{c:'T26.x',l:'안 화상',d:1},{c:'T27.x',l:'호흡기 화상',d:1},{c:'T28.x',l:'기타 내부 장기 화상',d:1},{c:'T29.x',l:'다발성 부위 화상',d:1},{c:'T31.0',l:'BSA <10% 화상',d:0},{c:'T31.1',l:'BSA 10-19% 화상',d:0},{c:'T31.2',l:'BSA 20-29% 화상',d:1},{c:'T31.3',l:'BSA 30-39% 화상',d:1},{c:'T31.4',l:'BSA 40-49% 화상',d:1},{c:'T31.5',l:'BSA 50-59% 화상',d:1},{c:'T31.6',l:'BSA 60-69% 화상',d:1},{c:'T31.7',l:'BSA 70-79% 화상',d:1},{c:'T31.8',l:'BSA 80-89% 화상',d:1},{c:'T31.9',l:'BSA 90%+ 화상',d:1}],
+   decisions:[{id:'severity_threshold',q:'중증화상 BSA 임계?',opts:[{v:'10',l:'BSA ≥10% (T31.1+) 모두 중증'},{v:'20',l:'BSA ≥20% (T31.2+, ABA criteria)'},{v:'depth_dependent',l:'심도(2도 이상) + BSA 조합'}],def:'20'},{id:'inhalation_separate',q:'호흡기 화상(T27)은 BSA 무관 중증?',opts:[{v:'always',l:'항상 중증 ground truth'},{v:'with_bsa',l:'BSA 기준 충족 시만'},{v:'severe_only',l:'중증 표시 명시 시만'}],def:'always'}]},
+  {code:'Y0131',label:'사지접합의 수술 (수족지접합)',short:'수지접합',group:'limb',age:'any',
+   icd:[{c:'S68.0',l:'엄지 절단',d:1},{c:'S68.1',l:'기타 손가락 절단 (1지)',d:1},{c:'S68.2',l:'다지 손가락 절단',d:1},{c:'S68.3',l:'손가락 + 손 절단 동반',d:1},{c:'S68.4',l:'손 절단 (수근부)',d:1},{c:'S68.8',l:'손목 부분 절단',d:1},{c:'S68.9',l:'손목·손 절단 미상',d:1},{c:'S98.x',l:'발·발가락 외상성 절단',d:1},{c:'S97.x',l:'발 압착·짓이김',d:0}],
+   decisions:[{id:'replantation_window',q:'시간 경과 (warm ischemia >6h)도 본 Y코드에 포함?',opts:[{v:'all',l:'모든 절단 사례 포함'},{v:'within_window',l:'시간 내 도착만'},{v:'icd_blind',l:'ICD-10에 시간 정보 없으므로 모두 포함'}],def:'icd_blind'}]},
+  {code:'Y0132',label:'사지접합의 수술 (수족지접합 외)',short:'사지접합',group:'limb',age:'any',
+   icd:[{c:'S48.0',l:'어깨 관절·상박 절단',d:1},{c:'S48.1',l:'팔꿈치·하박 절단',d:0},{c:'S48.9',l:'어깨·상박 절단 미상',d:1},{c:'S58.0',l:'팔꿈치 절단',d:1},{c:'S58.1',l:'팔꿈치 + 손목 사이 절단',d:1},{c:'S58.9',l:'팔뚝 절단 미상',d:1},{c:'S78.0',l:'고관절 절단',d:1},{c:'S78.1',l:'고관절·무릎 사이 절단',d:1},{c:'S78.9',l:'대퇴 절단 미상',d:1},{c:'S88.0',l:'무릎 절단',d:1},{c:'S88.1',l:'무릎·발목 사이 절단',d:1},{c:'S88.9',l:'하퇴 절단 미상',d:1}],
+   decisions:[{id:'partial_amputation',q:'부분 절단 (S48.1 등)도 ground truth?',opts:[{v:'all',l:'완전·부분 모두 포함'},{v:'complete_only',l:'완전 절단만'},{v:'context',l:'재접합 가능성 명시 시만'}],def:'all'}]},
+  {code:'Y0141',label:'응급투석 (HD)',short:'응급 HD',group:'renal',age:'any',
+   icd:[{c:'N17.0',l:'AKI + 세뇨관 괴사',d:1},{c:'N17.1',l:'AKI + 신피질 괴사',d:1},{c:'N17.2',l:'AKI + 수질 괴사',d:1},{c:'N17.8',l:'기타 AKI',d:1},{c:'N17.9',l:'AKI 미상',d:1},{c:'N18.5',l:'CKD stage 5 (말기)',d:1},{c:'N19',l:'신부전 미상',d:1},{c:'T39.x',l:'salicylate 등 약물 중독 (HD 적응)',d:1},{c:'T50.x',l:'기타 약물 중독',d:1},{c:'E87.5',l:'고칼륨혈증',d:1},{c:'E10.1',l:'당뇨병성 케톤산증',d:0}],
+   decisions:[{id:'hd_vs_crrt',q:'AKI 환자에서 HD vs CRRT 분류 — ICD-10으로 가능?',opts:[{v:'icd_blind',l:'ICD-10만으로 불가 — 모든 AKI를 둘 다 라벨'},{v:'hemodynamic',l:'안정→HD, 불안정→CRRT 임상정보 필요'},{v:'all_to_hd',l:'모두 Y0141로 (HD 우선)'}],def:'icd_blind'}]},
+  {code:'Y0142',label:'응급투석 (CRRT)',short:'CRRT',group:'renal',age:'any',
+   icd:[{c:'N17.x',l:'AKI (HD와 동일 ICD 풀)',d:1},{c:'R57.x',l:'쇼크 (CRRT 흔한 적응)',d:1},{c:'R65.x',l:'sepsis with organ dysfunction',d:1},{c:'A41.x',l:'sepsis (specific organism)',d:1}],
+   decisions:[{id:'crrt_specific',q:'CRRT specific 라벨 — sepsis·shock 동반 AKI만?',opts:[{v:'sepsis_shock',l:'sepsis(R65/A41) + shock(R57) 동반 AKI만'},{v:'all_aki',l:'모든 AKI를 둘 다 라벨'},{v:'hemodynamic_unstable',l:'혈역학 불안정 명시 케이스만'}],def:'all_aki'}]},
+  {code:'Y0150',label:'정신과적 응급입원',short:'정신과응급',group:'psych',age:'any',
+   icd:[{c:'F10.x',l:'알코올 사용 장애 (급성 중독·금단)',d:1},{c:'F11.x',l:'아편 사용 장애',d:1},{c:'F19.x',l:'다중 약물 사용 장애',d:1},{c:'F20.x',l:'조현병 (급성기)',d:1},{c:'F23.x',l:'급성 정신증',d:1},{c:'F25.x',l:'분열정동장애',d:1},{c:'F30.x',l:'조증 에피소드',d:1},{c:'F31.x',l:'양극성 장애 (급성기)',d:1},{c:'F32.x',l:'우울증 에피소드',d:0},{c:'F33.x',l:'재발 우울증',d:0},{c:'F40.x',l:'공포증',d:0},{c:'F41.x',l:'불안 장애',d:0},{c:'F60.x',l:'성격 장애',d:0},{c:'X60-X84',l:'고의 자해 (자살시도)',d:1},{c:'R45.81',l:'자살 사고',d:1}],
+   decisions:[{id:'severity_filter',q:'정신과 응급입원 ground truth — 모든 F00-F99 vs 자해·타해?',opts:[{v:'self_harm_only',l:'자살시도(X60-X84) + 자해 의도 명시만'},{v:'acute_psychosis',l:'급성 정신증(F20·F23·F30·F31)도 포함'},{v:'broad',l:'모든 F00-F99 + X60-X84'}],def:'acute_psychosis'}]},
+  {code:'Y0160',label:'안과적 응급 수술',short:'안과응급',group:'eye',age:'any',
+   icd:[{c:'H40.2',l:'급성 폐각 녹내장',d:1},{c:'H44.0',l:'화농성 안내염',d:1},{c:'H44.1',l:'기타 안내염',d:1},{c:'H44.2',l:'전포도막 안구',d:1},{c:'H44.6',l:'안내 자석성 이물',d:1},{c:'H44.7',l:'안내 비자석성 이물',d:1},{c:'H35.6',l:'망막박리',d:1},{c:'H33.0',l:'망막 열공·박리',d:1},{c:'H43.1',l:'유리체 출혈',d:0},{c:'S05.0',l:'각막 외상',d:0},{c:'S05.1',l:'안구 좌상',d:1},{c:'S05.2',l:'안구 천공 (열상)',d:1},{c:'S05.3',l:'기타 안구 외상',d:1},{c:'S05.4',l:'안와 외상',d:0}],
+   decisions:[{id:'corneal_abrasion',q:'단순 각막 외상(S05.0)은 응급 수술 적응?',opts:[{v:'exclude',l:'제외 (외래 처치)'},{v:'severe_only',l:'각막 천공 명시 시만'},{v:'include',l:'포함'}],def:'exclude'}]},
+  {code:'Y0171',label:'영상의학 혈관중재 (성인)',short:'혈관중재(성인)',group:'vascular',age:'adult',
+   icd:[{c:'I72.x',l:'동맥류 (대동맥 외)',d:1},{c:'I74.0',l:'복부대동맥 색전증',d:1},{c:'I74.1',l:'대동맥 색전증 기타',d:1},{c:'I74.2',l:'상지 동맥 색전증',d:1},{c:'I74.3',l:'하지 동맥 색전증',d:1},{c:'I74.4',l:'사지 동맥 색전증 미상',d:1},{c:'I74.5',l:'장골 동맥 색전증',d:1},{c:'I74.8',l:'기타 동맥 색전증',d:1},{c:'I74.9',l:'동맥 색전증 미상',d:1},{c:'I26.x',l:'폐색전증',d:1},{c:'K55.0',l:'장간막 동맥 색전증',d:1},{c:'O88.2',l:'산과 색전증',d:0}],
+   decisions:[{id:'pe_inclusion',q:'폐색전증(I26)은 IR 시술 ground truth?',opts:[{v:'massive_only',l:'대량 PE만 (혈역학 불안정)'},{v:'include',l:'모든 PE 포함 (catheter-directed 적응)'},{v:'exclude',l:'제외 (내과적 관리 우선)'}],def:'massive_only'}]},
+  {code:'Y0172',label:'영상의학 혈관중재 (영유아)',short:'혈관중재(영유아)',group:'vascular',age:'pediatric',
+   icd:[{c:'I72.x',l:'동맥류 (영유아)',d:1},{c:'I74.x',l:'동맥 색전증 (영유아)',d:1},{c:'P52.x',l:'신생아 두개내 출혈 (IR 적응)',d:1},{c:'D18.x',l:'혈관종 (출혈성)',d:0}],
+   decisions:[{id:'pediatric_cutoff',q:'영유아 정의?',opts:[{v:'2',l:'≤ 2세'},{v:'5',l:'< 5세'},{v:'18',l:'< 18세'}],def:'18'}]},
+];
+
+const THRESHOLDS = [
+  {id:'h1_sensitivity',label:'H1 — Sensitivity',current:0.85,help:'민감도. 실제 중증환자를 시스템이 식별하는 비율. Under-triage 위험과 직결.'},
+  {id:'h2_specificity',label:'H2 — Specificity',current:0.90,help:'특이도. 실제 비중증을 시스템이 정확히 거르는 비율. Over-triage(권역 자원 낭비) 방지.'},
+  {id:'h3_marginal_gain',label:'H3 — 한계효용 / 질문',current:0.03,help:'추가 질문 1개당 sensitivity 한계 증분. "의미 있는 개선"의 임계.'},
+  {id:'h4_tier_match',label:'H4 — Tier 일치율',current:0.70,help:'tier 권고가 실제 이송 종별과 일치하는 비율. 운영 정확도.'},
+];
+
+const STORAGE_KEY = 'emris_consultation_v1';
+
+// ─────────────────────────────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────────────────────────────
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { console.warn('[state] load failed', e); }
+  return initState();
+}
+
+function initState() {
+  const yc = {};
+  Y_CODES.forEach(y => {
+    const include = y.icd.filter(i => i.d === 1).map(i => i.c);
+    const decisions = {};
+    y.decisions.forEach(d => decisions[d.id] = d.def);
+    yc[y.code] = { include, exclude: [], custom: [], decisions, notes: '', touched: false };
+  });
+  const thresholds = {};
+  THRESHOLDS.forEach(t => thresholds[t.id] = { value: t.current, rationale: '' });
+  return {
+    consultation_id: 'PREKTAS-VAL-2026-001-CONSULT-' + Date.now().toString(36),
+    started_at: new Date().toISOString(),
+    last_saved: null,
+    y_codes: yc,
+    thresholds,
+    red_flags: [],
+  };
+}
+
+function saveState() {
+  state.last_saved = new Date().toISOString();
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch (e) { console.warn('[state] save failed', e); }
+  document.getElementById('last-saved').textContent = new Date().toLocaleTimeString('ko-KR', {hour12:false});
+  updateProgress();
+}
+
+function resetAll() {
+  localStorage.removeItem(STORAGE_KEY);
+  state = initState();
+  renderAll();
+  goToSection('welcome');
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Render: welcome
+// ─────────────────────────────────────────────────────────────────────
+function renderWelcome() {
+  const w = document.getElementById('section-welcome');
+  clearChildren(w);
+  w.appendChild(el('h2', {class:'section-title', text:'시작하기 전에'}));
+  w.appendChild(el('p', {text:'본 자문은 세 영역으로 구성됩니다.'}));
+
+  const co1 = el('div', {class:'callout'});
+  co1.appendChild(el('strong', {text:'영역 1 · Y코드 27개 (필수)'}));
+  co1.appendChild(el('br'));
+  co1.appendChild(document.createTextNode('각 Y코드에 대해 "이 진단(ICD-10)은 본 Y코드 시술 적응에 해당하는가?"를 판단. 사전 제안된 ICD-10 후보가 표시되며 체크/해제 + 추가 코드 입력 + open decision 답변 + 자유 메모를 작성합니다.'));
+  w.appendChild(co1);
+
+  const co2 = el('div', {class:'callout'});
+  co2.appendChild(el('strong', {text:'영역 2 · 가설 임계값 (4개)'}));
+  co2.appendChild(el('br'));
+  co2.appendChild(document.createTextNode('Sensitivity·Specificity·한계효용·Tier 일치율의 임상적 임계값을 검토합니다. 현재 protocol에 적은 값(0.85, 0.90, 0.03, 0.70)은 통상 triage 도구 평가 기준이며 한국 응급의료 맥락에서 조정 가능합니다.'));
+  w.appendChild(co2);
+
+  const co3 = el('div', {class:'callout'});
+  co3.appendChild(el('strong', {text:'영역 3 · Red flag list (자유)'}));
+  co3.appendChild(el('br'));
+  co3.appendChild(document.createTextNode('본 검증 연구가 반드시 발견해야 할 critical false negative 시나리오를 자유롭게 추가합니다. Phase 8g audit의 우선 검토 대상이 됩니다.'));
+  w.appendChild(co3);
+
+  w.appendChild(el('h3', {class:'welcome-h3', text:'작업 방법'}));
+  const ul = el('ul');
+  ['왼쪽 사이드바의 Y0010부터 차례로 진행하시거나 관심 코드부터 자유롭게 선택하세요.',
+   '각 Y코드 페이지의 ICD-10 후보는 사전 제안 default가 체크되어 있습니다. 임상 판단으로 추가/제거·수정하세요.',
+   '모든 입력은 localStorage에 자동 저장됩니다. 브라우저를 닫고 나중에 돌아와도 보존됩니다.',
+   '완료 후 ⬇ 결과 내보내기로 JSON 다운로드 또는 클립보드 복사. 그 파일을 maintainer에게 전달하시면 됩니다.',
+   '예상 소요: 2–3시간 (한 번에 또는 여러 세션에 나눠 진행 가능)'].forEach(t => {
+    ul.appendChild(el('li', {text:t}));
+  });
+  w.appendChild(ul);
+
+  const navDiv = el('div', {class:'nav-buttons'});
+  navDiv.appendChild(el('div'));
+  const startBtn = el('button', {class:'btn', text:'▶ 시작 (Y0010 심근경색)'});
+  startBtn.addEventListener('click', () => goToSection('Y0010'));
+  navDiv.appendChild(startBtn);
+  w.appendChild(navDiv);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Render: nav
+// ─────────────────────────────────────────────────────────────────────
+function renderNav() {
+  const nav = document.getElementById('nav-list');
+  clearChildren(nav);
+
+  const head = el('div', {class:'nav-section', text:'Y코드 27개'});
+  nav.appendChild(head);
+
+  Y_CODES.forEach(y => {
+    const item = el('div', {class:'nav-item', 'data-section':y.code});
+    if (state.y_codes[y.code].touched) item.classList.add('touched');
+    item.appendChild(el('span', {class:'nav-code', text:y.code}));
+    item.appendChild(el('span', {class:'nav-label', text:y.short}));
+    item.appendChild(el('span', {class:'nav-status'}));
+    item.addEventListener('click', () => goToSection(y.code));
+    nav.appendChild(item);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Render: Y-code sections
+// ─────────────────────────────────────────────────────────────────────
+function renderYCodes() {
+  const container = document.getElementById('ycode-sections');
+  clearChildren(container);
+  Y_CODES.forEach(y => {
+    const sec = el('section', {class:'ycode', 'data-section':y.code});
+
+    const header = el('div', {class:'y-header'});
+    header.appendChild(el('span', {class:'y-code-tag', text:y.code}));
+    header.appendChild(el('h2', {text:y.label}));
+    const ageLabel = y.age === 'pediatric' ? '소아' : y.age === 'adult' ? '성인' : '전체';
+    header.appendChild(el('span', {class:'y-meta', text:ageLabel + ' · ' + y.group}));
+    sec.appendChild(header);
+
+    // ICD-10 cluster
+    const fg1 = el('div', {class:'field-group'});
+    fg1.appendChild(el('h3', {text:'이 Y코드의 reference standard ICD-10'}));
+    fg1.appendChild(el('div', {class:'help', text:'아래는 사전 제안된 ICD-10 후보입니다. 본 Y코드 시술/입원 적응에 해당하는 환자가 받을 가능성이 높은 진단을 체크하세요. 체크된 코드는 ground truth label로 사용됩니다.'}));
+
+    const grid = el('div', {class:'icd-grid'});
+    y.icd.forEach(icd => {
+      const row = el('label', {class:'icd-row'});
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = state.y_codes[y.code].include.includes(icd.c);
+      if (cb.checked) row.classList.add('checked');
+      cb.addEventListener('change', () => {
+        if (cb.checked) {
+          if (!state.y_codes[y.code].include.includes(icd.c)) state.y_codes[y.code].include.push(icd.c);
+          row.classList.add('checked');
+        } else {
+          state.y_codes[y.code].include = state.y_codes[y.code].include.filter(c => c !== icd.c);
+          row.classList.remove('checked');
+        }
+        state.y_codes[y.code].touched = true;
+        saveState();
+        renderNavTouched();
+      });
+      row.appendChild(cb);
+      row.appendChild(el('span', {class:'icd-code', text:icd.c}));
+      row.appendChild(el('span', {class:'icd-label', text:icd.l}));
+      grid.appendChild(row);
+    });
+    fg1.appendChild(grid);
+
+    // Custom ICD-10
+    const customRow = el('div', {class:'custom-icd-row'});
+    customRow.appendChild(el('label', {class:'custom-label', text:'추가 코드:'}));
+    const customInput = document.createElement('input');
+    customInput.type = 'text';
+    customInput.placeholder = '예: I49.x, R57.0';
+    const customBtn = el('button', {class:'add-btn', text:'+ 추가'});
+    customBtn.type = 'button';
+    customBtn.addEventListener('click', () => {
+      const v = customInput.value.trim();
+      if (!v) return;
+      if (!state.y_codes[y.code].custom.includes(v)) {
+        state.y_codes[y.code].custom.push(v);
+        state.y_codes[y.code].touched = true;
+        saveState();
+        renderCustomList(y.code, customListDiv);
+        renderNavTouched();
+      }
+      customInput.value = '';
+    });
+    customRow.appendChild(customInput);
+    customRow.appendChild(customBtn);
+    fg1.appendChild(customRow);
+
+    const customListDiv = el('div', {style:'margin-top:8px;'});
+    fg1.appendChild(customListDiv);
+    renderCustomList(y.code, customListDiv);
+
+    sec.appendChild(fg1);
+
+    // Decisions
+    if (y.decisions.length > 0) {
+      const fg2 = el('div', {class:'field-group'});
+      fg2.appendChild(el('h3', {text:'임상 결정 사항'}));
+      fg2.appendChild(el('div', {class:'help', text:'본 Y코드의 ICD-10 cluster 정의에 영향을 주는 임상 판단입니다. 가장 적절한 옵션을 선택하세요.'}));
+      y.decisions.forEach(d => {
+        const block = el('div', {class:'decision-block'});
+        block.appendChild(el('div', {class:'d-question', text:d.q}));
+        const optsDiv = el('div', {class:'d-options'});
+        d.opts.forEach(opt => {
+          const lbl = document.createElement('label');
+          const r = document.createElement('input');
+          r.type = 'radio';
+          r.name = y.code + '-' + d.id;
+          r.value = opt.v;
+          r.checked = state.y_codes[y.code].decisions[d.id] === opt.v;
+          if (r.checked) lbl.classList.add('selected');
+          r.addEventListener('change', () => {
+            state.y_codes[y.code].decisions[d.id] = opt.v;
+            state.y_codes[y.code].touched = true;
+            saveState();
+            optsDiv.querySelectorAll('label').forEach(l => l.classList.remove('selected'));
+            lbl.classList.add('selected');
+            renderNavTouched();
+          });
+          lbl.appendChild(r);
+          lbl.appendChild(document.createTextNode(' ' + opt.l));
+          optsDiv.appendChild(lbl);
+        });
+        block.appendChild(optsDiv);
+        fg2.appendChild(block);
+      });
+      sec.appendChild(fg2);
+    }
+
+    // Notes
+    const fg3 = el('div', {class:'field-group'});
+    fg3.appendChild(el('h3', {text:'자문 의견 (자유)'}));
+    fg3.appendChild(el('div', {class:'help', text:'본 Y코드 cluster 정의에 대한 추가 의견·근거·예외 사항을 자유롭게 기록하세요.'}));
+    const notes = document.createElement('textarea');
+    notes.className = 'notes';
+    notes.placeholder = '예: I22.x 후속 심근경색은 첫 발생과 임상 관리 동일하므로 함께 포함...';
+    notes.value = state.y_codes[y.code].notes;
+    notes.addEventListener('input', () => {
+      state.y_codes[y.code].notes = notes.value;
+      state.y_codes[y.code].touched = true;
+      saveState();
+      renderNavTouched();
+    });
+    fg3.appendChild(notes);
+    sec.appendChild(fg3);
+
+    // Nav buttons
+    const idx = Y_CODES.findIndex(yc2 => yc2.code === y.code);
+    const prev = idx > 0 ? Y_CODES[idx - 1] : null;
+    const next = idx < Y_CODES.length - 1 ? Y_CODES[idx + 1] : null;
+    const navDiv = el('div', {class:'nav-buttons'});
+    if (prev) {
+      const b = el('button', {class:'btn secondary', text:'◀ ' + prev.code + ' ' + prev.short});
+      b.addEventListener('click', () => goToSection(prev.code));
+      navDiv.appendChild(b);
+    } else {
+      navDiv.appendChild(el('div'));
+    }
+    if (next) {
+      const b = el('button', {class:'btn', text:next.code + ' ' + next.short + ' ▶'});
+      b.addEventListener('click', () => goToSection(next.code));
+      navDiv.appendChild(b);
+    } else {
+      const b = el('button', {class:'btn', text:'🎯 다음: 가설 임계값 ▶'});
+      b.addEventListener('click', () => goToSection('thresholds'));
+      navDiv.appendChild(b);
+    }
+    sec.appendChild(navDiv);
+
+    container.appendChild(sec);
+  });
+}
+
+function renderCustomList(yCode, div) {
+  clearChildren(div);
+  const customs = state.y_codes[yCode].custom;
+  if (customs.length === 0) return;
+  const ul = el('div', {class:'custom-chip-list'});
+  customs.forEach(c => {
+    const chip = el('span', {class:'custom-chip', title:'클릭하여 제거', text:c + ' ✕'});
+    chip.addEventListener('click', () => {
+      state.y_codes[yCode].custom = state.y_codes[yCode].custom.filter(x => x !== c);
+      saveState();
+      renderCustomList(yCode, div);
+    });
+    ul.appendChild(chip);
+  });
+  div.appendChild(ul);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Render: thresholds, red flags, export
+// ─────────────────────────────────────────────────────────────────────
+function renderThresholds() {
+  const sec = document.getElementById('section-thresholds');
+  clearChildren(sec);
+  sec.appendChild(el('h2', {class:'section-title', text:'가설 임계값 검토'}));
+  sec.appendChild(el('p', {class:'section-help', text:'현재 protocol에 적은 임계값은 통상 triage 도구 평가 기준입니다. 한국 응급의료 맥락에서 적절한지 판단하시고 변경 시 사유를 기록해 주세요.'}));
+
+  THRESHOLDS.forEach(t => {
+    const card = el('div', {class:'threshold-card'});
+    card.appendChild(el('div', {class:'t-id', text:t.label}));
+
+    const qDiv = el('div', {class:'t-q'});
+    qDiv.appendChild(el('strong', {text:'현재 protocol 값: ' + t.current}));
+    qDiv.appendChild(document.createTextNode(t.help));
+    card.appendChild(qDiv);
+
+    const inputDiv = el('div', {class:'t-input'});
+    const numInput = document.createElement('input');
+    numInput.type = 'number';
+    numInput.step = '0.01';
+    numInput.min = '0';
+    numInput.max = '1';
+    numInput.value = state.thresholds[t.id].value;
+    numInput.addEventListener('input', () => {
+      state.thresholds[t.id].value = parseFloat(numInput.value);
+      saveState();
+    });
+    const rationale = document.createElement('textarea');
+    rationale.placeholder = '변경 사유 또는 임상적 근거 (선택)';
+    rationale.value = state.thresholds[t.id].rationale;
+    rationale.addEventListener('input', () => {
+      state.thresholds[t.id].rationale = rationale.value;
+      saveState();
+    });
+    inputDiv.appendChild(numInput);
+    inputDiv.appendChild(rationale);
+    card.appendChild(inputDiv);
+
+    sec.appendChild(card);
+  });
+}
+
+function renderRedFlagsSection() {
+  const sec = document.getElementById('section-red-flags');
+  clearChildren(sec);
+  sec.appendChild(el('h2', {class:'section-title', text:'Red flag — 반드시 발견되어야 할 critical FN 시나리오'}));
+  sec.appendChild(el('p', {class:'section-help', text:'본 검증 연구의 false negative audit이 우선 검토할 시나리오를 자유롭게 추가하세요. 예: "30대 남성 흉통 STEMI인데 시스템이 unmapped 처리한 경우", "임신 28주 복통이 태반조기박리인데 ground truth Y0112로 라벨링되지 않은 경우" 등.'}));
+
+  const inputDiv = el('div', {class:'red-flag-input'});
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.id = 'rf-input';
+  inp.placeholder = '예: 30대 흉통 STEMI 환자 unmapped';
+  const addBtn = el('button', {class:'btn', text:'+ 추가'});
+  addBtn.addEventListener('click', addRedFlag);
+  inp.addEventListener('keypress', (e) => { if (e.key === 'Enter') addRedFlag(); });
+  inputDiv.appendChild(inp);
+  inputDiv.appendChild(addBtn);
+  sec.appendChild(inputDiv);
+
+  const list = el('div', {class:'red-flag-list', id:'rf-list'});
+  sec.appendChild(list);
+  renderRedFlags();
+}
+
+function renderRedFlags() {
+  const list = document.getElementById('rf-list');
+  if (!list) return;
+  clearChildren(list);
+  state.red_flags.forEach((rf, i) => {
+    const item = el('div', {class:'red-flag-item'});
+    item.appendChild(el('span', {class:'rf-text', text:rf}));
+    const rm = el('button', {class:'rf-remove', text:'제거'});
+    rm.addEventListener('click', () => {
+      state.red_flags.splice(i, 1);
+      saveState();
+      renderRedFlags();
+    });
+    item.appendChild(rm);
+    list.appendChild(item);
+  });
+}
+
+function addRedFlag() {
+  const input = document.getElementById('rf-input');
+  if (!input) return;
+  const v = input.value.trim();
+  if (!v) return;
+  state.red_flags.push(v);
+  input.value = '';
+  saveState();
+  renderRedFlags();
+}
+
+function renderExportSection() {
+  const sec = document.getElementById('section-export');
+  clearChildren(sec);
+  sec.appendChild(el('h2', {class:'section-title', text:'결과 내보내기'}));
+  sec.appendChild(el('p', {class:'section-help', text:'완료된 자문 내역을 JSON으로 내보냅니다. 다운로드 받은 파일을 maintainer에게 전달하시거나 클립보드에 복사하여 전송 가능합니다.'}));
+
+  const preview = el('div', {class:'export-preview', id:'export-preview', text:'―'});
+  sec.appendChild(preview);
+
+  const actions = el('div', {class:'export-actions'});
+  const dlBtn = el('button', {class:'btn', text:'⬇ JSON 다운로드'});
+  dlBtn.addEventListener('click', downloadJSON);
+  const cpBtn = el('button', {class:'btn secondary', text:'📋 클립보드 복사'});
+  cpBtn.addEventListener('click', copyJSON);
+  const rsBtn = el('button', {class:'btn danger', text:'⚠ 초기화'});
+  rsBtn.addEventListener('click', () => { if (confirm('정말 모든 입력을 초기화하시겠습니까?')) resetAll(); });
+  actions.appendChild(dlBtn);
+  actions.appendChild(cpBtn);
+  actions.appendChild(rsBtn);
+  sec.appendChild(actions);
+
+  sec.appendChild(el('p', {id:'export-status', style:'margin-top:12px; font-size:13px; color:var(--good);'}));
+}
+
+function renderExportPreview() {
+  const exportData = buildExport();
+  const p = document.getElementById('export-preview');
+  if (p) p.textContent = JSON.stringify(exportData, null, 2);
+}
+
+function buildExport() {
+  return {
+    consultation_id: state.consultation_id,
+    protocol_id: 'PREKTAS-VAL-2026-001',
+    consultation_role: 'emergency_medicine_specialist',
+    started_at: state.started_at,
+    completed_at: new Date().toISOString(),
+    last_saved: state.last_saved,
+    schema_version: '1.0',
+    y_codes: state.y_codes,
+    thresholds: state.thresholds,
+    red_flags: state.red_flags,
+    summary: {
+      total_y_codes: Y_CODES.length,
+      touched_y_codes: Object.values(state.y_codes).filter(y => y.touched).length,
+      total_red_flags: state.red_flags.length,
+    },
+  };
+}
+
+function downloadJSON() {
+  const data = buildExport();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const date = new Date().toISOString().slice(0, 10);
+  a.download = 'emris-consultation-' + date + '-' + state.consultation_id.slice(-8) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  const s = document.getElementById('export-status');
+  if (s) s.textContent = '✓ JSON 파일 다운로드 완료';
+}
+
+function copyJSON() {
+  const data = buildExport();
+  const text = JSON.stringify(data, null, 2);
+  navigator.clipboard.writeText(text).then(() => {
+    const s = document.getElementById('export-status');
+    if (s) s.textContent = '✓ 클립보드에 복사 완료';
+  }, (e) => {
+    const s = document.getElementById('export-status');
+    if (s) s.textContent = '✗ 복사 실패: ' + e.message;
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Navigation + utils
+// ─────────────────────────────────────────────────────────────────────
+function renderNavTouched() {
+  document.querySelectorAll('.nav-item').forEach(item => {
+    const code = item.getAttribute('data-section');
+    if (code && state.y_codes[code]) {
+      item.classList.toggle('touched', state.y_codes[code].touched);
+    }
+  });
+}
+
+function updateProgress() {
+  const total = Y_CODES.length + THRESHOLDS.length + 1;
+  let touched = 0;
+  Y_CODES.forEach(y => { if (state.y_codes[y.code].touched) touched++; });
+  THRESHOLDS.forEach(t => { if (state.thresholds[t.id].rationale.trim()) touched++; });
+  if (state.red_flags.length > 0) touched++;
+  const pct = (touched / total) * 100;
+  const fill = document.getElementById('progress-fill');
+  if (fill) fill.style.width = pct + '%';
+  const txt = document.getElementById('progress-text');
+  if (txt) txt.textContent = touched + ' / ' + total + ' 답변 완료';
+}
+
+function goToSection(name) {
+  document.querySelectorAll('section[data-section]').forEach(s => s.classList.remove('active'));
+  const target = document.querySelector('section[data-section="' + name + '"]');
+  if (target) {
+    target.classList.add('active');
+    if (name === 'export-section') renderExportPreview();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.toggle('active', item.getAttribute('data-section') === name);
+  });
+}
+
+function renderAll() {
+  renderWelcome();
+  renderNav();
+  renderYCodes();
+  renderThresholds();
+  renderRedFlagsSection();
+  renderExportSection();
+  updateProgress();
+  document.getElementById('session-id').textContent = state.consultation_id.slice(-8);
+  if (state.last_saved) {
+    document.getElementById('last-saved').textContent = new Date(state.last_saved).toLocaleTimeString('ko-KR', {hour12:false});
+  }
+}
+
+// Wire nav buttons (avoid inline onclick)
+document.getElementById('nav-welcome').addEventListener('click', () => goToSection('welcome'));
+document.getElementById('nav-thresholds').addEventListener('click', () => goToSection('thresholds'));
+document.getElementById('nav-red-flags').addEventListener('click', () => goToSection('red-flags'));
+document.getElementById('nav-export').addEventListener('click', () => goToSection('export-section'));
+
+renderAll();
+</script>
+</body>
+</html>
