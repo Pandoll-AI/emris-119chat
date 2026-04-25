@@ -165,6 +165,51 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | viewCaseReadOnly | reads | CaseStore (case object) | drawer 클릭 시 |
 | enhanceRibbonScroll | called-by | buildRibbons | region/disease 두 ribbon에 화살표·드래그 wiring |
 
+## Phase 8b–i Entities (2026-04-26) — v0.1 검증 결과
+
+| Entity | Type | Location | Description |
+|---|---|---|---|
+| Pre-KTAS Code Crosswalk | research-output | `research/prektas-code-crosswalk.json` | 5자(C/D) ↔ 6자(A+suffix 0/9) 정렬. mapped 59.3% (unique) / 72.5% (visit-weighted). suffix 1/2/3 의미 불명. |
+| Validation Pipeline Script | script | `scripts/research/validate-phase8.py` | Python single-pass 225k CSV 분석. EUC-KR streaming + crosswalk + ICD-10 매칭 + Wilson CI + stratified + FN/FP 패턴. |
+| Validation Results v0.1 | research-output | `research/validation-results-v0.1.json` | Primary metrics (sens 0.394, spec 0.808) + 27 Y-code per-class precision/recall/F1. |
+| Validation Stratified | research-output | `research/validation-stratified.json` | region(3) × age_group(4) × grade(5) stratified metrics. |
+| Validation Error Audit | research-output | `research/validation-error-audit.json` | Top 50 FN/FP patterns. Critical FN: Y0060(소화기) 1349건. Critical FP: Y0032(신경계) 13,929건. |
+| Validation Report v1.0 | research-output | `research/prektas-validation-report-v1.0.md` | 9 섹션 최종 보고서. H1 FAIL · H2 PASS · v0.2 권고. |
+
+## Phase 8b–i Relations
+
+| Subject | Relation | Object | Context |
+|---|---|---|---|
+| Validation Pipeline Script | reads | Pre-KTAS Code Crosswalk | 6자→5자 정렬 |
+| Validation Pipeline Script | reads | Y-code → ICD-10 Cluster (frozen) | reference standard |
+| Validation Pipeline Script | reads | source-prektas.csv | 외부 입력 (EUC-KR streaming) |
+| Validation Pipeline Script | writes | Validation Results v0.1 | primary + per-Y-code |
+| Validation Pipeline Script | writes | Validation Stratified | region/age/grade |
+| Validation Pipeline Script | writes | Validation Error Audit | FN/FP patterns |
+| Validation Results v0.1 | informs | Validation Report v1.0 | metrics 인용 |
+| Validation Error Audit | informs | Validation Report v1.0 §6 | v0.2 권고 근거 |
+
+## Phase 8b–i Actions (2026-04-26)
+
+| Date | Action | Actor | Target | Detail |
+|---|---|---|---|---|
+| 2026-04-26 | request | user | "loopy" 명령 + "남은 모든 작업 자동 진행" | 수면 시간 활용 자동화 지시 |
+| 2026-04-26 | scan | claude | source-prektas.csv 6자 코드 분포 | 첫문자 A 175,237/225,017 = 77.9%, suffix 0/9 dominant |
+| 2026-04-26 | derive | claude | 5/6자 crosswalk 가설 | suffix 0=adult(C), 9=pediatric(D), middle 4chars 동일 |
+| 2026-04-26 | commit | claude | `f396343` Phase 8a-1 crosswalk | 1,843/3,106 mapped (59.3%) |
+| 2026-04-26 | implement | claude | `scripts/research/validate-phase8.py` | Python 통합 분석 스크립트 |
+| 2026-04-26 | execute | claude | 225k CSV single-pass | 130,536 included (58%), severe prevalence 11.19% |
+| 2026-04-26 | measure | claude | binary q0 | sens 0.394, spec 0.808, F1 0.27, κ 0.16 |
+| 2026-04-26 | measure | claude | binary q_oracle | marginal gain +0.000 — rule gap 본질 |
+| 2026-04-26 | hypothesis_test | claude | H1·H2 (한국 baseline 0.80) | H1 FAIL, H2 PASS, H3 FAIL |
+| 2026-04-26 | analyze | claude | per-Y-code | rule absent: Y0141/0142/0060/0051 (recall 0). best: Y0120(F1 0.60). |
+| 2026-04-26 | analyze | claude | top FN/FP | FN top: 소화기+Y0060 1349건. FP top: 신경계+Y0032 13,929건. |
+| 2026-04-26 | analyze | claude | stratified | grade 1 sens 0.185 (가장 위급환자 80% unmapped). 지역 ±5%p 일관. |
+| 2026-04-26 | write | claude | `research/prektas-validation-report-v1.0.md` | 9 섹션 보고서 + v0.2 권고 |
+| 2026-04-26 | commit | claude | `8bcef0c` Phase 8b–i | 7 files, 2063 insertions |
+| 2026-04-26 | deploy | claude | Vercel production | research.html lede에 결과 + 보고서 링크 |
+| 2026-04-26 | defer | claude | Phase 8h v0.2 룰 개선 | 임상 판단 필요 — 사용자 검토 후 진행 |
+
 ## Phase 8a-2 Entities (추가, 2026-04-25) — 자문 도구
 
 | Entity | Type | Location | Description |

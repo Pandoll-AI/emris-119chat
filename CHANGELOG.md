@@ -1,5 +1,81 @@
 # Changelog
 
+## [2026-04-26] Phase 8b–i 완료: v0.1 진단정확도 검증 결과 (H1 FAIL, H2 PASS)
+
+> 응급의학 전문의가 잠자러 가면서 "남은 모든 작업 자동 진행" 지시 ("loopy" 명령). Phase 8a-1 crosswalk 작성 후 Phase 8b–8i 통합 분석 완료. 3 commits.
+
+### 변경 동기
+- Phase 8a-2 frozen reference standard 동결 후 즉시 검증 단계 진입
+- 사용자 부재 시간 활용 (자동화 가능 부분만 실행)
+- v0.2 룰 개선(8h)은 임상 판단이 핵심이라 권고만 남기고 사용자 검토 대기
+
+### Commits
+| # | 작업 | Commit |
+|---|---|---|
+| 1 | Phase 8a-1 — Pre-KTAS 5자/6자 코드 crosswalk v1.0 | `f396343` |
+| 2 | Phase 8b–i 통합 분석 — v0.1 검증 완료 | `8bcef0c` |
+
+### 핵심 결과 (130,536 included visits, source-prektas.csv)
+- **Sensitivity = 0.394** (95% CI 0.386–0.401) — H1 0.80 임계 **FAIL**
+- **Specificity = 0.808** (95% CI 0.805–0.810) — H2 0.80 임계 **PASS**
+- Oracle marginal gain = +0.000 — H3 FAIL (rule gap 본질 문제)
+- F1 = 0.27, Balanced Acc = 0.60, κ = 0.16
+- Severe prevalence = 11.19% (frozen multi-label cluster 효과)
+- **임상 활용 불가 판정**. 60.6% under-triage.
+
+### Added (Phase 8a-1)
+- `research/prektas-code-crosswalk.json` — 5자(C/D prefix) ↔ 6자(A prefix + suffix 0/9) crosswalk
+  * Pattern: `[A][L2][L3][L4_2chars][group_suffix]` → `[group_letter][L2][L3][L4_2chars]`
+  * suffix 0=adult, 9=pediatric
+  * mapped 1,843 / 3,106 unique codes (59.3%)
+  * unmapped: codebook 부재 ~438, suffix 1/2/3 (의미 불명) 205
+
+### Added (Phase 8b–i)
+- `scripts/research/validate-phase8.py` — 통합 분석 (Python, single-pass 225k 행)
+  * EUC-KR streaming via iconv
+  * crosswalk + codebook lookup + ICD-10 multi-label 매칭
+  * Wilson 95% CI, per-Y-code metrics
+  * Stratified (region/age/grade)
+  * Top FN/FP pattern 자동 추출
+- `research/validation-results-v0.1.json` — primary metrics + 27 Y-code per-class
+- `research/validation-stratified.json` — region/age/grade
+- `research/validation-error-audit.json` — top 50 FN/FP patterns
+- `research/prektas-validation-report-v1.0.md` — 9 섹션 최종 보고서
+
+### 주요 발견
+- **Rule absent (recall 0)**: Y0141 응급HD, Y0142 CRRT, Y0060 복부응급, Y0051 담낭
+- **Massive over-trigger**: Y0032 뇌출혈 13,929 FP (신경계 카테고리 광범위 trigger)
+- **Best**: Y0120 화상 (F1 0.60), Y0113 부인과 (F1 0.49)
+- Grade 1 sensitivity 18.5% — 가장 위급한 환자의 80%가 unmapped
+- 지역 일관성 ±5%p (광주·전남·전북 cohort)
+
+### Changed
+- `prektas-research.html` — Lede에 v1.0 결과 요약 (sens 39.4%, spec 80.8%) + 보고서 링크
+- `scripts/build-research-page.mjs` — Lede 결과 반영 + 광주→광주·전남·전북 정정
+
+### Phase 8h v0.2 권고 (보고서 §6)
+- **Critical**: Y0141/0142/0060/0051 적응 룰 신규 작성 (recall 0)
+- **High**: Y0032/0010/0041 over-trigger 좁히기
+- **Medium**: Y0082·Y0020 recall 보강
+- **목표**: v0.2 sens ≥ 0.70, spec ≥ 0.75
+
+### 한계 (보고서 §7)
+- 단일 cohort, retrospective (광주·전남·전북 편중)
+- 27.5% 데이터 손실 (crosswalk + codebook 부재 + 진단 결측)
+- Conditional include / clinical_split 미적용 (단순 prefix matching, Phase 8c+ 권고)
+- Oracle 시뮬레이션은 best-case
+
+### 배포
+- main pushed: `8bcef0c`
+- Vercel production: `https://119chat.emergency-info.com/prektas-research.html` (보고서 링크 포함)
+
+### 사용자 깨어났을 때 검토 항목
+- 보고서 §6 v0.2 권고 임상 검토
+- 5/6자 crosswalk 미매핑 코드 (suffix 1/2/3, 205개) 임상 의미 자문
+- v0.2 알고리즘 작성 진입 여부 결정
+
+---
+
 ## [2026-04-25] Phase 8a-2 (consultation tool): 응급의학 전문의 자문 도구
 
 > Phase 8a-2 ground truth 동결 작업을 효율화하는 web 자문 도구. 사용자가 응급의학 전문의 자격을 알리면서 자문 시작. 1 commit.

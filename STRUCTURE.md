@@ -73,6 +73,14 @@ data/prektas-codebook.json                                │
 | `prektas-research.html` | Phase 8 validation protocol 요약·시각화 페이지 (빌드 산출, 매거진 레이아웃, 10 chapters) | build script + protocol markdown |
 | `research/prektas-validation-protocol.md` | **Phase 8 source of truth** — 사전 등록(preregistered) 분석 계획 v1.0. STARD 2015 준수. 4 가설, 11 sub-phases, threats to validity, ethics, reproducibility. | 정본 codebook + 1차 prevalence 스캔 |
 | `prektas-consultation.html` | **Phase 8a-2 응급의학 전문의 자문 도구** — 49.4KB standalone SPA. 27 Y-code × ICD-10 prefill + 12+ 임상 결정 + 임계값 + red flags + JSON export. localStorage auto-save. | 임상 통상 기준 prefill + protocol-flagged decisions |
+| `research/consultation-2026-04-25-moef75va.json` | 응급의학 전문의 자문 원본 (보존) | consultation tool export |
+| `research/y-code-icd10-clusters.json` | **Phase 8a-2 frozen reference standard v1.0** — 27 Y-code × ICD-10 cluster + thresholds + amendments | consultation 변환 |
+| `research/prektas-code-crosswalk.json` | **Phase 8a-1** — 5자/6자 코드 정렬. mapped 59.3% unique. | codebook + CSV unique 6자 코드 set |
+| `scripts/research/validate-phase8.py` | **Phase 8b–f 통합 분석 스크립트 (Python)** — 225k CSV single-pass. EUC-KR streaming + ICD-10 매칭 + Wilson CI + stratified. | crosswalk + frozen clusters + mapping v0.1 + codebook |
+| `research/validation-results-v0.1.json` | **Phase 8e** — primary metrics (sens 0.394, spec 0.808) + 27 Y-code per-class | validate-phase8.py 출력 |
+| `research/validation-stratified.json` | **Phase 8f** — region/age/grade stratified | validate-phase8.py 출력 |
+| `research/validation-error-audit.json` | **Phase 8g** — top 50 FN/FP patterns | validate-phase8.py 출력 |
+| `research/prektas-validation-report-v1.0.md` | **Phase 8i 최종 보고서** — 9 섹션. H1 FAIL · H2 PASS · v0.2 권고. | 위 결과 4개 종합 |
 | `run.sh` | 포트 3489 로컬 서버 제어 (`start\|stop\|restart`) | python3, public/ |
 | `public/index.html` (심볼릭) | → `../prektas-hospital-recommender.html` | 루트 HTML |
 | `public/research.html` (심볼릭) | → `../prektas-research.html` | 루트 HTML |
@@ -138,10 +146,21 @@ source-prektas.csv (225k visits, EUC-KR)
         Final report + replication (Phase 8i, 8j)
 ```
 
-### Phase 8 npm scripts (예정)
-- `npm run validate:phase8a-1` — 코드 crosswalk 작성
-- `npm run validate:phase8b` — source CSV 표준화
-- `npm run validate:phase8` — 전체 8b–f 파이프라인
+### Phase 8 실행 명령
+
+**완료된 작업** (Phase 8a-1, 8a-2, 8b–i):
+```bash
+# Phase 8a-1: crosswalk (이미 commit됨, 재실행 불필요)
+# Phase 8a-2: consultation tool 사용 (이미 자문 완료 + frozen JSON commit)
+
+# Phase 8b–i: 통합 분석 재실행
+python3 scripts/research/validate-phase8.py
+# → research/validation-results-v0.1.json
+# → research/validation-stratified.json
+# → research/validation-error-audit.json
+```
+
+**보고서**: `research/prektas-validation-report-v1.0.md`
 
 ### Phase 8a-2 자문 흐름
 
