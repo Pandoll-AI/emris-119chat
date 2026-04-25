@@ -596,6 +596,21 @@
     color: var(--t-dim);
     font-style: italic;
   }
+  .prektas-review .pr-requery-btn {
+    align-self: flex-start;
+    padding: 8px 14px;
+    border: 1px solid var(--t-accent);
+    background: var(--t-surface);
+    color: var(--t-accent);
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    border-radius: var(--r-0);
+    font-size: var(--fs-sm);
+    transition: background var(--t-fast), color var(--t-fast);
+  }
+  .prektas-review .pr-requery-btn:hover { background: var(--t-accent); color: #ffffff; }
+  .prektas-review .pr-requery-btn:disabled { opacity: 0.5; cursor: wait; }
   .prektas-review .pr-capabilities {
     margin-top: 4px;
     padding-top: 6px;
@@ -1842,12 +1857,14 @@
 
     REGIONS.forEach(r => {
       const btn = el('button', { className: 'ribbon-btn', textContent: r.name });
+      btn.dataset.code = r.code;
       btn.addEventListener('click', () => selectRegion(r.code, btn));
       regionRibbon.appendChild(btn);
     });
 
     DISEASE_CATEGORIES.forEach(d => {
       const btn = el('button', { className: 'ribbon-btn', textContent: d.name });
+      btn.dataset.codes = d.codes;
       btn.addEventListener('click', () => selectDisease(d.codes, btn));
       diseaseRibbon.appendChild(btn);
     });
@@ -3329,10 +3346,49 @@ JSON만 반환. 마크다운/설명 금지.`;
         const sg = el('div', { className: 'pr-suggested' });
         sg.textContent = 'AI 제안 Y코드: ' + rv.suggested_y_codes.join(', ');
         card.appendChild(sg);
-        // "이 Y코드로 추가 조회" 버튼 — Step 12에서 활성화 예정 (현재 informational only)
-        const note = el('div', { className: 'pr-note' });
-        note.textContent = '※ 추가 조회 버튼은 Step 12에서 활성화';
-        card.appendChild(note);
+
+        // Phase 6 Step 12 — Override 재조회 버튼
+        const requeryBtn = el('button', { className: 'pr-requery-btn' });
+        requeryBtn.type = 'button';
+        requeryBtn.textContent = '🔄 이 Y코드로 추가 조회';
+        requeryBtn.addEventListener('click', async () => {
+          requeryBtn.disabled = true;
+          requeryBtn.textContent = '재조회 중…';
+          try {
+            const active = window.CaseStore && window.CaseStore.getActive();
+            const region = (active && active.region) || (
+              (document.querySelector('#region-ribbon .ribbon-btn.selected') || {}).dataset || {}
+            ).code || null;
+            if (!region) {
+              alert('지역 정보가 없어 재조회할 수 없습니다. 새 케이스로 다시 시작해 주세요.');
+              return;
+            }
+            // 기존 Y 후보 + suggested 합치기 (중복 제거)
+            const existing = (active && active.assessment && active.assessment.narrowed_y_candidates) || [];
+            const merged = Array.from(new Set([...existing, ...rv.suggested_y_codes]));
+            // 합류 함수에 prektas_context override 표시
+            const baseCtx = (active && active.patient && active.assessment) ? {
+              patient: active.patient,
+              additional_qa: [],
+              rule_based: Object.assign({}, active.assessment, {
+                narrowed_y_candidates: merged,
+                llm_override_applied: rv.suggested_y_codes,
+              }),
+            } : null;
+            const userText = '🔄 LLM 제안 Y코드 추가 조회: ' + rv.suggested_y_codes.join(', ');
+            appendUserBubble(userText);
+            await searchAndShow(userText, region, merged.join(','), baseCtx);
+          } catch (e) {
+            console.error('[override requery] failed:', e);
+            const wrap = el('div', { className: 'bubble' });
+            wrap.textContent = '재조회 실패. 새 케이스로 다시 시도해 주세요.';
+            appendBotNode(wrap);
+          } finally {
+            requeryBtn.disabled = false;
+            requeryBtn.textContent = '🔄 이 Y코드로 추가 조회';
+          }
+        });
+        card.appendChild(requeryBtn);
       }
       if (rv.required_capabilities) {
         const cap = el('div', { className: 'pr-capabilities' });
