@@ -1,5 +1,50 @@
 # Changelog
 
+## [2026-04-26] Phase 9a (draft): v0.2 매핑성 매트릭스 1차 초안 — 임상 정합성 reframe
+
+> v0.1 보고서의 "sensitivity 39.4% → 임상 활용 불가" framing이 임상 자문자(응급의학 전문의) 의견에 따라 reframe됨. 통계 sensitivity 임계 폐기, 임상 정합성 + 모순 검출 우선. 1 commit (draft).
+
+### 변경 동기 (사용자 의견 반영)
+- Pre-KTAS + 0–3 질문은 현장 정보의 본질적 한계가 큰 input. 통계로 sens 0.70 강제는 임상 현실과 맞지 않음.
+- **명확한 case만 Y코드 매핑, 모호한 case는 tier만 권고**가 임상적으로 옳음.
+- 코드만으로 잘 매핑: 심근경색·정신과·내시경·산과
+- 코드로 매핑 불가: 담낭/담도 (이미지 전 구별 불가), 투석 (secondary 적응)
+- 광주·전라 데이터는 검증 안 됨 (수십% 오류 가능). 통계는 directional probe, 결정 X.
+- LLM은 ground truth 결정자 X, 최종 병원 선택자 (Phase 6 흐름 유지).
+
+### Plan
+- 새 plan: `~/.claude/plans/mighty-herding-sutton.md` (Phase 9: v0.2 reframe)
+- Sub-phases: 9a 매트릭스 초안 → 9b 자문자 검토 → 9c 알고리즘 → 9d 모순 검출 → 9e 보고서·페이지 → 9f 챗봇 통합(선택)
+
+### Added (Phase 9a 1차 초안)
+- **`research/y-code-mappability-matrix.json`** v1.0-draft (~290 lines, awaiting_consultant_review)
+  - 27 Y코드 × A/B/C 분류
+    - **A (Confident)**: 12 — Y0010·Y0081·Y0082·Y0091·Y0092·Y0100·Y0111·Y0112·Y0120·Y0131·Y0132·Y0150
+    - **B (Candidate)**: 7 — Y0020·Y0031·Y0032·Y0041·Y0042·Y0113·Y0160
+    - **C (Tier-only)**: 8 — Y0051·Y0052·Y0060·Y0070·Y0141·Y0142·Y0171·Y0172
+  - 각 Y코드 entry: group · rationale · trigger_pre_ktas · questions_needed · limitation · co_candidates · v01_issue · user_note
+  - 그룹 정의 + 검증 framing + 데이터 caveat 명시
+  - consultant_review_questions 8 항목 (B↔C 이동 후보, 각 그룹 적절성, over-trigger 좁히기, A/B 승격 가능성)
+  - v0.2 알고리즘 출력 schema 명세 (mappability + y_candidates with confidence + tier_recommendation)
+
+### 사용자 명시 의견 보존 (각 entry의 user_note field)
+- Y0010 심근경색·Y0081/0082 내시경·Y0111/0112 산과·Y0150 정신과 → A (사용자 명시 "코드만으로 잘 매핑")
+- Y0051/0052 담낭/담도 → C (사용자 명시 "이미지 전 구별 불가")
+- Y0141/0142 응급투석 → C (사용자 명시 추측 "다른 primary focus의 secondary, dialysis-specific Pre-KTAS 코드 부재")
+
+### Pending
+- **9b 자문자 검토** (사용자 응답 대기)
+- 검토 후 v1.0 frozen → 9c v0.2 알고리즘 구현 → 9d 모순 검출 → 9e 보고서·페이지 reframe
+
+### Review (Pre-Landing Audit, post-merge)
+- Quality Score: **8.5/10** (4 informational, 0 critical)
+- INFO: 자문자 검토 대기 상태 (status="awaiting_consultant_review" 명시)
+- INFO: 사용자 명시 의견과 maintainer 추론이 user_note로 구분 가능 (추적성)
+- INFO: A 12 · B 7 · C 8 — 27개 모두 분류, 누락 없음
+- INFO: consultant_review_questions 8 항목이 적절한 분량 (~30분 검토)
+
+---
+
 ## [2026-04-26] Phase 8b–i 완료: v0.1 진단정확도 검증 결과 (H1 FAIL, H2 PASS)
 
 > 응급의학 전문의가 잠자러 가면서 "남은 모든 작업 자동 진행" 지시 ("loopy" 명령). Phase 8a-1 crosswalk 작성 후 Phase 8b–8i 통합 분석 완료. 3 commits.

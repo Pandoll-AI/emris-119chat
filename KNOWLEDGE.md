@@ -165,6 +165,42 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | viewCaseReadOnly | reads | CaseStore (case object) | drawer 클릭 시 |
 | enhanceRibbonScroll | called-by | buildRibbons | region/disease 두 ribbon에 화살표·드래그 wiring |
 
+## Phase 9a Entities (2026-04-26) — v0.2 매핑성 매트릭스 (draft)
+
+| Entity | Type | Location | Description |
+|---|---|---|---|
+| Y-code Mappability Matrix | research-output (draft, awaiting review) | `research/y-code-mappability-matrix.json` | 27 Y코드 × A/B/C 분류 + rationale + trigger + limitation. v0.2 알고리즘 설계의 source of truth (frozen 후). |
+
+## Phase 9a Relations
+
+| Subject | Relation | Object | Context |
+|---|---|---|---|
+| Y-code Mappability Matrix | informs | v0.2 algorithm (Phase 9c, 예정) | 각 Y코드의 group이 출력 채널(y_candidates vs tier-only) 결정 |
+| Y-code Mappability Matrix | references | Validation Report v1.0 | v0.1 결과(per-Y-code recall)를 그룹 분류 근거로 사용 |
+| Y-code Mappability Matrix | preserves | 사용자 명시 의견 | user_note field로 chat 의견 추적성 보존 |
+| Y-code Mappability Matrix | requires | 자문자 검토 (Phase 9b) | status='awaiting_consultant_review' 상태 |
+
+## Phase 9a Actions (2026-04-26)
+
+| Date | Action | Actor | Target | Detail |
+|---|---|---|---|---|
+| 2026-04-26 | feedback | user | v1.0 보고서 framing | "통계 sens 0.70 임계 강제는 임상 현실과 맞지 않음. 명확한 case만 Y매핑, 모호한 case는 tier만 권고가 옳음. 광주·전라 데이터는 검증 안 됨, 통계는 directional probe." |
+| 2026-04-26 | reframe | user | Phase 9 plan 방향 | 임상 정합성 + 모순 검출 우선, sens 임계 폐기 |
+| 2026-04-26 | plan | claude | Phase 9 plan 새로 작성 | 9a 매트릭스 → 9b 검토 → 9c 알고리즘 → 9d 모순 → 9e 보고서·페이지. AskUserQuestion 2건으로 분류 방식 + 검증 구조 결정. |
+| 2026-04-26 | draft | claude | `research/y-code-mappability-matrix.json` v1.0-draft | 27 Y코드 × A/B/C(12·7·8) + 사용자 명시 의견 + v0.1 결과 + 임상 추론 종합 |
+| 2026-04-26 | request | claude | 자문자 (사용자) | 8 항목 검토 요청 (chat 검토, ~30분) |
+
+## Phase 9 Plan 결정 사항
+
+| 항목 | 결정 |
+|---|---|
+| Sens 0.70 같은 임계값 | **폐기** (v0.2 평가 기준 X) |
+| 광주·전라 데이터 위상 | directional probe (검증 안 됨, 결정 X) |
+| 검증 구조 | 논리적 정합성 + 모순 검출 (수치는 informational) |
+| A/B/C 분류 방식 | Maintainer 1차 초안 → 자문자 30분 검토 |
+| 출력 채널 분리 | y_candidates (A/B만) + tier_recommendation (모든 그룹) |
+| LLM 위치 | ground truth 결정자 X, 최종 병원 선택자 (Phase 6 유지) |
+
 ## Phase 8b–i Entities (2026-04-26) — v0.1 검증 결과
 
 | Entity | Type | Location | Description |

@@ -81,6 +81,7 @@ data/prektas-codebook.json                                │
 | `research/validation-stratified.json` | **Phase 8f** — region/age/grade stratified | validate-phase8.py 출력 |
 | `research/validation-error-audit.json` | **Phase 8g** — top 50 FN/FP patterns | validate-phase8.py 출력 |
 | `research/prektas-validation-report-v1.0.md` | **Phase 8i 최종 보고서** — 9 섹션. H1 FAIL · H2 PASS · v0.2 권고. | 위 결과 4개 종합 |
+| `research/y-code-mappability-matrix.json` | **Phase 9a 1차 초안 (draft)** — 27 Y코드 × A/B/C 분류 (Confident/Candidate/Tier-only). v0.2 알고리즘 설계 source of truth. 자문자 검토 대기. | 사용자 명시 의견 + v1.0 결과 + 임상 추론 |
 | `run.sh` | 포트 3489 로컬 서버 제어 (`start\|stop\|restart`) | python3, public/ |
 | `public/index.html` (심볼릭) | → `../prektas-hospital-recommender.html` | 루트 HTML |
 | `public/research.html` (심볼릭) | → `../prektas-research.html` | 루트 HTML |
