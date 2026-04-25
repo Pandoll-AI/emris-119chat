@@ -1,0 +1,85 @@
+{
+  "review_id": "MAPPABILITY-REVIEW-moexk8az",
+  "matrix_version": "1.0-draft",
+  "consultation_role": "emergency_medicine_specialist",
+  "started_at": "2026-04-25T22:48:03.851Z",
+  "completed_at": "2026-04-25T23:18:52.069Z",
+  "last_saved": "2026-04-25T23:18:49.653Z",
+  "schema_version": "1.0",
+  "summary": {
+    "total_y_codes": 27,
+    "changed_y_codes": 5,
+    "answered_questions": 8,
+    "total_questions": 8
+  },
+  "y_code_decisions": {
+    "Y0010": { "draft_group": "A", "consultant_group": "A", "changed": false, "notes": "" },
+    "Y0020": { "draft_group": "B", "consultant_group": "B", "changed": false, "notes": "" },
+    "Y0031": { "draft_group": "B", "consultant_group": "B", "changed": false, "notes": "" },
+    "Y0032": { "draft_group": "B", "consultant_group": "B", "changed": false, "notes": "" },
+    "Y0041": {
+      "draft_group": "B",
+      "consultant_group": "C",
+      "changed": true,
+      "notes": "만약에 찢어지는 흉통이 있는 환자가 있다면, 먼저 심근경색 치료가 가능한 병원으로 갔다가, 아니면 검사후 대동맥응급으로 판별되는 것이 낫다."
+    },
+    "Y0042": {
+      "draft_group": "B",
+      "consultant_group": "C",
+      "changed": true,
+      "notes": "만약에 찢어지는 복통이 있는 환자가 있다면, 먼저 권역센터/지역센터 급 병원으로 갔다가, 아니면 검사후 대동맥응급으로 판별되는 것이 낫다."
+    },
+    "Y0051": { "draft_group": "C", "consultant_group": "C", "changed": false, "notes": "" },
+    "Y0052": { "draft_group": "C", "consultant_group": "C", "changed": false, "notes": "" },
+    "Y0060": { "draft_group": "C", "consultant_group": "C", "changed": false, "notes": "" },
+    "Y0070": { "draft_group": "C", "consultant_group": "C", "changed": false, "notes": "" },
+    "Y0081": { "draft_group": "A", "consultant_group": "A", "changed": false, "notes": "" },
+    "Y0082": { "draft_group": "A", "consultant_group": "A", "changed": false, "notes": "" },
+    "Y0091": { "draft_group": "A", "consultant_group": "A", "changed": false, "notes": "" },
+    "Y0092": { "draft_group": "A", "consultant_group": "A", "changed": false, "notes": "" },
+    "Y0100": {
+      "draft_group": "A",
+      "consultant_group": "B",
+      "changed": true,
+      "notes": "출생직후에 구급대가 가는 일은 거의 없다. 이건 임신 주수로 추정하여 분만과 같이 트리거 되는 걸로 채택하라."
+    },
+    "Y0111": { "draft_group": "A", "consultant_group": "A", "changed": false, "notes": "" },
+    "Y0112": {
+      "draft_group": "A",
+      "consultant_group": "B",
+      "changed": true,
+      "notes": "분만 통증이 아닌 경우 트리거되는게 맞겠지만, 출산 Y0111과 동시에 필요할 가능성이 있다."
+    },
+    "Y0113": {
+      "draft_group": "B",
+      "consultant_group": "C",
+      "changed": true,
+      "notes": "현장에서는 복통인지 구분이 안되므로 처음부터 고려할 질환이 아니다. "
+    },
+    "Y0120": { "draft_group": "A", "consultant_group": "A", "changed": false, "notes": "" },
+    "Y0131": { "draft_group": "A", "consultant_group": "A", "changed": false, "notes": "" },
+    "Y0132": { "draft_group": "A", "consultant_group": "A", "changed": false, "notes": "" },
+    "Y0141": { "draft_group": "C", "consultant_group": "C", "changed": false, "notes": "" },
+    "Y0142": { "draft_group": "C", "consultant_group": "C", "changed": false, "notes": "" },
+    "Y0150": { "draft_group": "A", "consultant_group": "A", "changed": false, "notes": "" },
+    "Y0160": {
+      "draft_group": "B",
+      "consultant_group": "B",
+      "changed": false,
+      "notes": "단순 각막외상, 눈병을 제외하고는 이 코드를 트리거할 수 있다."
+    },
+    "Y0171": { "draft_group": "C", "consultant_group": "C", "changed": false, "notes": "" },
+    "Y0172": { "draft_group": "C", "consultant_group": "C", "changed": false, "notes": "" }
+  },
+  "review_question_answers": [
+    { "id": 1, "question": "이 A/B/C 분류에 동의하시는가? 특히 12·7·8 비율이 임상적으로 적절한가?", "answer": "아니다 수정 요청했다. " },
+    { "id": 2, "question": "B → C 또는 C → B 이동 후보가 있는가? (예: Y0070을 B로 올리거나, Y0113을 C로 내리는 게 옳을지)", "answer": "수정요청 했다." },
+    { "id": 3, "question": "A 그룹 중 추가 질문이 더 필요한 케이스가 있는가? (예: Y0150 자해 명시 외에 추가 분기?)", "answer": "몇가지는 추가질문이 도움이 될수도 있을거 같다. 너가 고민하고 제안하라." },
+    { "id": 4, "question": "C 그룹의 tier_recommendation 기본값이 적절한가? (regional_or_local_center vs regional_only vs local_center_preferred)", "answer": "무슨말인지 모르겠다." },
+    { "id": 5, "question": "v0.1에서 over-trigger였던 Y0032(13,929 FP)·Y0150(929 FP)는 v0.2에서 specific feature 한정만으로 충분한가, 더 좁혀야 하는가?", "answer": "무슨말인지 모르겠다." },
+    { "id": 6, "question": "각 Y코드의 'questions_needed'가 적절한가? 추가/제거 필요?", "answer": "몇가지는 추가질문이 도움이 될수도 있을거 같다. 너가 고민하고 제안하라." },
+    { "id": 7, "question": "Y0160 안과를 B로 두었으나, 안구 천공·관통상 명시 시 A로 승격 가능한가?", "answer": "맞다." },
+    { "id": 8, "question": "Y0070 영유아 장중첩이 C인 게 맞는가? 영유아 + 구토 + 혈변(currant jelly) → A 가능한지?", "answer": "그걸로 바로 판단하는 건 안된다 여전히 C" }
+  ],
+  "additional_comments": ""
+}

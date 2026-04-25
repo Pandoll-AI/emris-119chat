@@ -26,6 +26,18 @@ print_url() {
     echo "Tailscale: http://${ip}:${PORT}/research.html"
   fi
   echo ""
+  echo "── Phase 9b 자문자 검토 (/mappability-review.html) ──"
+  echo "Local:     http://127.0.0.1:${PORT}/mappability-review.html"
+  if [[ -n "$ip" ]]; then
+    echo "Tailscale: http://${ip}:${PORT}/mappability-review.html"
+  fi
+  echo ""
+  echo "── Phase 8a-2 자문 도구 (/consultation.html) ──"
+  echo "Local:     http://127.0.0.1:${PORT}/consultation.html"
+  if [[ -n "$ip" ]]; then
+    echo "Tailscale: http://${ip}:${PORT}/consultation.html"
+  fi
+  echo ""
 }
 
 stop_server() {

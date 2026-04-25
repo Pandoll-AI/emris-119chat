@@ -1,11 +1,21 @@
 {
-  "version": "1.0-draft",
-  "status": "awaiting_consultant_review",
+  "version": "1.0",
+  "status": "frozen",
+  "frozen_at": "2026-04-26",
+  "consultant_review": {
+    "review_id": "MAPPABILITY-REVIEW-moexk8az",
+    "review_file": "research/mappability-review-2026-04-26-moexk8az.json",
+    "reviewer_role": "emergency_medicine_specialist",
+    "reviewed_at": "2026-04-25T22:48:03Z – 23:18:52Z (~31 min)",
+    "changes_count": 5,
+    "questions_answered": 8
+  },
   "drafted_at": "2026-04-26",
   "drafter": "maintainer (Claude Opus 4.7) — based on user's clinical guidance + v1.0 validation per-Y-code results + clinical reasoning",
   "purpose": "각 27 Y코드를 임상 매핑성에 따라 A/B/C 그룹으로 분류. v0.2 알고리즘은 그룹별로 다른 출력 채널(y_candidates vs tier-only)을 사용한다.",
   "framing": {
     "principle": "Pre-KTAS + 0–3 질문은 현장 정보의 본질적 한계가 있다. 명확한 case만 Y코드 매핑하고, 모호한 case는 중증도 + 카테고리 기반 tier만 권고한다.",
+    "consultant_principle": "후보군으로 좁히기보다 적합한 tier 병원으로 직송 + 병원이 검사 후 결정. Y0041/0042/0113 모두 B→C는 이 원칙의 일관 적용.",
     "data_caveat": "광주·전라 데이터(225k visits)는 검증 안 됨. 본 매트릭스는 통계가 아닌 임상 추론에 기반한다.",
     "primary_authority": "응급의학 전문의 임상 판단 (자문자)"
   },
@@ -18,12 +28,12 @@
     "B": {
       "name": "Candidate Y mapping",
       "definition": "Y코드 후보군(보통 2–3개)로 좁힐 수 있으나 단정 불가. 모두 후보로 출력하되 confidence='candidate'.",
-      "examples": "뇌경색 vs 뇌출혈, 흉통 character 모호, 골반통(부인과 vs 위장관)"
+      "examples": "뇌경색 vs 뇌출혈, 안과 응급(천공·관통 시 A 승격), 임신 주수 추정으로 분만+산과수술 동시 trigger"
     },
     "C": {
       "name": "Tier-only, no Y mapping",
       "definition": "현장 정보로 Y코드 결정 불가능. y_candidates는 비어있고 tier_recommendation만 부여.",
-      "examples": "담낭 vs 담도(이미지 전 구별 불가), 복부응급(특정 시술 결정 불가), 응급투석(secondary 적응)"
+      "examples": "담낭 vs 담도(이미지 전 구별 불가), 복부응급(시술 단정 불가), 응급투석(secondary 적응), 대동맥응급(tier 직송 + 병원 검사 후 결정)"
     },
     "unmapped": {
       "name": "No Y, no specific tier",
@@ -34,16 +44,19 @@
     "Y0010": {
       "label": "심근경색의 재관류중재술",
       "group": "A",
+      "draft_group": "A",
+      "consultant_changed": false,
       "rationale": "압박성 흉통(심인성 의심) + 성인 → STEMI/NSTEMI 임상 의심 명확. PCI 가능 권역/지역응급의료센터 직송 명확.",
       "trigger_pre_ktas": "level2=심혈관계, level3=흉통(심장성), 압박성/조이는 character",
       "questions_needed": ["chest_pain_character"],
-      "limitation": "흉통 양상이 모호한 경우 Y0041과 분기 필요 (B로 fallback)",
-      "confidence_signal": "압박성·조이는 통증 명시 + 성인",
+      "limitation": "흉통 양상이 모호한 경우 Y0041과 분기 필요. 단 Y0041이 C 그룹으로 변경됨에 따라 Y0010+찢어지는 흉통도 Y0010 trigger + 권역/지역센터 tier로 처리 가능 (자문자 메모)",
       "user_note": "사용자 명시: '심근경색은 코드만으로 잘 매핑'"
     },
     "Y0020": {
       "label": "뇌경색의 재관류중재술",
       "group": "B",
+      "draft_group": "B",
+      "consultant_changed": false,
       "rationale": "FAST 양성 + 발병시각으로 후보군 진입. 뇌출혈과의 감별은 영상 후. 후보로 출력하되 단정 X.",
       "trigger_pre_ktas": "level2=신경계, level3=뇌졸중/편마비/구음장애",
       "questions_needed": ["onset_time_stroke"],
@@ -53,54 +66,68 @@
     "Y0031": {
       "label": "뇌출혈수술 (거미막하 출혈)",
       "group": "B",
+      "draft_group": "B",
+      "consultant_changed": false,
       "rationale": "극심한 두통 + 의식변화 + 비외상성 → 후보. 동맥류 파열 vs 자발성 vs 외상성 구별은 CT 후.",
       "trigger_pre_ktas": "level2=신경계, level3=두통(극심)/의식변화",
       "questions_needed": ["trauma_or_spontaneous"],
-      "limitation": "외상성과 자발성 구별이 현장에서 100% 명확하지 않음. frozen reference standard에서는 'separate' 결정이지만 v0.2 룰에서는 둘 다 후보 권장.",
+      "limitation": "외상성과 자발성 구별이 현장에서 100% 명확하지 않음.",
       "co_candidates": ["Y0032", "Y0020"]
     },
     "Y0032": {
       "label": "뇌출혈수술 (거미막하 출혈 외)",
       "group": "B",
+      "draft_group": "B",
+      "consultant_changed": false,
       "rationale": "비외상성 의식변화 + 편마비 → 후보. CT 전 단정 불가.",
       "trigger_pre_ktas": "level2=신경계, level3=의식변화/편마비/발작",
       "questions_needed": ["trauma_or_spontaneous"],
-      "limitation": "v0.1에서 신경계 카테고리 광범위 trigger로 13,929 FP. v0.2는 specific feature(편마비·GCS<13·극심한 두통) 한정.",
+      "limitation": "v0.1에서 신경계 카테고리 광범위 trigger로 13,929 FP. v0.2는 specific feature 한정.",
       "v01_issue": "13,929 FP — over-trigger 좁히기 critical",
       "co_candidates": ["Y0031", "Y0020"]
     },
     "Y0041": {
       "label": "대동맥응급 (흉부)",
-      "group": "B",
-      "rationale": "찢어지는 통증 + 흉부·등 통증 + 이동성 → 후보. Y0010과 분기 위해 character 질문 필요.",
+      "group": "C",
+      "draft_group": "B",
+      "consultant_changed": true,
+      "consultant_notes": "만약에 찢어지는 흉통이 있는 환자가 있다면, 먼저 심근경색 치료가 가능한 병원으로 갔다가, 아니면 검사후 대동맥응급으로 판별되는 것이 낫다.",
+      "rationale": "찢어지는 흉통은 후보 단정보다 PCI 가능 권역/지역센터 직송 → 병원 검사 후 대동맥응급 판별이 임상적으로 옳음. y_candidates 단정 X, tier만.",
       "trigger_pre_ktas": "level2=심혈관계, 찢어지는/이동성 통증",
-      "questions_needed": ["chest_pain_character", "aortic_location"],
-      "limitation": "현장에서 박리 vs 동맥류 vs 단순 흉통 분기 모호. Y0010과 둘 다 후보로 출력 가능.",
-      "co_candidates": ["Y0010", "Y0042"]
+      "tier_recommendation": "regional_or_local_center",
+      "questions_needed": [],
+      "limitation": "Y0010 후보군에 자연스럽게 포함되어 동일 tier 직송."
     },
     "Y0042": {
       "label": "대동맥응급 (복부)",
-      "group": "B",
-      "rationale": "박동성 복통 + 쇼크 + 노인 → 후보. AAA rupture 의심.",
+      "group": "C",
+      "draft_group": "B",
+      "consultant_changed": true,
+      "consultant_notes": "만약에 찢어지는 복통이 있는 환자가 있다면, 먼저 권역센터/지역센터 급 병원으로 갔다가, 아니면 검사후 대동맥응급으로 판별되는 것이 낫다.",
+      "rationale": "찢어지는 복통은 권역/지역센터 직송 + 병원 검사. 단정 X.",
       "trigger_pre_ktas": "level2=심혈관계 또는 소화기계, 박동성 복통 + 쇼크",
-      "questions_needed": ["aortic_location"],
-      "limitation": "현장에서 단순 복통과 AAA 구별 어려움. 쇼크·노인 trigger로 좁힘.",
-      "co_candidates": ["Y0041", "Y0060"]
+      "tier_recommendation": "regional_or_local_center",
+      "questions_needed": [],
+      "limitation": "Y0060 복부응급과 같은 tier 처리."
     },
     "Y0051": {
       "label": "담낭담관질환 (담낭질환)",
       "group": "C",
-      "rationale": "이미지 검사(US/CT) 이전에는 담낭 vs 담도 구별 불가능. 우상복부 통증 + 발열 → 둘 다 가능. y_candidates에서 단정 X. tier만 권고 (지역응급의료센터급).",
+      "draft_group": "C",
+      "consultant_changed": false,
+      "rationale": "이미지 검사(US/CT) 이전에는 담낭 vs 담도 구별 불가능. 우상복부 통증 + 발열 → 둘 다 가능. y_candidates에서 단정 X. tier만 권고.",
       "trigger_pre_ktas": "level2=소화기계, level3=우상복부 통증 + 발열·황달",
       "tier_recommendation": "regional_or_local_center",
-      "limitation": "Y0051과 Y0052를 묶어 처리. 현장에서 구별 시도 X.",
+      "limitation": "Y0051과 Y0052를 묶어 처리.",
       "user_note": "사용자 명시: '담도질환과 담낭질환은 이미지 검사 이전에는 구별하여 알기 힘들 것'",
       "v01_issue": "recall 0% — 'rule absent'로 분류했으나 실은 임상적으로 매핑 불가 영역"
     },
     "Y0052": {
       "label": "담낭담관질환 (담도포함질환)",
       "group": "C",
-      "rationale": "Y0051과 동일. 담관염은 황달·Charcot triad 시 의심하나 영상 전 단정 불가. tier만.",
+      "draft_group": "C",
+      "consultant_changed": false,
+      "rationale": "Y0051과 동일. 영상 전 단정 불가. tier만.",
       "trigger_pre_ktas": "level2=소화기계, level3=황달·우상복부 통증",
       "tier_recommendation": "regional_or_local_center",
       "limitation": "Y0051과 묶어 처리.",
@@ -109,24 +136,31 @@
     "Y0060": {
       "label": "복부응급수술 (비외상)",
       "group": "C",
-      "rationale": "현장 시점에 특정 시술(충수절제 vs 장폐색 reduction vs 복막염 세척) 결정 불가. 복통 심각도 + 복막자극 명시 시 권역/지역응급의료센터급 tier 권고만.",
+      "draft_group": "C",
+      "consultant_changed": false,
+      "rationale": "현장 시점에 특정 시술 결정 불가. 복통 심각도 + 복막자극 명시 시 권역/지역센터 tier 권고만.",
       "trigger_pre_ktas": "level2=소화기계, level3=복통(심함)/복막자극·rebound·guarding",
       "tier_recommendation": "regional_or_local_center",
-      "limitation": "Y0060 자체가 '복부응급수술'이라는 광범위 카테고리. 현장에서 시술 단정 시도가 부적절.",
-      "v01_issue": "recall 0% — 'rule absent'로 분류했으나 임상적으로 매핑 불가 영역"
+      "limitation": "광범위 카테고리. 시술 단정 시도 부적절.",
+      "v01_issue": "recall 0% — 임상적으로 매핑 불가 영역"
     },
     "Y0070": {
       "label": "장중첩/폐색 (영유아)",
       "group": "C",
-      "rationale": "영유아 + 복통/구토는 후보군에 들어가지만 장중첩 단정 불가 (영상 후 결정). tier 위주 (지역응급의료센터급).",
+      "draft_group": "C",
+      "consultant_changed": false,
+      "consultant_notes": "(Q8 답변) 영유아 + 구토 + 혈변(currant jelly)으로 바로 판단하는 건 안된다. 여전히 C.",
+      "rationale": "영유아 + 복통/구토는 후보군에 들어가지만 장중첩 단정 불가 (영상 후 결정). tier 위주.",
       "trigger_pre_ktas": "level2=소화기계, age<12, 복통/구토/혈변",
       "tier_recommendation": "regional_or_local_center",
-      "limitation": "Y0082 위장관내시경(영유아)와 분기도 모호. 둘 다 후보군이지만 정밀 결정은 영상 후."
+      "limitation": "Y0082 위장관내시경(영유아)와 분기도 모호."
     },
     "Y0081": {
       "label": "위장관 응급내시경 (성인)",
       "group": "A",
-      "rationale": "토혈·흑색변 명시 + 성인 → 응급 상부위장관 내시경 적응 명확. 시술 가능한 권역/지역응급의료센터 직송.",
+      "draft_group": "A",
+      "consultant_changed": false,
+      "rationale": "토혈·흑색변 명시 + 성인 → 응급 상부위장관 내시경 적응 명확.",
       "trigger_pre_ktas": "level2=소화기계, level3=토혈/흑색변, age≥18",
       "questions_needed": ["bleeding_site"],
       "limitation": "하부 위장관 출혈(K62.5)은 conditional_include로 처리.",
@@ -135,6 +169,8 @@
     "Y0082": {
       "label": "위장관 응급내시경 (영유아)",
       "group": "A",
+      "draft_group": "A",
+      "consultant_changed": false,
       "rationale": "영유아 + 토혈/이물 → 명확. age<12 + 위장관 출혈/이물.",
       "trigger_pre_ktas": "level2=소화기계, age<12, 토혈/흑색변/이물",
       "questions_needed": ["bleeding_site"],
@@ -143,57 +179,77 @@
     "Y0091": {
       "label": "기관지 응급내시경 (성인)",
       "group": "A",
+      "draft_group": "A",
+      "consultant_changed": false,
       "rationale": "기도 이물 명시 + 성인 → 응급 기관지 내시경 명확.",
       "trigger_pre_ktas": "level2=호흡기계, level3=기도 이물/흡인, age≥18",
       "questions_needed": ["foreign_body_site"],
-      "limitation": "대량 각혈(R04.2)은 conditional_include로 처리 (massive only).",
+      "limitation": "대량 각혈(R04.2)은 conditional_include로 처리.",
       "co_candidates": ["Y0171"]
     },
     "Y0092": {
       "label": "기관지 응급내시경 (영유아)",
       "group": "A",
+      "draft_group": "A",
+      "consultant_changed": false,
       "rationale": "영유아 + 기도 이물은 흔한 응급. 명확.",
       "trigger_pre_ktas": "level2=호흡기계, age<12, 기도 이물/흡인",
       "questions_needed": ["foreign_body_site"],
-      "limitation": "Y0082(위장관)와 분기 필요 (foreign body site)"
+      "limitation": "Y0082(위장관)와 분기 필요"
     },
     "Y0100": {
       "label": "저체중출생아",
-      "group": "A",
-      "rationale": "출생 체중으로 결정. <2500g (frozen reference WHO 정의).",
-      "trigger_pre_ktas": "level2=신생아, 저체중·미숙아 명시",
-      "questions_needed": [],
-      "limitation": "출생 직후 환자만 해당, 현장에서 체중 추정 가능"
+      "group": "B",
+      "draft_group": "A",
+      "consultant_changed": true,
+      "consultant_notes": "출생직후에 구급대가 가는 일은 거의 없다. 이건 임신 주수로 추정하여 분만과 같이 트리거 되는 걸로 채택하라.",
+      "rationale": "출생 직후 구급 호출은 매우 드묾. 임신 주수 + 분만 임박 trigger와 함께 후보로 출력. Y0111과 동시 trigger.",
+      "trigger_pre_ktas": "level2=임신/여성생식계, 임신 주수<37 + 분만 임박",
+      "questions_needed": ["pregnancy_status"],
+      "limitation": "ICD-10 ground truth는 출생 직후 P07.x이지만 시스템 trigger 시점은 분만 시점이라 평가 시 주의.",
+      "co_candidates": ["Y0111", "Y0112"]
     },
     "Y0111": {
       "label": "산부인과 응급 (분만)",
       "group": "A",
+      "draft_group": "A",
+      "consultant_changed": false,
       "rationale": "분만 임박 또는 진행 중 → 명확. 산부인과 가능 병원 직송.",
       "trigger_pre_ktas": "level2=임신/여성생식계, level3=분만/진통",
       "questions_needed": [],
       "limitation": "정상 분만은 frozen reference에서 include로 결정됨.",
-      "user_note": "사용자 명시: '산과는 코드만으로 잘 매핑'"
+      "user_note": "사용자 명시: '산과는 코드만으로 잘 매핑'",
+      "co_candidates": ["Y0100", "Y0112"]
     },
     "Y0112": {
       "label": "산부인과 응급 (산과수술)",
-      "group": "A",
-      "rationale": "임신 + 출혈/태반조기박리/자간증/자궁외임신 → 명확. 응급 산과 수술 적응.",
+      "group": "B",
+      "draft_group": "A",
+      "consultant_changed": true,
+      "consultant_notes": "분만 통증이 아닌 경우 트리거되는게 맞겠지만, 출산 Y0111과 동시에 필요할 가능성이 있다.",
+      "rationale": "임신 + 출혈/태반조기박리/자간증/자궁외임신 → Y0111과 동시 후보. 단독 confident X.",
       "trigger_pre_ktas": "level2=임신/여성생식계, level3=출혈·전치태반·자간증",
       "questions_needed": ["pregnancy_status"],
-      "limitation": "임신 주수 정보 필요 (조기진통 vs 임박 분만 분기)"
+      "limitation": "Y0111과 묶어 후보 처리.",
+      "co_candidates": ["Y0111"]
     },
     "Y0113": {
       "label": "산부인과 응급 (부인과수술)",
-      "group": "B",
-      "rationale": "골반통/난소염전 의심 → 후보. PID와 fallback 분기 필요.",
-      "trigger_pre_ktas": "level2=임신/여성생식계 또는 비뇨기계, 골반통/하복부 통증",
-      "questions_needed": ["pregnancy_status"],
-      "limitation": "현장에서 난소염전 vs 충수염 vs PID 구별 어려움. 둘 다 후보(Y0060과 동시).",
-      "co_candidates": ["Y0060"]
+      "group": "C",
+      "draft_group": "B",
+      "consultant_changed": true,
+      "consultant_notes": "현장에서는 복통인지 구분이 안되므로 처음부터 고려할 질환이 아니다.",
+      "rationale": "현장에서 부인과 응급(난소염전·PID 등)을 단독 식별 불가. 복통 → Y0060과 같이 tier 직송.",
+      "trigger_pre_ktas": "level2=비뇨기계 또는 임신/여성생식계, 골반통",
+      "tier_recommendation": "regional_or_local_center",
+      "questions_needed": [],
+      "limitation": "Y0060과 같은 tier 처리."
     },
     "Y0120": {
       "label": "중증화상",
       "group": "A",
+      "draft_group": "A",
+      "consultant_changed": false,
       "rationale": "BSA + grade(2도 이상) + 호흡기 화상 동반 시 명확. ABA criteria 적용.",
       "trigger_pre_ktas": "level2=환경손상 또는 피부, level3=화상",
       "questions_needed": ["burn_severity"],
@@ -203,7 +259,9 @@
     "Y0131": {
       "label": "사지접합의 수술 (수족지접합)",
       "group": "A",
-      "rationale": "손가락/발가락 절단 부위 명시 → 명확. 시간 경과 무관하게 ICD-10에 시간 정보 없으므로 모두 인정 (frozen reference 결정).",
+      "draft_group": "A",
+      "consultant_changed": false,
+      "rationale": "손가락/발가락 절단 부위 명시 → 명확.",
       "trigger_pre_ktas": "level2=근골격계, level3=절단·외상성 절단",
       "questions_needed": ["replantation_part"],
       "limitation": "warm ischemia time은 별도 임상 정보"
@@ -211,24 +269,30 @@
     "Y0132": {
       "label": "사지접합의 수술 (수족지접합 외)",
       "group": "A",
+      "draft_group": "A",
+      "consultant_changed": false,
       "rationale": "팔/다리 절단 부위 명시 → 명확. 완전·부분 모두 포함.",
       "trigger_pre_ktas": "level2=근골격계, 사지 절단·압착",
       "questions_needed": ["replantation_part"],
-      "limitation": "Y0131과 분기 필요 (replantation_part)"
+      "limitation": "Y0131과 분기 필요"
     },
     "Y0141": {
       "label": "응급투석 (HD)",
       "group": "C",
-      "rationale": "다른 primary focus(약물 중독/AKI 합병/패혈증)의 secondary 적응. Pre-KTAS 코드 자체에 dialysis-specific 분류 부재. 신부전 의심·고칼륨·요독증 명시 시에도 시술 단정 불가. tier만.",
+      "draft_group": "C",
+      "consultant_changed": false,
+      "rationale": "다른 primary focus의 secondary. Pre-KTAS code 자체에 dialysis-specific 분류 부재. tier만.",
       "trigger_pre_ktas": "level2=물질오용 또는 심혈관계 또는 호흡기계, secondary 적응",
       "tier_recommendation": "regional_or_local_center",
-      "limitation": "Y0141 vs Y0142 split은 R57.x(쇼크) 동반 여부 — 임상 정보 별도 필요. C 그룹이므로 split 평가 대상 X.",
+      "limitation": "Y0141 vs Y0142 split은 R57.x 동반 — 임상 정보 별도 필요.",
       "user_note": "사용자 명시(추측): '투석 같은 시술은 다른 primary focus를 치료하는 중 신장 기능이 저하된 환자에게서 특별히 고려할 상황. 이것만을 위한 pre-ktas code가 존재하지 않을 것'",
-      "v01_issue": "recall 0% — 'rule absent'로 분류했으나 임상적으로 매핑 불가 영역"
+      "v01_issue": "recall 0% — 임상적으로 매핑 불가 영역"
     },
     "Y0142": {
       "label": "응급투석 (CRRT)",
       "group": "C",
+      "draft_group": "C",
+      "consultant_changed": false,
       "rationale": "Y0141과 동일. 혈역학 불안정 동반 secondary 적응. tier만.",
       "trigger_pre_ktas": "level2=다양 (sepsis·shock 동반)",
       "tier_recommendation": "regional_or_local_center",
@@ -238,35 +302,43 @@
     "Y0150": {
       "label": "정신과적 응급입원",
       "group": "A",
-      "rationale": "자해·자살시도 명시 또는 급성 정신증(F20·F23·F30·F31) → 명확. 자살시도는 X60-X84 범위로 reference에 frozen.",
+      "draft_group": "A",
+      "consultant_changed": false,
+      "rationale": "자해·자살시도 명시 또는 급성 정신증(F20·F23·F30·F31) → 명확.",
       "trigger_pre_ktas": "level2=정신건강, level3=자해/자살시도/급성 정신증",
       "questions_needed": ["psychiatric_risk"],
       "limitation": "정신건강 카테고리 전체 trigger는 over-inclusion (v0.1 issue). v0.2는 자해·정신증 명시 시만.",
       "user_note": "사용자 명시: '정신과응급은 코드만으로 잘 매핑'",
-      "v01_issue": "정신건강 카테고리 전체 trigger → 929 FP. specific feature 한정 필요."
+      "v01_issue": "정신건강 카테고리 전체 trigger → 929 FP."
     },
     "Y0160": {
       "label": "안과적 응급 수술",
       "group": "B",
-      "rationale": "안구 외상·시력 위협(급성 녹내장·안내염·망막박리) → 후보. 단순 각막 외상은 conditional_include.",
+      "draft_group": "B",
+      "consultant_changed": false,
+      "consultant_notes": "단순 각막외상, 눈병을 제외하고는 이 코드를 트리거할 수 있다. (Q7 답변) 안구 천공·관통상 명시 시 A 승격 가능.",
+      "rationale": "안구 외상·시력 위협 → 후보. 단순 각막 외상·눈병은 conditional 제외.",
       "trigger_pre_ktas": "level2=눈, level3=안구 외상/관통/시력 급격 저하",
       "questions_needed": ["eye_emergency_kind"],
-      "limitation": "현장에서 안구 손상 정도 평가 한계. 단순 외상과 응급수술 적응 구별 어려움.",
-      "consultant_note": "frozen reference에서 S05.0 conditional_include 처리 결정"
+      "limitation": "현장에서 안구 손상 정도 평가 한계. 단순 각막외상·눈병 제외 필터 필요.",
+      "conditional_promote_to_A": "안구 천공·관통상 명시 시 A confidence='confident'로 승격 (자문자 Q7 답변 기반)"
     },
     "Y0171": {
       "label": "영상의학 혈관중재 (성인)",
       "group": "C",
-      "rationale": "구급대원이 IR 시술 적응(massive PE catheter-directed, 동맥 색전증 등) 결정 불가. 혈역학 불안정·대량 출혈 명시 시에도 시술 분기는 병원 결정. tier만.",
+      "draft_group": "C",
+      "consultant_changed": false,
+      "rationale": "구급대원이 IR 시술 적응 결정 불가. tier만.",
       "trigger_pre_ktas": "level2=다양 (동맥 색전증·대량 PE 의심)",
       "tier_recommendation": "regional_only",
-      "limitation": "IR 가능 권역응급의료센터 직송. 시술 단정 X.",
-      "v01_strength": "v0.1에서 평가 대상 외 (recall 측정 안 됨)"
+      "limitation": "IR 가능 권역응급의료센터 직송. 시술 단정 X."
     },
     "Y0172": {
       "label": "영상의학 혈관중재 (영유아)",
       "group": "C",
-      "rationale": "Y0171과 동일. 영유아 혈관중재 적응은 신생아 두개내 출혈·동맥류 등 매우 specific. 현장 결정 불가. tier만.",
+      "draft_group": "C",
+      "consultant_changed": false,
+      "rationale": "Y0171과 동일. 영유아 혈관중재 적응은 매우 specific. 현장 결정 불가. tier만.",
       "trigger_pre_ktas": "age<12, level2=다양",
       "tier_recommendation": "regional_only",
       "limitation": "권역응급의료센터급 + 소아 IR 가능 시설 직송 권고만."
@@ -274,27 +346,72 @@
   },
   "summary": {
     "A_confident": {
-      "count": 12,
-      "codes": ["Y0010", "Y0081", "Y0082", "Y0091", "Y0092", "Y0100", "Y0111", "Y0112", "Y0120", "Y0131", "Y0132", "Y0150"]
+      "count": 10,
+      "codes": ["Y0010", "Y0081", "Y0082", "Y0091", "Y0092", "Y0111", "Y0120", "Y0131", "Y0132", "Y0150"]
     },
     "B_candidate": {
-      "count": 7,
-      "codes": ["Y0020", "Y0031", "Y0032", "Y0041", "Y0042", "Y0113", "Y0160"]
+      "count": 6,
+      "codes": ["Y0020", "Y0031", "Y0032", "Y0100", "Y0112", "Y0160"]
     },
     "C_tier_only": {
-      "count": 8,
-      "codes": ["Y0051", "Y0052", "Y0060", "Y0070", "Y0141", "Y0142", "Y0171", "Y0172"]
+      "count": 11,
+      "codes": ["Y0041", "Y0042", "Y0051", "Y0052", "Y0060", "Y0070", "Y0113", "Y0141", "Y0142", "Y0171", "Y0172"]
     }
   },
-  "consultant_review_questions": [
-    "이 A/B/C 분류에 동의하시는가? 특히 12·7·8 비율이 임상적으로 적절한가?",
-    "B → C 또는 C → B 이동 후보가 있는가? (예: Y0070을 B로 올리거나, Y0113을 C로 내리는 게 옳을지)",
-    "A 그룹 중 추가 질문이 더 필요한 케이스가 있는가? (예: Y0150 자해 명시 외에 추가 분기?)",
-    "C 그룹의 tier_recommendation 기본값이 적절한가? (regional_or_local_center vs regional_only vs local_center_preferred)",
-    "v0.1에서 over-trigger였던 Y0032(13,929 FP)·Y0150(929 FP)는 v0.2에서 specific feature 한정만으로 충분한가, 더 좁혀야 하는가?",
-    "각 Y코드의 'questions_needed'가 적절한가? 추가/제거 필요?",
-    "한 가지 검증 못 한 가설: Y0160 안과를 B로 두었으나, 안구 천공·관통상 명시 시 A로 승격 가능한가?",
-    "Y0070 영유아 장중첩이 C인 게 맞는가? 영유아 + 구토 + 혈변(currant jelly) → A 가능한지?"
+  "consultant_changes": [
+    {
+      "y_code": "Y0041",
+      "from": "B",
+      "to": "C",
+      "rationale": "찢어지는 흉통 → 먼저 PCI 가능 권역/지역센터 직송 → 검사 후 대동맥응급 판별이 임상적으로 옳음. 후보 단정보다 tier 직송."
+    },
+    {
+      "y_code": "Y0042",
+      "from": "B",
+      "to": "C",
+      "rationale": "찢어지는 복통 → 권역/지역센터 직송 → 병원 검사 후 결정. 동일 원칙."
+    },
+    {
+      "y_code": "Y0100",
+      "from": "A",
+      "to": "B",
+      "rationale": "출생 직후 구급대 호출 매우 드묾. Y0111(분만)과 동시 trigger 후보로 처리."
+    },
+    {
+      "y_code": "Y0112",
+      "from": "A",
+      "to": "B",
+      "rationale": "Y0111과 동시 필요 가능성. 단독 confident가 아니라 후보군."
+    },
+    {
+      "y_code": "Y0113",
+      "from": "B",
+      "to": "C",
+      "rationale": "현장에서 복통 vs 부인과 응급 구분 불가. Y0060과 같은 tier 처리."
+    }
+  ],
+  "consultant_principle_extracted": "후보군으로 좁히기보다 적합한 tier 병원으로 직송 + 병원이 영상/검사 후 결정. Y0041/0042/0113 모두 B→C 변경은 이 일관된 임상 원칙의 적용. v0.2 알고리즘은 이 원칙을 내재화해야 함.",
+  "open_items_for_v0_2": [
+    {
+      "topic": "추가 질문 catalog 정밀화 (자문자 Q3·Q6 위임)",
+      "consultant_answer": "몇 가지는 추가질문이 도움이 될 수도 있을 거 같다. 너가 고민하고 제안하라.",
+      "maintainer_responsibility": "Phase 9c 알고리즘 설계 시 각 그룹별 적절한 question catalog 정의"
+    },
+    {
+      "topic": "Y0160 conditional_promote_to_A",
+      "consultant_answer": "맞다. (Q7) 안구 천공·관통상 명시 시 A 승격.",
+      "maintainer_responsibility": "Phase 9c 알고리즘에 conditional confidence upgrade 룰 구현"
+    },
+    {
+      "topic": "tier_recommendation 4 옵션 plain language",
+      "consultant_answer": "무슨말인지 모르겠다. (Q4) — maintainer jargon 책임",
+      "maintainer_responsibility": "Phase 9c에서 tier 옵션은 maintainer 결정 (default: regional_or_local_center). 향후 자문 도구는 plain language."
+    },
+    {
+      "topic": "Y0032 over-trigger 좁히기 정도",
+      "consultant_answer": "무슨말인지 모르겠다. (Q5)",
+      "maintainer_responsibility": "Phase 9c에서 maintainer 결정 — specific feature(편마비·GCS<13·극심한 두통) 한정"
+    }
   ],
   "schema_for_v0_2_algorithm": {
     "description": "이 매트릭스는 build-prektas-to-y-mapping-v0.2.mjs가 각 Pre-KTAS 코드 entry에 대해 다음을 결정하는 데 사용됨",
@@ -305,6 +422,12 @@
       "tier_recommendation": "{ preferred, acceptable[] } — 모든 그룹에 부여",
       "questions": "0-3 추가 질문 ID list",
       "rationale": "임상 추론 한 줄"
+    },
+    "special_rules": {
+      "Y0100_Y0111_Y0112_co_trigger": "임신 주수 + 분만 임박 → Y0111(A confident) + Y0100(B) + Y0112(B) 동시 trigger",
+      "Y0160_conditional_promote": "level3·level4 텍스트에 '안구 천공' 또는 '관통상' 매칭 시 confidence='confident' 승격",
+      "Y0150_specific_feature_only": "정신건강 카테고리 전체 trigger 금지. '자해·자살시도' 또는 '급성 정신증(F20·F23·F30·F31 의심)' 명시 시만",
+      "Y0032_specific_feature_only": "신경계 카테고리 전체 trigger 금지. '편마비' OR 'GCS<13' OR '극심한 두통' 명시 시만"
     }
   }
 }

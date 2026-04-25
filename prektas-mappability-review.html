@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Phase 9b — 매핑성 매트릭스 자문자 검토</title>
+<style>
+  :root {
+    --ink: #0a0a0a;
+    --bg: #fafaf8;
+    --surface: #ffffff;
+    --dim: #6b6b68;
+    --muted: #94948f;
+    --line: rgba(10,10,10,0.14);
+    --line-soft: rgba(10,10,10,0.07);
+    --accent: #a8231c;
+    --accent-soft: rgba(168,35,28,0.08);
+    --good: #1f7a3d;
+    --good-soft: rgba(31,122,61,0.08);
+    --warn: #b8860b;
+    --warn-soft: rgba(184,134,11,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { background: var(--bg); color: var(--ink); font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Helvetica Neue", sans-serif; font-feature-settings: "tnum"; line-height: 1.55; font-size: 15px; }
+
+  .app { display: grid; grid-template-columns: 300px 1fr; min-height: 100vh; }
+  @media (max-width: 880px) { .app { grid-template-columns: 1fr; } .sidebar { position: fixed; bottom: 0; left: 0; right: 0; max-height: 50vh; overflow-y: auto; z-index: 10; border-top: 2px solid var(--ink); background: var(--surface); } .main { padding-bottom: 50vh; } }
+
+  .sidebar { border-right: 1px solid var(--line); background: var(--surface); padding: 24px 0; overflow-y: auto; max-height: 100vh; position: sticky; top: 0; }
+  .sidebar h1 { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; padding: 0 24px; margin-bottom: 6px; font-weight: 800; }
+  .sidebar .sub { font-size: 11px; color: var(--dim); padding: 0 24px 18px; border-bottom: 1px solid var(--line); }
+
+  .progress-bar { padding: 16px 24px; border-top: 1px solid var(--line); margin-top: 12px; }
+  .bar-bg { width: 100%; height: 4px; background: var(--line-soft); position: relative; }
+  .bar-fill { position: absolute; left: 0; top: 0; height: 100%; background: var(--accent); transition: width 0.2s; }
+  .bar-text { font-size: 11px; color: var(--dim); margin-top: 6px; font-family: ui-monospace, monospace; }
+
+  .nav-section { padding: 14px 24px 6px; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .nav-section.A { color: var(--good); }
+  .nav-section.B { color: var(--warn); }
+  .nav-section.C { color: var(--accent); }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 7px 24px; cursor: pointer; font-size: 13px; border-left: 2px solid transparent; transition: background 0.1s, border-color 0.1s; }
+  .nav-item:hover { background: var(--accent-soft); }
+  .nav-item.active { border-left-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+  .nav-item .nav-code { font-family: ui-monospace, monospace; font-size: 11px; color: var(--dim); flex-shrink: 0; width: 50px; }
+  .nav-item.active .nav-code { color: var(--accent); }
+  .nav-item .nav-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+  .nav-item .nav-grp { font-size: 9px; font-weight: 800; padding: 2px 5px; border: 1px solid; letter-spacing: 0.05em; }
+  .nav-item .nav-grp.A { color: var(--good); border-color: var(--good); }
+  .nav-item .nav-grp.B { color: var(--warn); border-color: var(--warn); }
+  .nav-item .nav-grp.C { color: var(--accent); border-color: var(--accent); }
+  .nav-item.changed .nav-grp { background: var(--accent); color: #fff; }
+  .nav-item.touched::after { content: '●'; font-size: 8px; color: var(--good); margin-left: 4px; }
+
+  .actions { padding: 12px 24px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); }
+  .btn { padding: 8px 14px; border: 1px solid var(--accent); background: var(--surface); color: var(--accent); font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px; text-align: center; transition: background 0.1s, color 0.1s; }
+  .btn:hover { background: var(--accent); color: #fff; }
+  .btn.secondary { border-color: var(--line); color: var(--ink); }
+  .btn.secondary:hover { background: var(--ink); color: #fff; }
+  .btn.danger { border-color: var(--accent); color: var(--accent); }
+
+  .main { padding: 40px 48px 80px; max-width: 1000px; }
+  @media (max-width: 880px) { .main { padding: 24px 20px 60px; } }
+
+  .preamble { padding-bottom: 28px; border-bottom: 2px solid var(--ink); margin-bottom: 28px; }
+  .preamble .kicker { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 8px; }
+  .preamble h1 { font-size: clamp(26px, 3.6vw, 36px); line-height: 1.1; letter-spacing: -0.02em; font-weight: 900; margin-bottom: 12px; }
+  .preamble .lede { font-size: 15px; color: var(--dim); max-width: 64ch; line-height: 1.55; }
+  .preamble .meta { display: flex; gap: 18px; margin-top: 14px; font-size: 12px; color: var(--dim); flex-wrap: wrap; font-family: ui-monospace, monospace; }
+
+  /* Welcome / Y-code / Questions / Export sections */
+  section[data-section] { display: none; padding: 14px 0; }
+  section[data-section].active { display: block; }
+
+  .welcome ul { padding-left: 20px; margin: 14px 0; }
+  .welcome li { margin: 8px 0; line-height: 1.6; }
+  .welcome h2 { font-size: 22px; font-weight: 800; margin-bottom: 14px; letter-spacing: -0.02em; }
+  .welcome h3 { margin-top: 20px; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+
+  .y-card .y-header { display: flex; align-items: baseline; gap: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 22px; flex-wrap: wrap; }
+  .y-code-tag { font-family: ui-monospace, monospace; font-size: 14px; font-weight: 700; color: var(--accent); }
+  .y-card h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+  .y-card .y-meta { font-size: 12px; color: var(--dim); margin-left: auto; }
+  .group-badge { display: inline-block; padding: 2px 8px; border: 1.5px solid; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; }
+  .group-badge.A { color: var(--good); border-color: var(--good); }
+  .group-badge.B { color: var(--warn); border-color: var(--warn); }
+  .group-badge.C { color: var(--accent); border-color: var(--accent); }
+
+  .field-group { margin-bottom: 22px; }
+  .field-group h3 { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); font-weight: 700; margin-bottom: 4px; }
+  .field-group .help { font-size: 12px; color: var(--dim); margin-bottom: 8px; line-height: 1.5; max-width: 64ch; }
+  .field-group .info-block { padding: 10px 14px; background: var(--surface); border: 1px solid var(--line-soft); font-size: 13px; line-height: 1.55; }
+  .field-group .info-block.user-note { border-left: 3px solid var(--accent); }
+  .field-group .info-block strong { color: var(--accent); }
+  .info-row { display: grid; grid-template-columns: 110px 1fr; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line-soft); font-size: 13px; line-height: 1.55; }
+  .info-row .lbl { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; padding-top: 2px; }
+  .info-row .val { color: var(--ink); }
+  .info-row .val.code { font-family: ui-monospace, monospace; font-size: 12px; }
+
+  .group-radio { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
+  @media (max-width: 640px) { .group-radio { grid-template-columns: 1fr 1fr; } }
+  .group-radio label { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1.5px solid var(--line); cursor: pointer; transition: all 0.1s; font-size: 13px; }
+  .group-radio label:hover { background: var(--accent-soft); }
+  .group-radio label.selected.A { background: var(--good-soft); border-color: var(--good); color: var(--good); font-weight: 700; }
+  .group-radio label.selected.B { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); font-weight: 700; }
+  .group-radio label.selected.C { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  .group-radio label.selected.unmapped { background: #f0f0eb; border-color: var(--ink); font-weight: 700; }
+  .group-radio input[type="radio"] { accent-color: var(--accent); }
+
+  .change-flag { padding: 8px 12px; font-size: 12px; font-weight: 700; margin-top: 10px; }
+  .change-flag.same { color: var(--good); background: var(--good-soft); border-left: 3px solid var(--good); }
+  .change-flag.changed { color: var(--accent); background: var(--accent-soft); border-left: 3px solid var(--accent); }
+
+  textarea.notes { width: 100%; padding: 10px 12px; border: 1px solid var(--line); font-family: inherit; font-size: 13px; line-height: 1.5; min-height: 70px; resize: vertical; }
+  textarea.notes:focus { outline: 2px solid var(--accent); }
+
+  .nav-buttons { display: flex; justify-content: space-between; gap: 12px; margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .nav-buttons .btn { flex: 0 1 auto; min-width: 120px; }
+
+  /* Review questions */
+  .question-card { border: 1px solid var(--line); padding: 16px 18px; background: var(--surface); margin: 14px 0; }
+  .question-card .q-num { font-size: 22px; font-weight: 900; color: var(--accent); margin-bottom: 6px; letter-spacing: -0.02em; }
+  .question-card .q-text { font-size: 14px; line-height: 1.55; margin-bottom: 10px; font-weight: 600; }
+  .question-card textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); font-family: inherit; font-size: 13px; min-height: 80px; resize: vertical; }
+  .question-card textarea:focus { outline: 2px solid var(--accent); }
+
+  /* Export */
+  .export-preview { background: var(--surface); border: 1px solid var(--line); padding: 14px; margin: 16px 0; max-height: 400px; overflow: auto; font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
+  .export-actions { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+
+  .summary-block { padding: 14px 18px; background: var(--surface); border: 1px solid var(--line); margin: 12px 0; font-size: 13px; line-height: 1.6; }
+  .summary-block strong { color: var(--accent); }
+
+  h2.section-title { font-size: 22px; font-weight: 800; margin-bottom: 14px; letter-spacing: -0.02em; }
+  p.section-help { color: var(--dim); margin-bottom: 16px; max-width: 64ch; line-height: 1.6; font-size: 14px; }
+
+  code { font-family: ui-monospace, monospace; font-size: 0.9em; background: var(--line-soft); padding: 1px 5px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <h1>Phase 9b 검토</h1>
+    <div class="sub">매핑성 매트릭스 v1.0-draft → frozen</div>
+
+    <div class="progress-bar">
+      <div class="bar-bg"><div class="bar-fill" id="progress-fill"></div></div>
+      <div class="bar-text" id="progress-text">0 / 35 검토 완료</div>
+    </div>
+
+    <nav id="nav-list"></nav>
+
+    <div class="actions">
+      <button class="btn secondary" id="nav-welcome">📖 안내</button>
+      <button class="btn secondary" id="nav-questions">❓ 검토 질문 8개</button>
+      <button class="btn" id="nav-export">⬇ 결과 내보내기</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="preamble">
+      <div class="kicker">Phase 9b · 매핑성 매트릭스 자문자 검토</div>
+      <h1>27 Y코드 × A/B/C 분류 — 1차 초안 검토 후 frozen</h1>
+      <p class="lede">v0.1 보고서의 "sensitivity 39.4% → 임상 활용 불가" framing을 reframe하기 위해, 각 Y코드를 임상 매핑성에 따라 <strong>A(Confident) / B(Candidate) / C(Tier-only)</strong>로 분류합니다. 본 도구는 maintainer 1차 초안(A:12 · B:7 · C:8)에 대한 자문자 30분 검토용입니다. 동의 시 그대로 두고, 변경 시 라디오 + 자유 메모로 의견 기록 → JSON export.</p>
+      <div class="meta">
+        <span>Matrix v1.0-draft</span>
+        <span>Session: <span id="session-id">―</span></span>
+        <span>Last saved: <span id="last-saved">―</span></span>
+      </div>
+    </div>
+
+    <section class="welcome active" data-section="welcome" id="section-welcome"></section>
+
+    <div id="ycode-sections"></div>
+
+    <section data-section="questions" id="section-questions"></section>
+
+    <section data-section="export" id="section-export"></section>
+  </main>
+</div>
+
+<script>
+'use strict';
+
+function el(tag, attrs, children) {
+  const e = document.createElement(tag);
+  if (attrs) for (const k in attrs) {
+    if (k === 'class') e.className = attrs[k];
+    else if (k === 'style') e.style.cssText = attrs[k];
+    else if (k === 'text') e.textContent = attrs[k];
+    else if (k.indexOf('data-') === 0) e.setAttribute(k, attrs[k]);
+    else e.setAttribute(k, attrs[k]);
+  }
+  if (children) children.forEach(c => {
+    if (c == null) return;
+    if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+    else e.appendChild(c);
+  });
+  return e;
+}
+function clearChildren(node) { while (node && node.firstChild) node.removeChild(node.firstChild); }
+
+// ────────────────── Inline matrix data (v1.0-draft) ──────────────────
+const Y_CODES_MATRIX = [
+  {"code":"Y0010","label":"심근경색의 재관류중재술","group":"A","rationale":"압박성 흉통(심인성 의심) + 성인 → STEMI/NSTEMI 임상 의심 명확. PCI 가능 권역/지역응급의료센터 직송 명확.","trigger_pre_ktas":"level2=심혈관계, level3=흉통(심장성), 압박성/조이는 character","questions_needed":["chest_pain_character"],"limitation":"흉통 양상이 모호한 경우 Y0041과 분기 필요 (B로 fallback)","user_note":"사용자 명시: '심근경색은 코드만으로 잘 매핑'"},
+  {"code":"Y0020","label":"뇌경색의 재관류중재술","group":"B","rationale":"FAST 양성 + 발병시각으로 후보군 진입. 뇌출혈과의 감별은 영상 후. 후보로 출력하되 단정 X.","trigger_pre_ktas":"level2=신경계, level3=뇌졸중/편마비/구음장애","questions_needed":["onset_time_stroke"],"limitation":"현장에서 뇌경색 vs 뇌출혈 구별 불가. 둘 다 후보로 출력 권장.","co_candidates":["Y0031","Y0032"]},
+  {"code":"Y0031","label":"뇌출혈수술 (거미막하 출혈)","group":"B","rationale":"극심한 두통 + 의식변화 + 비외상성 → 후보. 동맥류 파열 vs 자발성 vs 외상성 구별은 CT 후.","trigger_pre_ktas":"level2=신경계, level3=두통(극심)/의식변화","questions_needed":["trauma_or_spontaneous"],"limitation":"외상성과 자발성 구별이 현장에서 100% 명확하지 않음.","co_candidates":["Y0032","Y0020"]},
+  {"code":"Y0032","label":"뇌출혈수술 (거미막하 출혈 외)","group":"B","rationale":"비외상성 의식변화 + 편마비 → 후보. CT 전 단정 불가.","trigger_pre_ktas":"level2=신경계, level3=의식변화/편마비/발작","questions_needed":["trauma_or_spontaneous"],"limitation":"v0.1에서 신경계 카테고리 광범위 trigger로 13,929 FP. v0.2는 specific feature 한정.","v01_issue":"13,929 FP — over-trigger 좁히기 critical","co_candidates":["Y0031","Y0020"]},
+  {"code":"Y0041","label":"대동맥응급 (흉부)","group":"B","rationale":"찢어지는 통증 + 흉부·등 통증 + 이동성 → 후보. Y0010과 분기 위해 character 질문 필요.","trigger_pre_ktas":"level2=심혈관계, 찢어지는/이동성 통증","questions_needed":["chest_pain_character","aortic_location"],"limitation":"현장에서 박리 vs 동맥류 vs 단순 흉통 분기 모호.","co_candidates":["Y0010","Y0042"]},
+  {"code":"Y0042","label":"대동맥응급 (복부)","group":"B","rationale":"박동성 복통 + 쇼크 + 노인 → 후보. AAA rupture 의심.","trigger_pre_ktas":"level2=심혈관계 또는 소화기계, 박동성 복통 + 쇼크","questions_needed":["aortic_location"],"limitation":"현장에서 단순 복통과 AAA 구별 어려움. 쇼크·노인 trigger로 좁힘.","co_candidates":["Y0041","Y0060"]},
+  {"code":"Y0051","label":"담낭담관질환 (담낭질환)","group":"C","rationale":"이미지 검사(US/CT) 이전에는 담낭 vs 담도 구별 불가능. 우상복부 통증 + 발열 → 둘 다 가능. y_candidates에서 단정 X. tier만 권고.","trigger_pre_ktas":"level2=소화기계, level3=우상복부 통증 + 발열·황달","tier_recommendation":"regional_or_local_center","limitation":"Y0051과 Y0052를 묶어 처리. 현장에서 구별 시도 X.","user_note":"사용자 명시: '담도질환과 담낭질환은 이미지 검사 이전에는 구별하여 알기 힘들 것'","v01_issue":"recall 0% — 'rule absent'로 분류했으나 실은 임상적으로 매핑 불가 영역"},
+  {"code":"Y0052","label":"담낭담관질환 (담도포함질환)","group":"C","rationale":"Y0051과 동일. 담관염은 황달·Charcot triad 시 의심하나 영상 전 단정 불가. tier만.","trigger_pre_ktas":"level2=소화기계, level3=황달·우상복부 통증","tier_recommendation":"regional_or_local_center","limitation":"Y0051과 묶어 처리.","v01_issue":"recall 0.3% — rule near-absent, 실제로 매핑 불가 영역"},
+  {"code":"Y0060","label":"복부응급수술 (비외상)","group":"C","rationale":"현장 시점에 특정 시술(충수절제 vs 장폐색 reduction vs 복막염 세척) 결정 불가. 복통 심각도 + 복막자극 명시 시 권역/지역응급의료센터급 tier 권고만.","trigger_pre_ktas":"level2=소화기계, level3=복통(심함)/복막자극·rebound·guarding","tier_recommendation":"regional_or_local_center","limitation":"Y0060 자체가 '복부응급수술'이라는 광범위 카테고리. 현장에서 시술 단정 시도가 부적절.","v01_issue":"recall 0% — 'rule absent'로 분류했으나 임상적으로 매핑 불가 영역"},
+  {"code":"Y0070","label":"장중첩/폐색 (영유아)","group":"C","rationale":"영유아 + 복통/구토는 후보군에 들어가지만 장중첩 단정 불가 (영상 후 결정). tier 위주 (지역응급의료센터급).","trigger_pre_ktas":"level2=소화기계, age<12, 복통/구토/혈변","tier_recommendation":"regional_or_local_center","limitation":"Y0082 위장관내시경(영유아)와 분기도 모호."},
+  {"code":"Y0081","label":"위장관 응급내시경 (성인)","group":"A","rationale":"토혈·흑색변 명시 + 성인 → 응급 상부위장관 내시경 적응 명확. 시술 가능한 권역/지역응급의료센터 직송.","trigger_pre_ktas":"level2=소화기계, level3=토혈/흑색변, age≥18","questions_needed":["bleeding_site"],"limitation":"하부 위장관 출혈(K62.5)은 conditional_include로 처리.","user_note":"사용자 명시: '내시경은 코드만으로 잘 매핑'"},
+  {"code":"Y0082","label":"위장관 응급내시경 (영유아)","group":"A","rationale":"영유아 + 토혈/이물 → 명확. age<12 + 위장관 출혈/이물.","trigger_pre_ktas":"level2=소화기계, age<12, 토혈/흑색변/이물","questions_needed":["bleeding_site"],"limitation":"이물의 경우 Y0092(기관지)와 분기 필요"},
+  {"code":"Y0091","label":"기관지 응급내시경 (성인)","group":"A","rationale":"기도 이물 명시 + 성인 → 응급 기관지 내시경 명확.","trigger_pre_ktas":"level2=호흡기계, level3=기도 이물/흡인, age≥18","questions_needed":["foreign_body_site"],"limitation":"대량 각혈(R04.2)은 conditional_include로 처리 (massive only).","co_candidates":["Y0171"]},
+  {"code":"Y0092","label":"기관지 응급내시경 (영유아)","group":"A","rationale":"영유아 + 기도 이물은 흔한 응급. 명확.","trigger_pre_ktas":"level2=호흡기계, age<12, 기도 이물/흡인","questions_needed":["foreign_body_site"],"limitation":"Y0082(위장관)와 분기 필요 (foreign body site)"},
+  {"code":"Y0100","label":"저체중출생아","group":"A","rationale":"출생 체중으로 결정. <2500g (frozen reference WHO 정의).","trigger_pre_ktas":"level2=신생아, 저체중·미숙아 명시","questions_needed":[],"limitation":"출생 직후 환자만 해당, 현장에서 체중 추정 가능"},
+  {"code":"Y0111","label":"산부인과 응급 (분만)","group":"A","rationale":"분만 임박 또는 진행 중 → 명확. 산부인과 가능 병원 직송.","trigger_pre_ktas":"level2=임신/여성생식계, level3=분만/진통","questions_needed":[],"limitation":"정상 분만은 frozen reference에서 include로 결정됨.","user_note":"사용자 명시: '산과는 코드만으로 잘 매핑'"},
+  {"code":"Y0112","label":"산부인과 응급 (산과수술)","group":"A","rationale":"임신 + 출혈/태반조기박리/자간증/자궁외임신 → 명확. 응급 산과 수술 적응.","trigger_pre_ktas":"level2=임신/여성생식계, level3=출혈·전치태반·자간증","questions_needed":["pregnancy_status"],"limitation":"임신 주수 정보 필요 (조기진통 vs 임박 분만 분기)"},
+  {"code":"Y0113","label":"산부인과 응급 (부인과수술)","group":"B","rationale":"골반통/난소염전 의심 → 후보. PID와 fallback 분기 필요.","trigger_pre_ktas":"level2=임신/여성생식계 또는 비뇨기계, 골반통/하복부 통증","questions_needed":["pregnancy_status"],"limitation":"현장에서 난소염전 vs 충수염 vs PID 구별 어려움.","co_candidates":["Y0060"]},
+  {"code":"Y0120","label":"중증화상","group":"A","rationale":"BSA + grade(2도 이상) + 호흡기 화상 동반 시 명확. ABA criteria 적용.","trigger_pre_ktas":"level2=환경손상 또는 피부, level3=화상","questions_needed":["burn_severity"],"limitation":"BSA 추정의 현장 정확성 한계 (전문의 자문 의견)","v01_strength":"F1 0.60 (best-performing)"},
+  {"code":"Y0131","label":"사지접합의 수술 (수족지접합)","group":"A","rationale":"손가락/발가락 절단 부위 명시 → 명확. 시간 경과 무관.","trigger_pre_ktas":"level2=근골격계, level3=절단·외상성 절단","questions_needed":["replantation_part"],"limitation":"warm ischemia time은 별도 임상 정보"},
+  {"code":"Y0132","label":"사지접합의 수술 (수족지접합 외)","group":"A","rationale":"팔/다리 절단 부위 명시 → 명확. 완전·부분 모두 포함.","trigger_pre_ktas":"level2=근골격계, 사지 절단·압착","questions_needed":["replantation_part"],"limitation":"Y0131과 분기 필요"},
+  {"code":"Y0141","label":"응급투석 (HD)","group":"C","rationale":"다른 primary focus(약물 중독/AKI 합병/패혈증)의 secondary 적응. Pre-KTAS 코드 자체에 dialysis-specific 분류 부재. 신부전 의심·고칼륨·요독증 명시 시에도 시술 단정 불가. tier만.","trigger_pre_ktas":"level2=물질오용 또는 심혈관계 또는 호흡기계, secondary 적응","tier_recommendation":"regional_or_local_center","limitation":"Y0141 vs Y0142 split은 R57.x(쇼크) 동반 여부 — 임상 정보 별도 필요.","user_note":"사용자 명시(추측): '투석 같은 시술은 다른 primary focus를 치료하는 중 신장 기능이 저하된 환자에게서 특별히 고려할 상황. 이것만을 위한 pre-ktas code가 존재하지 않을 것'","v01_issue":"recall 0% — 'rule absent'로 분류했으나 임상적으로 매핑 불가 영역"},
+  {"code":"Y0142","label":"응급투석 (CRRT)","group":"C","rationale":"Y0141과 동일. 혈역학 불안정 동반 secondary 적응. tier만.","trigger_pre_ktas":"level2=다양 (sepsis·shock 동반)","tier_recommendation":"regional_or_local_center","limitation":"Y0141과 묶어 처리.","v01_issue":"recall 0% — rule absent (실은 매핑 불가 영역)"},
+  {"code":"Y0150","label":"정신과적 응급입원","group":"A","rationale":"자해·자살시도 명시 또는 급성 정신증(F20·F23·F30·F31) → 명확.","trigger_pre_ktas":"level2=정신건강, level3=자해/자살시도/급성 정신증","questions_needed":["psychiatric_risk"],"limitation":"정신건강 카테고리 전체 trigger는 over-inclusion (v0.1 issue). v0.2는 자해·정신증 명시 시만.","user_note":"사용자 명시: '정신과응급은 코드만으로 잘 매핑'","v01_issue":"정신건강 카테고리 전체 trigger → 929 FP."},
+  {"code":"Y0160","label":"안과적 응급 수술","group":"B","rationale":"안구 외상·시력 위협(급성 녹내장·안내염·망막박리) → 후보. 단순 각막 외상은 conditional_include.","trigger_pre_ktas":"level2=눈, level3=안구 외상/관통/시력 급격 저하","questions_needed":["eye_emergency_kind"],"limitation":"현장에서 안구 손상 정도 평가 한계.","consultant_note":"frozen reference에서 S05.0 conditional_include 처리 결정"},
+  {"code":"Y0171","label":"영상의학 혈관중재 (성인)","group":"C","rationale":"구급대원이 IR 시술 적응(massive PE catheter-directed, 동맥 색전증 등) 결정 불가. 혈역학 불안정·대량 출혈 명시 시에도 시술 분기는 병원 결정. tier만.","trigger_pre_ktas":"level2=다양 (동맥 색전증·대량 PE 의심)","tier_recommendation":"regional_only","limitation":"IR 가능 권역응급의료센터 직송. 시술 단정 X."},
+  {"code":"Y0172","label":"영상의학 혈관중재 (영유아)","group":"C","rationale":"Y0171과 동일. 영유아 혈관중재 적응은 매우 specific. 현장 결정 불가. tier만.","trigger_pre_ktas":"age<12, level2=다양","tier_recommendation":"regional_only","limitation":"권역응급의료센터급 + 소아 IR 가능 시설 직송 권고만."}
+];
+
+const REVIEW_QUESTIONS = [
+  {id: 1, q: "이 A/B/C 분류에 동의하시는가? 특히 12·7·8 비율이 임상적으로 적절한가?"},
+  {id: 2, q: "B → C 또는 C → B 이동 후보가 있는가? (예: Y0070을 B로 올리거나, Y0113을 C로 내리는 게 옳을지)"},
+  {id: 3, q: "A 그룹 중 추가 질문이 더 필요한 케이스가 있는가? (예: Y0150 자해 명시 외에 추가 분기?)"},
+  {id: 4, q: "C 그룹의 tier_recommendation 기본값이 적절한가? (regional_or_local_center vs regional_only vs local_center_preferred)"},
+  {id: 5, q: "v0.1에서 over-trigger였던 Y0032(13,929 FP)·Y0150(929 FP)는 v0.2에서 specific feature 한정만으로 충분한가, 더 좁혀야 하는가?"},
+  {id: 6, q: "각 Y코드의 'questions_needed'가 적절한가? 추가/제거 필요?"},
+  {id: 7, q: "Y0160 안과를 B로 두었으나, 안구 천공·관통상 명시 시 A로 승격 가능한가?"},
+  {id: 8, q: "Y0070 영유아 장중첩이 C인 게 맞는가? 영유아 + 구토 + 혈변(currant jelly) → A 가능한지?"},
+];
+
+const STORAGE_KEY = 'emris_mappability_review_v1';
+const GROUP_LABELS = {
+  'A': 'A · Confident (코드만으로 결정)',
+  'B': 'B · Candidate (후보군)',
+  'C': 'C · Tier-only (Y매핑 불가)',
+  'unmapped': 'Unmapped (27 외 + grade 기반 tier)',
+};
+
+// ────────────────── State ──────────────────
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { console.warn('[state] load failed', e); }
+  return initState();
+}
+function initState() {
+  const yc = {};
+  Y_CODES_MATRIX.forEach(y => {
+    yc[y.code] = { consultant_group: y.group, notes: '', touched: false };
+  });
+  const qa = {};
+  REVIEW_QUESTIONS.forEach(q => qa[q.id] = '');
+  return {
+    review_id: 'MAPPABILITY-REVIEW-' + Date.now().toString(36),
+    started_at: new Date().toISOString(),
+    last_saved: null,
+    matrix_version: '1.0-draft',
+    y_codes: yc,
+    review_question_answers: qa,
+    additional_comments: '',
+  };
+}
+function saveState() {
+  state.last_saved = new Date().toISOString();
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch (e) { console.warn('[state] save failed', e); }
+  document.getElementById('last-saved').textContent = new Date().toLocaleTimeString('ko-KR', {hour12:false});
+  updateProgress();
+}
+function resetAll() {
+  localStorage.removeItem(STORAGE_KEY);
+  state = initState();
+  renderAll();
+  goToSection('welcome');
+}
+
+// ────────────────── Render: Welcome ──────────────────
+function renderWelcome() {
+  const w = document.getElementById('section-welcome');
+  clearChildren(w);
+  w.appendChild(el('div', {class:'welcome'}, [
+    (() => {
+      const h2 = el('h2', {text:'시작하기 전에'});
+      return h2;
+    })(),
+    el('p', {text:'본 검토는 두 영역으로 구성됩니다.'}),
+    (() => {
+      const card = el('div', {class:'summary-block'});
+      card.appendChild(el('strong', {text:'영역 1 · Y코드 27개 (필수)'}));
+      card.appendChild(el('br'));
+      card.appendChild(document.createTextNode('각 Y코드 페이지에서 1차 초안의 그룹(A/B/C)에 동의하시면 그대로 두고, 변경하시면 라디오 + 자유 메모로 의견 기록. 동의도 명시하면 좋음.'));
+      return card;
+    })(),
+    (() => {
+      const card = el('div', {class:'summary-block'});
+      card.appendChild(el('strong', {text:'영역 2 · 검토 질문 8개'}));
+      card.appendChild(el('br'));
+      card.appendChild(document.createTextNode('전체 매트릭스에 대한 8개 검토 질문에 답변. 자유 textarea.'));
+      return card;
+    })(),
+    el('h3', {text:'그룹 정의'}),
+    (() => {
+      const ul = el('ul');
+      ul.appendChild(el('li', {}, [el('strong', {style:'color:var(--good)', text:'A (Confident Y mapping):'}), ' Pre-KTAS 코드 또는 0–3 질문만으로 시술 적응이 명확. 12개.']));
+      ul.appendChild(el('li', {}, [el('strong', {style:'color:var(--warn)', text:'B (Candidate Y mapping):'}), ' Y코드 후보군(2–3개)로 좁힐 수 있으나 단정 불가. 7개.']));
+      ul.appendChild(el('li', {}, [el('strong', {style:'color:var(--accent)', text:'C (Tier-only):'}), ' 현장 정보로 Y코드 결정 불가능. tier만 권고. 8개.']));
+      return ul;
+    })(),
+    el('h3', {text:'작업 방법'}),
+    (() => {
+      const ul = el('ul');
+      ['왼쪽 사이드바 Y0010부터 차례로 또는 관심 코드부터 자유롭게 선택.',
+       '각 Y코드 페이지의 1차 초안 그룹은 default로 선택되어 있습니다. 동의하면 그대로, 변경하면 다른 라디오 + 메모.',
+       '"변경됨" 표시는 1차 초안과 자문자 결정이 다를 때 자동 강조.',
+       '진행 후 검토 질문 8개 답변 → ⬇ 결과 내보내기로 JSON 다운로드 또는 클립보드.',
+       '모든 입력은 localStorage에 자동 저장. 브라우저 닫고 나중에 돌아와도 보존.',
+       '예상 소요: 30분.'].forEach(t => ul.appendChild(el('li', {text:t})));
+      return ul;
+    })(),
+    (() => {
+      const navDiv = el('div', {class:'nav-buttons'});
+      navDiv.appendChild(el('div'));
+      const startBtn = el('button', {class:'btn', text:'▶ 시작 (Y0010 심근경색)'});
+      startBtn.addEventListener('click', () => goToSection('Y0010'));
+      navDiv.appendChild(startBtn);
+      return navDiv;
+    })(),
+  ]));
+}
+
+// ────────────────── Render: Nav ──────────────────
+function renderNav() {
+  const nav = document.getElementById('nav-list');
+  clearChildren(nav);
+
+  ['A', 'B', 'C'].forEach(g => {
+    const items = Y_CODES_MATRIX.filter(y => y.group === g);
+    nav.appendChild(el('div', {class:'nav-section ' + g, text: g + ' · ' + items.length + '개'}));
+    items.forEach(y => {
+      const consultantGroup = state.y_codes[y.code].consultant_group;
+      const changed = consultantGroup !== y.group;
+      const item = el('div', {class:'nav-item' + (changed ? ' changed' : '') + (state.y_codes[y.code].touched ? ' touched' : ''), 'data-section':y.code});
+      item.appendChild(el('span', {class:'nav-code', text:y.code}));
+      item.appendChild(el('span', {class:'nav-label', text:y.label.split(' ')[0]}));
+      item.appendChild(el('span', {class:'nav-grp ' + consultantGroup, text:consultantGroup}));
+      item.addEventListener('click', () => goToSection(y.code));
+      nav.appendChild(item);
+    });
+  });
+}
+
+// ────────────────── Render: Y-code cards ──────────────────
+function renderYCodes() {
+  const container = document.getElementById('ycode-sections');
+  clearChildren(container);
+  Y_CODES_MATRIX.forEach(y => {
+    const sec = el('section', {class:'y-card', 'data-section':y.code});
+
+    const header = el('div', {class:'y-header'});
+    header.appendChild(el('span', {class:'y-code-tag', text:y.code}));
+    header.appendChild(el('h2', {text:y.label}));
+    header.appendChild(el('span', {class:'y-meta'}, [el('span', {class:'group-badge ' + y.group, text:'1차 초안: ' + y.group})]));
+    sec.appendChild(header);
+
+    // Info rows
+    const fg1 = el('div', {class:'field-group'});
+    fg1.appendChild(el('h3', {text:'1차 초안 정보 (maintainer)'}));
+    [
+      ['rationale', y.rationale],
+      ['trigger', y.trigger_pre_ktas],
+      ['questions', (y.questions_needed && y.questions_needed.length) ? y.questions_needed.join(', ') : '없음'],
+      ['limitation', y.limitation || '—'],
+      ['co_candidates', (y.co_candidates && y.co_candidates.length) ? y.co_candidates.join(', ') : '—'],
+      ['v01_issue', y.v01_issue || '—'],
+      ['v01_strength', y.v01_strength || '—'],
+      ['tier_recommendation', y.tier_recommendation || '—'],
+    ].forEach(([lbl, val]) => {
+      if (val === '—' || val === '없음') return;
+      const row = el('div', {class:'info-row'});
+      row.appendChild(el('span', {class:'lbl', text:lbl}));
+      row.appendChild(el('span', {class:'val', text:val}));
+      fg1.appendChild(row);
+    });
+
+    if (y.user_note) {
+      const note = el('div', {class:'info-block user-note'});
+      note.appendChild(el('strong', {text:'사용자 명시 의견: '}));
+      note.appendChild(document.createTextNode(y.user_note));
+      fg1.appendChild(note);
+    }
+    sec.appendChild(fg1);
+
+    // Group radio
+    const fg2 = el('div', {class:'field-group'});
+    fg2.appendChild(el('h3', {text:'자문자 결정 — 이 Y코드의 그룹'}));
+    fg2.appendChild(el('div', {class:'help', text:'1차 초안 그룹이 default. 동의하면 그대로 두고, 변경하면 다른 라디오 선택.'}));
+    const radioWrap = el('div', {class:'group-radio'});
+    ['A', 'B', 'C', 'unmapped'].forEach(g => {
+      const lbl = el('label', {class: g});
+      const r = document.createElement('input');
+      r.type = 'radio';
+      r.name = y.code + '-group';
+      r.value = g;
+      if (state.y_codes[y.code].consultant_group === g) {
+        r.checked = true;
+        lbl.classList.add('selected');
+      }
+      r.addEventListener('change', () => {
+        state.y_codes[y.code].consultant_group = g;
+        state.y_codes[y.code].touched = true;
+        saveState();
+        radioWrap.querySelectorAll('label').forEach(l => l.classList.remove('selected'));
+        lbl.classList.add('selected');
+        updateChangeFlag(sec, y);
+        renderNav();
+      });
+      lbl.appendChild(r);
+      lbl.appendChild(document.createTextNode(' ' + GROUP_LABELS[g]));
+      radioWrap.appendChild(lbl);
+    });
+    fg2.appendChild(radioWrap);
+
+    const flag = el('div', {class:'change-flag'});
+    flag.id = 'flag-' + y.code;
+    fg2.appendChild(flag);
+    sec.appendChild(fg2);
+
+    // Notes
+    const fg3 = el('div', {class:'field-group'});
+    fg3.appendChild(el('h3', {text:'자문자 의견 (자유)'}));
+    fg3.appendChild(el('div', {class:'help', text:'동의 사유, 변경 사유, 추가 임상 고려사항 등 자유 기록.'}));
+    const notes = document.createElement('textarea');
+    notes.className = 'notes';
+    notes.placeholder = '예: 동의. 또는 "Y0070 → B로: 영유아 + 혈변 명시 시 장중첩 단정 가능"';
+    notes.value = state.y_codes[y.code].notes;
+    notes.addEventListener('input', () => {
+      state.y_codes[y.code].notes = notes.value;
+      state.y_codes[y.code].touched = true;
+      saveState();
+      renderNav();
+    });
+    fg3.appendChild(notes);
+    sec.appendChild(fg3);
+
+    // Nav buttons
+    const idx = Y_CODES_MATRIX.findIndex(yc => yc.code === y.code);
+    const prev = idx > 0 ? Y_CODES_MATRIX[idx - 1] : null;
+    const next = idx < Y_CODES_MATRIX.length - 1 ? Y_CODES_MATRIX[idx + 1] : null;
+    const navDiv = el('div', {class:'nav-buttons'});
+    if (prev) {
+      const b = el('button', {class:'btn secondary', text:'◀ ' + prev.code});
+      b.addEventListener('click', () => goToSection(prev.code));
+      navDiv.appendChild(b);
+    } else navDiv.appendChild(el('div'));
+    if (next) {
+      const b = el('button', {class:'btn', text:next.code + ' ▶'});
+      b.addEventListener('click', () => goToSection(next.code));
+      navDiv.appendChild(b);
+    } else {
+      const b = el('button', {class:'btn', text:'❓ 검토 질문 8개 ▶'});
+      b.addEventListener('click', () => goToSection('questions'));
+      navDiv.appendChild(b);
+    }
+    sec.appendChild(navDiv);
+
+    container.appendChild(sec);
+    updateChangeFlag(sec, y);
+  });
+}
+
+function updateChangeFlag(sec, y) {
+  const flag = sec.querySelector('#flag-' + y.code);
+  if (!flag) return;
+  const consultantGroup = state.y_codes[y.code].consultant_group;
+  if (consultantGroup === y.group) {
+    flag.className = 'change-flag same';
+    flag.textContent = '✓ 1차 초안 그룹(' + y.group + ')에 동의';
+  } else {
+    flag.className = 'change-flag changed';
+    flag.textContent = '⚠ 변경됨: ' + y.group + ' → ' + consultantGroup;
+  }
+}
+
+// ────────────────── Render: Review questions ──────────────────
+function renderQuestions() {
+  const sec = document.getElementById('section-questions');
+  clearChildren(sec);
+  sec.appendChild(el('h2', {class:'section-title', text:'검토 질문 8개'}));
+  sec.appendChild(el('p', {class:'section-help', text:'전체 매트릭스에 대한 자문자 의견. 답변 비어있는 질문은 "의견 없음"으로 처리됩니다.'}));
+
+  REVIEW_QUESTIONS.forEach(q => {
+    const card = el('div', {class:'question-card'});
+    card.appendChild(el('div', {class:'q-num', text:'Q' + q.id}));
+    card.appendChild(el('div', {class:'q-text', text:q.q}));
+    const ta = document.createElement('textarea');
+    ta.placeholder = '답변 자유 작성';
+    ta.value = state.review_question_answers[q.id] || '';
+    ta.addEventListener('input', () => {
+      state.review_question_answers[q.id] = ta.value;
+      saveState();
+    });
+    card.appendChild(ta);
+    sec.appendChild(card);
+  });
+
+  const ac = el('div', {class:'field-group', style:'margin-top:24px;'});
+  ac.appendChild(el('h3', {text:'추가 의견 (자유)'}));
+  ac.appendChild(el('div', {class:'help', text:'위 8개 질문에 포함되지 않은 의견·우려·요청 자유 기록.'}));
+  const ata = document.createElement('textarea');
+  ata.className = 'notes';
+  ata.style.minHeight = '120px';
+  ata.value = state.additional_comments;
+  ata.addEventListener('input', () => {
+    state.additional_comments = ata.value;
+    saveState();
+  });
+  ac.appendChild(ata);
+  sec.appendChild(ac);
+
+  const navDiv = el('div', {class:'nav-buttons'});
+  const back = el('button', {class:'btn secondary', text:'◀ 마지막 Y코드 (Y0172)'});
+  back.addEventListener('click', () => goToSection('Y0172'));
+  navDiv.appendChild(back);
+  const fwd = el('button', {class:'btn', text:'⬇ 결과 내보내기 ▶'});
+  fwd.addEventListener('click', () => goToSection('export'));
+  navDiv.appendChild(fwd);
+  sec.appendChild(navDiv);
+}
+
+// ────────────────── Render: Export ──────────────────
+function renderExport() {
+  const sec = document.getElementById('section-export');
+  clearChildren(sec);
+  sec.appendChild(el('h2', {class:'section-title', text:'결과 내보내기'}));
+  sec.appendChild(el('p', {class:'section-help', text:'완료된 검토 내역을 JSON으로 내보냅니다. 다운로드 또는 클립보드 복사 후 maintainer에게 전달.'}));
+
+  // Summary
+  const changes = Y_CODES_MATRIX.filter(y => state.y_codes[y.code].consultant_group !== y.group);
+  const summary = el('div', {class:'summary-block'});
+  summary.appendChild(el('strong', {text:'요약'}));
+  summary.appendChild(el('br'));
+  summary.appendChild(document.createTextNode('변경된 Y코드: ' + changes.length + ' / 27'));
+  if (changes.length > 0) {
+    summary.appendChild(el('br'));
+    summary.appendChild(document.createTextNode('변경 list: ' + changes.map(y => y.code + '(' + y.group + '→' + state.y_codes[y.code].consultant_group + ')').join(', ')));
+  }
+  summary.appendChild(el('br'));
+  const answeredQs = Object.values(state.review_question_answers).filter(a => a.trim()).length;
+  summary.appendChild(document.createTextNode('답변한 검토 질문: ' + answeredQs + ' / 8'));
+  sec.appendChild(summary);
+
+  const preview = el('div', {class:'export-preview', id:'export-preview', text:'―'});
+  sec.appendChild(preview);
+
+  const actions = el('div', {class:'export-actions'});
+  const dlBtn = el('button', {class:'btn', text:'⬇ JSON 다운로드'});
+  dlBtn.addEventListener('click', downloadJSON);
+  const cpBtn = el('button', {class:'btn secondary', text:'📋 클립보드 복사'});
+  cpBtn.addEventListener('click', copyJSON);
+  const rsBtn = el('button', {class:'btn danger', text:'⚠ 초기화'});
+  rsBtn.addEventListener('click', () => { if (confirm('정말 모든 입력을 초기화하시겠습니까?')) resetAll(); });
+  actions.appendChild(dlBtn);
+  actions.appendChild(cpBtn);
+  actions.appendChild(rsBtn);
+  sec.appendChild(actions);
+
+  sec.appendChild(el('p', {id:'export-status', style:'margin-top:12px; font-size:13px; color:var(--good);'}));
+  renderExportPreview();
+}
+
+function buildExport() {
+  const decisions = {};
+  Y_CODES_MATRIX.forEach(y => {
+    const s = state.y_codes[y.code];
+    decisions[y.code] = {
+      draft_group: y.group,
+      consultant_group: s.consultant_group,
+      changed: s.consultant_group !== y.group,
+      notes: s.notes || '',
+    };
+  });
+  const qa = REVIEW_QUESTIONS.map(q => ({
+    id: q.id,
+    question: q.q,
+    answer: state.review_question_answers[q.id] || '',
+  }));
+  const changedCount = Object.values(decisions).filter(d => d.changed).length;
+  return {
+    review_id: state.review_id,
+    matrix_version: state.matrix_version,
+    consultation_role: 'emergency_medicine_specialist',
+    started_at: state.started_at,
+    completed_at: new Date().toISOString(),
+    last_saved: state.last_saved,
+    schema_version: '1.0',
+    summary: {
+      total_y_codes: Y_CODES_MATRIX.length,
+      changed_y_codes: changedCount,
+      answered_questions: qa.filter(x => x.answer.trim()).length,
+      total_questions: REVIEW_QUESTIONS.length,
+    },
+    y_code_decisions: decisions,
+    review_question_answers: qa,
+    additional_comments: state.additional_comments || '',
+  };
+}
+
+function renderExportPreview() {
+  const data = buildExport();
+  const p = document.getElementById('export-preview');
+  if (p) p.textContent = JSON.stringify(data, null, 2);
+}
+
+function downloadJSON() {
+  const data = buildExport();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const date = new Date().toISOString().slice(0, 10);
+  a.download = 'mappability-review-' + date + '-' + state.review_id.slice(-8) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  const s = document.getElementById('export-status');
+  if (s) s.textContent = '✓ JSON 파일 다운로드 완료';
+}
+
+function copyJSON() {
+  const data = buildExport();
+  const text = JSON.stringify(data, null, 2);
+  navigator.clipboard.writeText(text).then(() => {
+    const s = document.getElementById('export-status');
+    if (s) s.textContent = '✓ 클립보드에 복사 완료';
+  }, (e) => {
+    const s = document.getElementById('export-status');
+    if (s) s.textContent = '✗ 복사 실패: ' + e.message;
+  });
+}
+
+// ────────────────── Navigation ──────────────────
+function goToSection(name) {
+  document.querySelectorAll('section[data-section]').forEach(s => s.classList.remove('active'));
+  const target = document.querySelector('section[data-section="' + name + '"]');
+  if (target) {
+    target.classList.add('active');
+    if (name === 'export') renderExportPreview();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.toggle('active', item.getAttribute('data-section') === name);
+  });
+}
+
+function updateProgress() {
+  const total = Y_CODES_MATRIX.length + REVIEW_QUESTIONS.length;
+  let touched = 0;
+  Y_CODES_MATRIX.forEach(y => { if (state.y_codes[y.code].touched) touched++; });
+  REVIEW_QUESTIONS.forEach(q => { if ((state.review_question_answers[q.id] || '').trim()) touched++; });
+  const pct = (touched / total) * 100;
+  const fill = document.getElementById('progress-fill');
+  if (fill) fill.style.width = pct + '%';
+  const txt = document.getElementById('progress-text');
+  if (txt) txt.textContent = touched + ' / ' + total + ' 검토';
+}
+
+function renderAll() {
+  renderWelcome();
+  renderNav();
+  renderYCodes();
+  renderQuestions();
+  renderExport();
+  updateProgress();
+  document.getElementById('session-id').textContent = state.review_id.slice(-8);
+  if (state.last_saved) {
+    document.getElementById('last-saved').textContent = new Date(state.last_saved).toLocaleTimeString('ko-KR', {hour12:false});
+  }
+}
+
+document.getElementById('nav-welcome').addEventListener('click', () => goToSection('welcome'));
+document.getElementById('nav-questions').addEventListener('click', () => goToSection('questions'));
+document.getElementById('nav-export').addEventListener('click', () => goToSection('export'));
+
+renderAll();
+</script>
+</body>
+</html>
