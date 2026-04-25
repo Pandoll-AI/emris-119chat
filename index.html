@@ -129,6 +129,126 @@
     color: #ffffff;
     border-color: var(--t-ink);
   }
+
+  /* 헤더 액션 버튼 (새 케이스 / 기록) */
+  .hd-btn {
+    padding: 4px 10px;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    border: 1px solid var(--t-line);
+    border-radius: var(--r-0);
+    background: var(--t-surface);
+    color: var(--t-dim);
+    cursor: pointer;
+    transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+    font-family: inherit;
+  }
+  .hd-btn:hover { border-color: var(--t-ink); color: var(--t-ink); }
+  .hd-btn:active { background: var(--t-bg); }
+
+  /* 기록 drawer */
+  .drawer-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(10,10,10,0.42);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--t-mid), visibility 0s var(--t-mid);
+    z-index: 90;
+  }
+  .drawer-backdrop.open { opacity: 1; visibility: visible; transition: opacity var(--t-mid); }
+  .drawer {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: min(360px, 90vw);
+    background: var(--t-surface);
+    border-right: 1px solid var(--t-line);
+    box-shadow: 0 0 30px rgba(10,10,10,0.18);
+    transform: translateX(-105%);
+    transition: transform var(--t-mid);
+    z-index: 100;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer-head {
+    flex: 0 0 auto;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--t-line);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .drawer-title {
+    font-size: var(--fs-md);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--t-ink);
+  }
+  .drawer-close {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: var(--fs-lg);
+    color: var(--t-dim);
+    padding: 4px 8px;
+    transition: color var(--t-fast);
+  }
+  .drawer-close:hover { color: var(--t-ink); }
+  .drawer-meta {
+    padding: 10px 16px;
+    font-size: var(--fs-xs);
+    color: var(--t-dim);
+    letter-spacing: 0.02em;
+    border-bottom: 1px solid var(--t-line-soft);
+  }
+  .drawer-list {
+    list-style: none;
+    margin: 0; padding: 0;
+    overflow-y: auto;
+    flex: 1 1 auto;
+  }
+  .case-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--t-line-soft);
+    cursor: pointer;
+    transition: background var(--t-fast);
+    display: grid;
+    gap: 4px;
+  }
+  .case-item:hover { background: var(--t-bg); }
+  .case-item.active { background: var(--t-bg); border-left: 3px solid var(--t-accent); padding-left: 13px; }
+  .case-item .ci-summary {
+    font-size: var(--fs-md);
+    font-weight: 600;
+    color: var(--t-ink);
+    line-height: 1.35;
+  }
+  .case-item .ci-meta {
+    font-size: var(--fs-xs);
+    color: var(--t-dim);
+    display: flex;
+    gap: 10px;
+    letter-spacing: 0.02em;
+  }
+  .case-item .ci-meta .mode-chip {
+    font-family: var(--t-font-mono);
+    padding: 1px 5px;
+    border: 1px solid var(--t-line);
+    color: var(--t-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .case-item .ci-meta .ci-status-active {
+    color: var(--t-accent);
+    font-weight: 700;
+  }
+  .case-empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--t-dim);
+    font-size: var(--fs-md);
+    line-height: 1.55;
+  }
   header .header-right {
     margin-left: auto;
     font-size: 12px;
@@ -512,11 +632,24 @@
 
 <header>
   <span class="logo">EMRIS</span>
+  <button class="hd-btn" id="case-new-btn" title="현재 케이스 마감 후 새로 시작">🆕 새 케이스</button>
+  <button class="hd-btn" id="case-history-btn" title="이전 케이스 기록 보기">📋 기록</button>
   <button id="ai-toggle" title="AI 꺼짐 — 켜면 자연어 파싱 + 추천 생성 (느림)">✨ AI</button>
   <div class="header-right">
     <span class="live-dot"></span>중앙응급의료센터 병상정보<br>응급실 안내
   </div>
 </header>
+
+<!-- 기록 drawer (좌측 슬라이드인) -->
+<div class="drawer-backdrop" id="drawer-backdrop"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <span class="drawer-title">케이스 기록</span>
+    <button class="drawer-close" id="drawer-close" aria-label="닫기">✕</button>
+  </div>
+  <div class="drawer-meta" id="drawer-meta"></div>
+  <ol class="drawer-list" id="drawer-list"></ol>
+</aside>
 
 <div id="ribbon">
   <div class="ribbon-row" id="region-ribbon"></div>
@@ -904,6 +1037,118 @@
       aiBtn.classList.toggle('active', aiEnabled);
       aiBtn.title = aiEnabled ? 'AI 추천 켜짐 — 클릭하면 끔' : 'AI 추천 꺼짐 — 클릭하면 켬';
     });
+
+    // ── 케이스 컨트롤 (Step 4) ──
+    setupCaseControls();
+  }
+
+  // 안전하게 DOM 노드 비우기 (innerHTML XSS 회피)
+  function clearChildren(el) {
+    if (!el) return;
+    while (el.firstChild) el.removeChild(el.firstChild);
+  }
+
+  // ── 케이스 컨트롤 (Phase 6 Step 4): 새 케이스 + 기록 drawer ──
+  function setupCaseControls() {
+    const newBtn = document.getElementById('case-new-btn');
+    const histBtn = document.getElementById('case-history-btn');
+    const drawer = document.getElementById('drawer');
+    const backdrop = document.getElementById('drawer-backdrop');
+    const closeBtn = document.getElementById('drawer-close');
+
+    function openDrawer() {
+      renderDrawer();
+      drawer.classList.add('open');
+      backdrop.classList.add('open');
+      drawer.setAttribute('aria-hidden', 'false');
+    }
+    function closeDrawer() {
+      drawer.classList.remove('open');
+      backdrop.classList.remove('open');
+      drawer.setAttribute('aria-hidden', 'true');
+    }
+    histBtn.addEventListener('click', openDrawer);
+    closeBtn.addEventListener('click', closeDrawer);
+    backdrop.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && drawer.classList.contains('open')) closeDrawer();
+    });
+
+    newBtn.addEventListener('click', () => {
+      const active = window.CaseStore && window.CaseStore.getActive();
+      const hasMessages = active && Array.isArray(active.messages) && active.messages.length > 0;
+      if (hasMessages) {
+        const ok = confirm('현재 케이스를 마감하고 새 케이스를 시작합니다.\n기록은 자동 보관됩니다. 계속할까요?');
+        if (!ok) return;
+      }
+      if (window.CaseStore) {
+        window.CaseStore.closeActive();
+      }
+      // 챗봇 화면 초기화 (textContent 비우기는 innerHTML 대신 안전한 패턴)
+      clearChildren(document.getElementById('chat'));
+      showWelcome();
+    });
+  }
+
+  function fmtTimestamp(ms) {
+    if (!ms) return '';
+    const d = new Date(ms);
+    const pad = (n) => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate())
+         + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  function renderDrawer() {
+    const list = document.getElementById('drawer-list');
+    const meta = document.getElementById('drawer-meta');
+    if (!list || !meta || !window.CaseStore) return;
+    const cases = window.CaseStore.list();
+    const activeId = (window.CaseStore.getActive() || {}).id;
+
+    meta.textContent = cases.length === 0
+      ? '저장된 케이스 없음. 채팅 또는 마법사로 평가를 시작하세요.'
+      : '총 ' + cases.length + '건 (브라우저 독립 보존, 최대 50건).';
+
+    clearChildren(list);
+    if (cases.length === 0) {
+      const empty = document.createElement('li');
+      empty.className = 'case-empty';
+      empty.textContent = '저장된 케이스가 없습니다.';
+      list.appendChild(empty);
+      return;
+    }
+    for (const c of cases) {
+      const li = document.createElement('li');
+      li.className = 'case-item' + (c.id === activeId ? ' active' : '');
+      li.dataset.id = c.id;
+      const summary = document.createElement('div');
+      summary.className = 'ci-summary';
+      summary.textContent = c.summary || '(제목 없음)';
+      li.appendChild(summary);
+      const m = document.createElement('div');
+      m.className = 'ci-meta';
+      const mode = document.createElement('span');
+      mode.className = 'mode-chip';
+      mode.textContent = c.input_mode || 'chat';
+      m.appendChild(mode);
+      const ts = document.createElement('span');
+      ts.textContent = fmtTimestamp(c.ts_started);
+      m.appendChild(ts);
+      const status = document.createElement('span');
+      if (c.id === activeId) {
+        status.className = 'ci-status-active';
+        status.textContent = '진행 중';
+      } else if (c.ts_closed) {
+        status.textContent = '마감';
+      }
+      m.appendChild(status);
+      li.appendChild(m);
+      // TODO Step 5+: 클릭 시 read-only 보기. 현재는 로그만.
+      li.addEventListener('click', () => {
+        console.log('[CaseStore] view case', c);
+      });
+      list.appendChild(li);
+    }
   }
 
   // ── 리본 ──────────────────────────────────
