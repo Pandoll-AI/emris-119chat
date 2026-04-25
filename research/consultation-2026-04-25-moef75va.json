@@ -1,0 +1,239 @@
+{
+  "consultation_id": "PREKTAS-VAL-2026-001-CONSULT-moef75va",
+  "protocol_id": "PREKTAS-VAL-2026-001",
+  "consultation_role": "emergency_medicine_specialist",
+  "started_at": "2026-04-25T14:14:01.078Z",
+  "completed_at": "2026-04-25T15:57:16.628Z",
+  "last_saved": "2026-04-25T15:57:05.126Z",
+  "schema_version": "1.0",
+  "y_codes": {
+    "Y0010": {
+      "include": ["I21.0", "I21.1", "I21.2", "I21.3", "I21.4", "I21.9", "I22.0", "I22.1", "I22.8", "I22.9"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "stemi_nstemi": "include_both" },
+      "notes": "STEMI 와 NSTEMI 관계없이 재관류시술이 필요한가 판단이므로 전체 포함이 맞다.",
+      "touched": true
+    },
+    "Y0020": {
+      "include": ["I63.0", "I63.1", "I63.2", "I63.3", "I63.4", "I63.5", "I63.8", "I63.9"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "onset_window": "include" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0031": {
+      "include": ["I60.0", "I60.1", "I60.2", "I60.3", "I60.4", "I60.5", "I60.6", "I60.7", "I60.8", "I60.9"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "traumatic_sah": "separate" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0032": {
+      "include": ["I61.0", "I61.1", "I61.2", "I61.3", "I61.4", "I61.5", "I61.6", "I61.8", "I61.9", "I62.0", "I62.1", "I62.9"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "traumatic_ich": "separate" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0041": {
+      "include": ["I71.0", "I71.1", "I71.2", "I71.5", "I71.6"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "aortic_split": "all_to_y0041" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0042": {
+      "include": ["I71.3", "I71.4", "I71.8", "I71.9"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "unspecified": "include_both" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0051": {
+      "include": ["K80.0", "K80.1", "K81.0", "K81.8", "K81.9", "K82.A"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "k80_2_inclusion": "exclude" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0052": {
+      "include": ["K80.3", "K80.4", "K83.0", "K83.1", "K83.2", "K83.3", "K83.8", "K83.4", "K80.5", "K83.9"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "cholangitis_severity": "all" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0060": {
+      "include": ["K35.2", "K35.3", "K35.8", "K35.9", "K40.3", "K40.4", "K56.0", "K56.1", "K56.2", "K56.5", "K56.6", "K56.7", "K65.0", "K65.8", "K65.9", "K85.x", "K57.x"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "pancreatitis_severity": "necrotizing" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0070": {
+      "include": ["K56.1", "K56.2", "K56.0", "P76.x", "Q41.x", "Q42.x"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "age_cutoff": "18" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0081": {
+      "include": ["K92.0", "K92.1", "K92.2", "K25.x", "K26.x", "K22.6", "I85.0", "T18.x"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "lower_gi": "context" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0082": {
+      "include": ["K92.0", "K92.1", "K92.2", "T18.x", "P54.x"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "pediatric_cutoff": "5" },
+      "notes": "<12세로 하자. ",
+      "touched": true
+    },
+    "Y0091": {
+      "include": ["T17.2", "T17.3", "T17.4", "T17.5", "T17.8", "T17.9", "R04.2"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "hemoptysis": "massive_only" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0092": {
+      "include": ["T17.2", "T17.3", "T17.4", "T17.5", "T17.8", "T17.9"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "pediatric_cutoff": "18" },
+      "notes": "이것도 <12세로 임의로 정함 ",
+      "touched": true
+    },
+    "Y0100": {
+      "include": ["P07.0", "P07.1", "P07.2", "P07.3", "P05.0", "P05.1"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "weight_cutoff": "2500" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0111": {
+      "include": ["O81.x", "O82.x", "O83.x", "O84.x", "O75.x", "O80.x"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "normal_birth": "include" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0112": {
+      "include": ["O00.x", "O01.x", "O44.x", "O45.x", "O46.x", "O72.x", "O15.x", "O14.x", "O60.x"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "preeclampsia": "include" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0113": {
+      "include": ["N70.x", "N73.x", "N83.4", "N83.5", "N93.x", "N98.x"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "pid_severity": "tubo_ovarian" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0120": {
+      "include": ["T20.x", "T21.x", "T22.x", "T23.x", "T24.x", "T25.x", "T26.x", "T27.x", "T28.x", "T29.x", "T31.2", "T31.3", "T31.4", "T31.5", "T31.6", "T31.7", "T31.8", "T31.9"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "severity_threshold": "20", "inhalation_separate": "always" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0131": {
+      "include": ["S68.0", "S68.1", "S68.2", "S68.3", "S68.4", "S68.8", "S68.9", "S98.x", "S97.x"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "replantation_window": "all" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0132": {
+      "include": ["S48.0", "S48.9", "S58.0", "S58.1", "S58.9", "S78.0", "S78.1", "S78.9", "S88.0", "S88.1", "S88.9", "S48.1"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "partial_amputation": "all" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0141": {
+      "include": ["N17.0", "N17.1", "N17.2", "N17.8", "N17.9", "N18.5", "N19", "T39.x", "T50.x", "E87.5"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "hd_vs_crrt": "hemodynamic" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0142": {
+      "include": ["N17.x", "R57.x", "R65.x", "A41.x"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "crrt_specific": "all_aki" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0150": {
+      "include": ["F10.x", "F11.x", "F19.x", "F20.x", "F23.x", "F25.x", "F30.x", "F31.x", "X60-X84", "R45.81"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "severity_filter": "acute_psychosis" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0160": {
+      "include": ["H40.2", "H44.0", "H44.1", "H44.2", "H44.6", "H44.7", "H35.6", "H33.0", "S05.1", "S05.2", "S05.3", "S05.0", "S05.4", "H43.1"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "corneal_abrasion": "exclude" },
+      "notes": "각막외상이 \"외견상 안구에 손상이 의심되는가\"를 기준으로 하는 것이 적당한 현장판단이다.",
+      "touched": true
+    },
+    "Y0171": {
+      "include": ["I72.x", "I74.0", "I74.1", "I74.2", "I74.3", "I74.4", "I74.5", "I74.8", "I74.9", "I26.x", "K55.0"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "pe_inclusion": "massive_only" },
+      "notes": "",
+      "touched": true
+    },
+    "Y0172": {
+      "include": ["I72.x", "I74.x", "P52.x"],
+      "exclude": [],
+      "custom": [],
+      "decisions": { "pediatric_cutoff": "18" },
+      "notes": "",
+      "touched": true
+    }
+  },
+  "thresholds": {
+    "h1_sensitivity": { "value": 0.80, "rationale": "" },
+    "h2_specificity": { "value": 0.80, "rationale": "" },
+    "h3_marginal_gain": { "value": 0.05, "rationale": "" },
+    "h4_tier_match": { "value": 0.80, "rationale": "" }
+  },
+  "red_flags": [],
+  "summary": {
+    "total_y_codes": 27,
+    "touched_y_codes": 27,
+    "total_red_flags": 0
+  }
+}

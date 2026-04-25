@@ -1,0 +1,448 @@
+{
+  "version": "1.0",
+  "frozen_at": "2026-04-26",
+  "source_consultation": "research/consultation-2026-04-25-moef75va.json",
+  "consultant": {
+    "role": "emergency_medicine_specialist",
+    "consultation_id": "PREKTAS-VAL-2026-001-CONSULT-moef75va",
+    "consulted_at_utc": "2026-04-25T14:14:01Z – 15:57:16Z",
+    "consultation_duration_minutes": 103
+  },
+  "schema": {
+    "include": "ICD-10 코드 또는 prefix (.x suffix). 본 Y코드의 ground truth label로 인정",
+    "exclude": "명시적으로 ground truth에서 제외할 ICD-10",
+    "age_filter": "연령 제한 (있을 시; min/max in years, source 표기)",
+    "conditional_include": "ICD-10 매칭 후 추가 임상 정보 필터가 필요한 코드 (Phase 8c에서 처리)",
+    "clinical_split_required": "두 Y코드가 ICD-10 동일 풀 공유 시 임상 정보로 split 필요",
+    "decisions": "임상 결정 결과 (자문 도구 ID → value)",
+    "notes": "자문 의견 자유 텍스트"
+  },
+  "icd10_syntax": {
+    "exact": "예: I21.0 — 단일 코드",
+    "prefix_x": "예: T17.x — T17.0, T17.1, ..., T17.9 모두 포함",
+    "range": "예: X60-X84 — X60.x ~ X84.x 모두 포함",
+    "no_decimal": "예: N19 — 단일 코드 (소수점 미포함도 유효)"
+  },
+  "y_codes": {
+    "Y0010": {
+      "label": "심근경색의 재관류중재술",
+      "short": "심근경색",
+      "group": "cardio",
+      "age": "any",
+      "include": ["I21.0", "I21.1", "I21.2", "I21.3", "I21.4", "I21.9", "I22.0", "I22.1", "I22.8", "I22.9"],
+      "exclude": [],
+      "decisions": { "stemi_nstemi": "include_both" },
+      "notes": "STEMI 와 NSTEMI 관계없이 재관류시술이 필요한가 판단이므로 전체 포함이 맞다."
+    },
+    "Y0020": {
+      "label": "뇌경색의 재관류중재술",
+      "short": "뇌경색",
+      "group": "neuro",
+      "age": "any",
+      "include": ["I63.0", "I63.1", "I63.2", "I63.3", "I63.4", "I63.5", "I63.8", "I63.9"],
+      "exclude": ["G45.x", "I63.6"],
+      "decisions": { "onset_window": "include" },
+      "notes": "발병시각 미상 환자도 DAWN/DEFUSE 영상기반 적응으로 포함."
+    },
+    "Y0031": {
+      "label": "뇌출혈수술 (거미막하 출혈)",
+      "short": "거미막하출혈",
+      "group": "neuro",
+      "age": "any",
+      "include": ["I60.0", "I60.1", "I60.2", "I60.3", "I60.4", "I60.5", "I60.6", "I60.7", "I60.8", "I60.9"],
+      "exclude": ["S06.6"],
+      "decisions": { "traumatic_sah": "separate" },
+      "notes": "외상성 SAH(S06.6)는 별도 처리, Y0031은 자발성 SAH만."
+    },
+    "Y0032": {
+      "label": "뇌출혈수술 (거미막하 출혈 외)",
+      "short": "뇌내출혈",
+      "group": "neuro",
+      "age": "any",
+      "include": ["I61.0", "I61.1", "I61.2", "I61.3", "I61.4", "I61.5", "I61.6", "I61.8", "I61.9", "I62.0", "I62.1", "I62.9"],
+      "exclude": ["S06.4", "S06.5"],
+      "decisions": { "traumatic_ich": "separate" },
+      "notes": "외상성 두개내 출혈(S06.x)은 별도, Y0032는 자발성만."
+    },
+    "Y0041": {
+      "label": "대동맥응급 (흉부)",
+      "short": "흉부대동맥응급",
+      "group": "cardio",
+      "age": "any",
+      "include": ["I71.0", "I71.1", "I71.2", "I71.5", "I71.6", "I71.8", "I71.9"],
+      "exclude": [],
+      "decisions": { "aortic_split": "all_to_y0041" },
+      "notes": "I71.0 박리는 모두 Y0041 (흉부)에. I71.8/I71.9 (부위미상)은 Y0042의 include_both 결정 따라 자동 동기화 추가됨.",
+      "amendment_sync_from_y0042": true
+    },
+    "Y0042": {
+      "label": "대동맥응급 (복부)",
+      "short": "복부대동맥응급",
+      "group": "cardio",
+      "age": "any",
+      "include": ["I71.3", "I71.4", "I71.8", "I71.9"],
+      "exclude": [],
+      "decisions": { "unspecified": "include_both" },
+      "notes": "I71.8/I71.9 부위미상은 Y0041과 Y0042 둘 다 ground truth로 인정 (자문자 명시 결정)."
+    },
+    "Y0051": {
+      "label": "담낭담관질환 (담낭질환)",
+      "short": "담낭질환",
+      "group": "gi",
+      "age": "any",
+      "include": ["K80.0", "K80.1", "K81.0", "K81.8", "K81.9", "K82.A"],
+      "exclude": ["K80.2", "K81.1"],
+      "decisions": { "k80_2_inclusion": "exclude" },
+      "notes": "담낭염 없는 단순 담낭결석(K80.2)은 응급 시술 적응 아님."
+    },
+    "Y0052": {
+      "label": "담낭담관질환 (담도포함질환)",
+      "short": "담도질환",
+      "group": "gi",
+      "age": "any",
+      "include": ["K80.3", "K80.4", "K83.0", "K83.1", "K83.2", "K83.3", "K83.8", "K83.4", "K80.5", "K83.9"],
+      "exclude": [],
+      "decisions": { "cholangitis_severity": "all" },
+      "notes": "광범위 inclusion 채택. K83.3/K83.4/K80.5/K83.9는 default exclude였으나 자문자가 추가 체크. Sensitivity 분석에서 strict cluster (K83.0+K80.3 한정) 별도 평가 권장.",
+      "broad_inclusion_warning": true
+    },
+    "Y0060": {
+      "label": "복부응급수술 (비외상)",
+      "short": "복부응급수술",
+      "group": "gi",
+      "age": "any",
+      "include": ["K35.2", "K35.3", "K35.8", "K35.9", "K40.3", "K40.4", "K56.0", "K56.1", "K56.2", "K56.5", "K56.6", "K56.7", "K65.0", "K65.8", "K65.9", "K85.x", "K57.x"],
+      "exclude": [],
+      "decisions": { "pancreatitis_severity": "necrotizing" },
+      "notes": "K85.x 췌장염은 모두 포함하되, sensitivity 분석에서 괴사·중증(K85.0 등)만 strict cluster로 별도 평가."
+    },
+    "Y0070": {
+      "label": "장중첩/폐색 (영유아)",
+      "short": "장중첩/폐색",
+      "group": "gi",
+      "age": "pediatric",
+      "include": ["K56.1", "K56.2", "K56.0", "P76.x", "Q41.x", "Q42.x"],
+      "exclude": [],
+      "age_filter": { "max": 18, "source": "consultant_explicit" },
+      "decisions": { "age_cutoff": "18" },
+      "notes": "영유아 정의 < 18세 (자문자 결정, 소아과 일반 정의)."
+    },
+    "Y0081": {
+      "label": "위장관 응급내시경 (성인)",
+      "short": "위장관내시경(성인)",
+      "group": "gi",
+      "age": "adult",
+      "include": ["K92.0", "K92.1", "K92.2", "K25.x", "K26.x", "K22.6", "I85.0", "T18.x"],
+      "exclude": [],
+      "age_filter": { "min": 18, "source": "implicit_from_y0082_split" },
+      "conditional_include": [
+        { "code": "K62.5", "key": "lower_gi_massive_or_unstable", "reason": "대량 출혈·혈역학 불안정 시만 포함 (자문 결정 'context')" }
+      ],
+      "decisions": { "lower_gi": "context" },
+      "notes": "대장 출혈(K62.5)은 대량 출혈·혈역학 불안정 명시 시만 ground truth."
+    },
+    "Y0082": {
+      "label": "위장관 응급내시경 (영유아)",
+      "short": "위장관내시경(영유아)",
+      "group": "gi",
+      "age": "pediatric",
+      "include": ["K92.0", "K92.1", "K92.2", "T18.x", "P54.x"],
+      "exclude": [],
+      "age_filter": { "max": 12, "source": "consultant_note_override", "tool_decision_was": "5", "note": "도구 옵션이 2/5/18만 제공되어 5 선택. 메모 '<12세로 하자'가 우선 적용." },
+      "decisions": { "pediatric_cutoff": "5" },
+      "notes": "<12세로 하자."
+    },
+    "Y0091": {
+      "label": "기관지 응급내시경 (성인)",
+      "short": "기관지내시경(성인)",
+      "group": "airway",
+      "age": "adult",
+      "include": ["T17.2", "T17.3", "T17.4", "T17.5", "T17.8", "T17.9"],
+      "exclude": ["T17.0", "T17.1"],
+      "age_filter": { "min": 18, "source": "implicit_from_y0092_split" },
+      "conditional_include": [
+        { "code": "R04.2", "key": "massive_hemoptysis_>200ml_24h", "reason": "대량(>200ml/24h) 명시 시만 (자문 결정 'massive_only')" }
+      ],
+      "decisions": { "hemoptysis": "massive_only" },
+      "notes": "대량 각혈(R04.2 + 양적 임계)만 ground truth."
+    },
+    "Y0092": {
+      "label": "기관지 응급내시경 (영유아)",
+      "short": "기관지내시경(영유아)",
+      "group": "airway",
+      "age": "pediatric",
+      "include": ["T17.2", "T17.3", "T17.4", "T17.5", "T17.8", "T17.9"],
+      "exclude": [],
+      "age_filter": { "max": 12, "source": "consultant_note_override", "tool_decision_was": "18", "note": "도구 옵션이 2/5/18만 제공되어 18 선택. 메모 '이것도 <12세로 임의로 정함'이 우선 적용." },
+      "decisions": { "pediatric_cutoff": "18" },
+      "notes": "이것도 <12세로 임의로 정함."
+    },
+    "Y0100": {
+      "label": "저체중출생아",
+      "short": "저체중출생아",
+      "group": "neonatal",
+      "age": "pediatric",
+      "include": ["P07.0", "P07.1", "P07.2", "P07.3", "P05.0", "P05.1"],
+      "exclude": [],
+      "severity_threshold_grams": 2500,
+      "decisions": { "weight_cutoff": "2500" },
+      "notes": "WHO 정의 채택: <2500g 모두 ground truth. NICU 적응(<1500g) 또는 권역만(<1000g) 정의보다 광범위. Sensitivity 분석에서 strict cutoff(<1500g) 별도 평가 권장."
+    },
+    "Y0111": {
+      "label": "산부인과 응급 (분만)",
+      "short": "분만",
+      "group": "obgyn",
+      "age": "adult",
+      "include": ["O81.x", "O82.x", "O83.x", "O84.x", "O75.x", "O80.x"],
+      "exclude": [],
+      "decisions": { "normal_birth": "include" },
+      "notes": "정상분만(O80.x)도 ground truth — 응급실 도착 임박 분만 시나리오 포함. Default exclude였으나 자문자 결정."
+    },
+    "Y0112": {
+      "label": "산부인과 응급 (산과수술)",
+      "short": "산과수술",
+      "group": "obgyn",
+      "age": "adult",
+      "include": ["O00.x", "O01.x", "O44.x", "O45.x", "O46.x", "O72.x", "O15.x", "O14.x", "O60.x"],
+      "exclude": ["O03.x", "O04.x", "O20.0"],
+      "decisions": { "preeclampsia": "include" },
+      "notes": "중증 전자간증(O14.x) 모두 포함. 조기진통(O60.x)도 포함 (default exclude였으나 자문자 추가)."
+    },
+    "Y0113": {
+      "label": "산부인과 응급 (부인과수술)",
+      "short": "부인과수술",
+      "group": "obgyn",
+      "age": "adult",
+      "include": ["N70.x", "N73.x", "N83.4", "N83.5", "N93.x", "N98.x"],
+      "exclude": ["N80.x"],
+      "decisions": { "pid_severity": "tubo_ovarian" },
+      "notes": "PID 중 난관난소농양(N73.x) 한정."
+    },
+    "Y0120": {
+      "label": "중증화상",
+      "short": "중증화상",
+      "group": "burn",
+      "age": "any",
+      "include": ["T20.x", "T21.x", "T22.x", "T23.x", "T24.x", "T25.x", "T26.x", "T27.x", "T28.x", "T29.x", "T31.2", "T31.3", "T31.4", "T31.5", "T31.6", "T31.7", "T31.8", "T31.9"],
+      "exclude": ["T30.x", "T31.0", "T31.1"],
+      "bsa_threshold": 20,
+      "decisions": { "severity_threshold": "20", "inhalation_separate": "always" },
+      "notes": "BSA ≥ 20% (T31.2+, ABA criteria). 호흡기 화상(T27.x)은 BSA 무관 항상 중증 ground truth."
+    },
+    "Y0131": {
+      "label": "사지접합의 수술 (수족지접합)",
+      "short": "수지접합",
+      "group": "limb",
+      "age": "any",
+      "include": ["S68.0", "S68.1", "S68.2", "S68.3", "S68.4", "S68.8", "S68.9", "S98.x", "S97.x"],
+      "exclude": [],
+      "decisions": { "replantation_window": "all" },
+      "notes": "모든 절단 사례 포함. 발 압착(S97.x)도 ground truth (default exclude였으나 자문자 추가). 시간 경과(warm ischemia)와 무관하게 ICD-10에 시간 정보 없으므로 모두 인정."
+    },
+    "Y0132": {
+      "label": "사지접합의 수술 (수족지접합 외)",
+      "short": "사지접합",
+      "group": "limb",
+      "age": "any",
+      "include": ["S48.0", "S48.9", "S58.0", "S58.1", "S58.9", "S78.0", "S78.1", "S78.9", "S88.0", "S88.1", "S88.9", "S48.1"],
+      "exclude": [],
+      "decisions": { "partial_amputation": "all" },
+      "notes": "완전·부분 절단 모두 포함 (S48.1 등). Default exclude였던 부분 절단도 자문자 결정 따라 ground truth."
+    },
+    "Y0141": {
+      "label": "응급투석 (HD)",
+      "short": "응급 HD",
+      "group": "renal",
+      "age": "any",
+      "include": ["N17.0", "N17.1", "N17.2", "N17.8", "N17.9", "N18.5", "N19", "T39.x", "T50.x", "E87.5"],
+      "exclude": ["E10.1", "T40.x"],
+      "clinical_split_required": {
+        "with": "Y0142",
+        "split_on": "hemodynamic_stability",
+        "rule": "혈역학 안정 → Y0141 (HD), 불안정(R57.x 동반) → Y0142 (CRRT). ICD-10만으론 결정 불가, Phase 8c에서 R57.x·R65.x·A41.x 동반 여부로 split 시도."
+      },
+      "decisions": { "hd_vs_crrt": "hemodynamic" },
+      "notes": "혈역학 안정성 임상정보 필요. Y0141·Y0142가 N17.x 풀 공유. Phase 8c split 룰 필요."
+    },
+    "Y0142": {
+      "label": "응급투석 (CRRT)",
+      "short": "CRRT",
+      "group": "renal",
+      "age": "any",
+      "include": ["N17.x", "R57.x", "R65.x", "A41.x"],
+      "exclude": [],
+      "clinical_split_required": {
+        "with": "Y0141",
+        "split_on": "hemodynamic_stability",
+        "rule": "Y0141과 동일 split. 모든 AKI를 Y0141·Y0142 둘 다 라벨링한 뒤 R57.x/R65.x/A41.x 동반 여부로 split."
+      },
+      "decisions": { "crrt_specific": "all_aki" },
+      "notes": "모든 AKI를 Y0141·Y0142 둘 다 라벨 (multi-label). Phase 8c에서 sepsis·shock 동반 여부로 split."
+    },
+    "Y0150": {
+      "label": "정신과적 응급입원",
+      "short": "정신과응급",
+      "group": "psych",
+      "age": "any",
+      "include": ["F10.x", "F11.x", "F19.x", "F20.x", "F23.x", "F25.x", "F30.x", "F31.x", "X60-X84", "R45.81"],
+      "exclude": ["F32.x", "F33.x", "F40.x", "F41.x", "F60.x"],
+      "decisions": { "severity_filter": "acute_psychosis" },
+      "notes": "급성 정신증(F20·F23·F30·F31) + 자해(X60-X84·R45.81) + 약물 사용(F10·F11·F19) 포함. 우울증·불안·성격장애는 제외."
+    },
+    "Y0160": {
+      "label": "안과적 응급 수술",
+      "short": "안과응급",
+      "group": "eye",
+      "age": "any",
+      "include": ["H40.2", "H44.0", "H44.1", "H44.2", "H44.6", "H44.7", "H35.6", "H33.0", "S05.1", "S05.2", "S05.3", "S05.4", "H43.1"],
+      "exclude": [],
+      "conditional_include": [
+        {
+          "code": "S05.0",
+          "key": "ocular_injury_suspicion",
+          "reason": "단순 각막 외상 자체는 응급 수술 적응 아니나 (decision exclude), 자문자 메모 따라 외견상 안구 손상·의심·관통·제포·출혈 키워드 동반 시 Y0160으로 인정. Phase 8c 라벨링 시 주증상 텍스트 필터 적용."
+        }
+      ],
+      "decisions": { "corneal_abrasion": "exclude" },
+      "notes": "각막외상이 \"외견상 안구에 손상이 의심되는가\"를 기준으로 하는 것이 적당한 현장판단이다. S05.0는 conditional_include로 처리."
+    },
+    "Y0171": {
+      "label": "영상의학 혈관중재 (성인)",
+      "short": "혈관중재(성인)",
+      "group": "vascular",
+      "age": "adult",
+      "include": ["I72.x", "I74.0", "I74.1", "I74.2", "I74.3", "I74.4", "I74.5", "I74.8", "I74.9", "K55.0"],
+      "exclude": ["O88.2"],
+      "age_filter": { "min": 18, "source": "implicit_from_y0172_split" },
+      "conditional_include": [
+        { "code": "I26.x", "key": "massive_pe_hemodynamic_unstable", "reason": "대량 PE만 (혈역학 불안정). 자문 결정 'massive_only'." }
+      ],
+      "decisions": { "pe_inclusion": "massive_only" },
+      "notes": "폐색전증(I26.x)은 대량·혈역학 불안정 명시 시만. catheter-directed thrombolysis 적응."
+    },
+    "Y0172": {
+      "label": "영상의학 혈관중재 (영유아)",
+      "short": "혈관중재(영유아)",
+      "group": "vascular",
+      "age": "pediatric",
+      "include": ["I72.x", "I74.x", "P52.x"],
+      "exclude": ["D18.x"],
+      "age_filter": { "max": 18, "source": "consultant_explicit" },
+      "decisions": { "pediatric_cutoff": "18" },
+      "notes": "영유아 정의 < 18세 (자문자 결정)."
+    }
+  },
+  "thresholds": {
+    "h1_sensitivity": {
+      "value": 0.80,
+      "rationale_consultant": "",
+      "rationale_inferred": "자문자가 4개 임계값 모두 0.80으로 통일 입력. 통상 triage 도구 평가 기준(sens 0.85·spec 0.90)보다 다소 완화된 한국 응급의료 baseline 채택으로 해석.",
+      "previous_value_protocol_v1_0": 0.85
+    },
+    "h2_specificity": {
+      "value": 0.80,
+      "rationale_consultant": "",
+      "rationale_inferred": "동일 — 0.80 baseline 채택.",
+      "previous_value_protocol_v1_0": 0.90
+    },
+    "h3_marginal_gain": {
+      "value": 0.05,
+      "rationale_consultant": "",
+      "rationale_inferred": "추가 질문 한계효용 임계 상향 (0.03 → 0.05). 더 의미 있는 한계효용을 요구.",
+      "previous_value_protocol_v1_0": 0.03
+    },
+    "h4_tier_match": {
+      "value": 0.80,
+      "rationale_consultant": "",
+      "rationale_inferred": "tier 일치율 임계 상향 (0.70 → 0.80). 운영 정확도 요구 강화.",
+      "previous_value_protocol_v1_0": 0.70
+    }
+  },
+  "red_flags": [],
+  "amendments_applied": [
+    {
+      "type": "icd_sync",
+      "y_codes": ["Y0041", "Y0042"],
+      "change": "Y0042 'include_both' 결정에 따라 Y0041 include에 I71.8, I71.9 자동 추가",
+      "source": "user_explicit_AskUserQuestion_2026-04-26"
+    },
+    {
+      "type": "conditional_include",
+      "y_code": "Y0160",
+      "change": "S05.0 (각막 외상)을 include에서 제거하고 conditional_include로 이동, key='ocular_injury_suspicion'",
+      "source": "user_explicit_AskUserQuestion_2026-04-26"
+    },
+    {
+      "type": "age_filter_override",
+      "y_code": "Y0070",
+      "change": "영유아 cutoff 5세 → 18세 (소아과 일반 정의)",
+      "source": "consultant_explicit"
+    },
+    {
+      "type": "age_filter_note_override",
+      "y_codes": ["Y0082", "Y0092"],
+      "change": "도구 결정 옵션(5 또는 18) 대신 자문 메모 '<12세' 적용",
+      "source": "consultant_note_override",
+      "rationale": "도구 옵션이 2/5/18만 제공되어 자문자가 메모로 12세 명시"
+    },
+    {
+      "type": "weight_cutoff_change",
+      "y_code": "Y0100",
+      "change": "저체중 cutoff 1500g → 2500g (WHO 정의)",
+      "source": "consultant_explicit"
+    },
+    {
+      "type": "broad_inclusion",
+      "y_code": "Y0052",
+      "change": "K83.3/K83.4/K80.5/K83.9 광범위 inclusion (default exclude였음)",
+      "source": "consultant_explicit",
+      "sensitivity_recommendation": "strict cluster (K83.0 + K80.3 한정) 별도 평가 권장"
+    },
+    {
+      "type": "default_inclusion_change",
+      "y_code": "Y0111",
+      "change": "정상분만 O80.x 포함 (default exclude였음)",
+      "source": "consultant_explicit"
+    },
+    {
+      "type": "default_inclusion_change",
+      "y_code": "Y0131",
+      "change": "발 압착 S97.x 포함 (default exclude였음)",
+      "source": "consultant_explicit"
+    },
+    {
+      "type": "clinical_split",
+      "y_codes": ["Y0141", "Y0142"],
+      "change": "N17.x 다중 라벨링 + Phase 8c에서 R57.x/R65.x/A41.x 동반 여부로 split",
+      "source": "consultant_explicit_decision"
+    },
+    {
+      "type": "threshold_change",
+      "h_id": "h1_sensitivity",
+      "change": "0.85 → 0.80",
+      "source": "consultant_explicit",
+      "interpretation": "한국 EM baseline 채택"
+    },
+    {
+      "type": "threshold_change",
+      "h_id": "h2_specificity",
+      "change": "0.90 → 0.80",
+      "source": "consultant_explicit",
+      "interpretation": "한국 EM baseline 채택"
+    },
+    {
+      "type": "threshold_change",
+      "h_id": "h3_marginal_gain",
+      "change": "0.03 → 0.05",
+      "source": "consultant_explicit",
+      "interpretation": "한계효용 임계 상향"
+    },
+    {
+      "type": "threshold_change",
+      "h_id": "h4_tier_match",
+      "change": "0.70 → 0.80",
+      "source": "consultant_explicit",
+      "interpretation": "운영 정확도 요구 강화"
+    }
+  ]
+}

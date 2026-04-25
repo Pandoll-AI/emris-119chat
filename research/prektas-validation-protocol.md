@@ -382,6 +382,76 @@ npm run validate:phase8       # 신규 스크립트 (Phase 8b 시 추가)
 
 ---
 
+## 16. Amendment v1.0 → v1.1 (frozen at 2026-04-26)
+
+> **Pre-data-lock amendment**. Phase 8c 데이터 잠금 이전이므로 **post-hoc 아님**.
+> Source: 응급의학 전문의 자문 결과 (`research/consultation-2026-04-25-moef75va.json`, 자문 시각 2026-04-25 14:14–15:57 UTC, ~1시간 43분).
+> Frozen reference standard: `research/y-code-icd10-clusters.json` v1.0.
+
+### 16.1 임계값 변경 (4건)
+
+자문자가 H1–H4 임계값 4개를 모두 0.80으로 통일 입력. `rationale` field 비어있으나 4개를 0.80으로 통일한 패턴은 의도적 baseline 채택으로 해석.
+
+| 가설 | v1.0 임계값 | v1.1 임계값 | 변경 해석 |
+|---|---|---|---|
+| H1 sensitivity | ≥ 0.85 | **≥ 0.80** | 한국 응급의료 baseline 채택. 통상 triage 도구 0.85보다 완화. |
+| H2 specificity | ≥ 0.90 | **≥ 0.80** | 한국 응급의료 baseline 채택. |
+| H3 한계효용/질문 | ≥ 0.03 | **≥ 0.05** | 더 의미 있는 한계효용 요구. 추가 질문 부담 vs 정확도 개선 trade-off 강화. |
+| H4 tier 일치율 | ≥ 0.70 | **≥ 0.80** | 운영 정확도 요구 강화. |
+
+**해석 시 명시 사항**: H1·H2 통과는 통상 임계가 아닌 **한국 baseline 임계**이며, 결과 보고 시 "본 연구의 v0.1 알고리즘은 한국 EM baseline 임계(0.80)를 통과했으나 통상 triage 도구 임계(0.85·0.90)에는 미달"과 같이 양쪽 임계 모두 보고하여 over-claim 방지.
+
+### 16.2 Y코드 ICD-10 cluster 변경
+
+자문 결과 frozen reference standard는 `research/y-code-icd10-clusters.json` v1.0에 commit. 주요 변경 (default v0.1 protocol §5.2 초안 대비):
+
+| Y-code | 변경 내용 | 종류 |
+|---|---|---|
+| **Y0041** | I71.8, I71.9 추가 (Y0042 'include_both' 결정으로 자동 동기화) | icd_sync (사용자 명시 확인) |
+| **Y0042** | I71.8, I71.9 ground truth 인정 (decision 'include_both') | scope_change |
+| **Y0160** | S05.0 (각막 외상) → conditional_include로 이동 (key='ocular_injury_suspicion') | conditional (사용자 명시 확인) |
+| **Y0070** | 영유아 cutoff 5세 → **18세** | age_filter (consultant_explicit) |
+| **Y0082** | 영유아 cutoff: 도구 옵션 5 선택했으나 메모 '<12세' 우선 → **12세** | age_filter (note_override) |
+| **Y0092** | 영유아 cutoff: 도구 옵션 18 선택했으나 메모 '<12세' 우선 → **12세** | age_filter (note_override) |
+| **Y0100** | 저체중 cutoff 1500g → **2500g** (WHO 정의) | weight_threshold |
+| **Y0052** | K83.3/K83.4/K80.5/K83.9 광범위 inclusion (default exclude) | broad_inclusion (sensitivity 분석에서 strict cluster 병행 권장) |
+| **Y0091** | R04.2 → conditional_include (대량 각혈만, key='massive_hemoptysis_>200ml_24h') | conditional |
+| **Y0111** | O80.x (정상분만) 포함 | scope_change |
+| **Y0112** | O60.x (조기진통) 추가 | scope_change |
+| **Y0113** | N73.x 한정, N70.x도 포함 (PID tubo_ovarian) | scope_change |
+| **Y0131** | S97.x (발 압착) 포함 | scope_change |
+| **Y0132** | S48.1 (부분 절단) 포함 | scope_change |
+| **Y0141·Y0142** | N17.x 다중 라벨링 + R57.x/R65.x/A41.x 동반 여부로 split (Phase 8c) | clinical_split_required |
+| **Y0150** | 급성 정신증(F20·F23·F30·F31) + 자해(X60-X84·R45.81) + 약물(F10·F11·F19) 한정 | scope_change |
+| **Y0171** | I26.x (PE) → conditional_include (대량 PE만, key='massive_pe_hemodynamic_unstable') | conditional |
+| **Y0172** | 영유아 cutoff 18세 (자문자 결정) | age_filter |
+
+### 16.3 Phase 8c 라벨링 영향
+
+다음 컴포넌트가 단순 ICD-10 prefix matching을 넘어선 추가 처리 필요:
+- **conditional_include**: Y0091 R04.2, Y0160 S05.0, Y0171 I26.x, Y0081 K62.5 — 주증상 텍스트 또는 임상 정보 키워드 매칭으로 임계 적용
+- **clinical_split_required**: Y0141 vs Y0142 — N17.x 환자에게 R57.x/R65.x/A41.x 동반 여부로 multi-label assignment
+- **age_filter**: 6 Y코드 (Y0070, Y0082, Y0092, Y0172 + Y0010 등 'any' age) — 연령 컬럼 적용
+
+### 16.4 Sensitivity analyses 추가
+
+기존 sensitivity analyses (§6.4)에 추가:
+- Y0052 strict cluster (K83.0 + K80.3 한정) vs broad (자문자 inclusion) 결과 비교
+- Y0100 strict cutoff (<1500g VLBW) vs WHO (<2500g) 결과 비교
+- Y0141·Y0142 split rule sensitivity: R57.x 동반 정의 변경 시 결과 변화
+
+### 16.5 Red flags
+
+자문 결과 red flag list 빈 값. 본 검증 연구가 명시적으로 우선 검토할 critical FN 시나리오는 사전 지정 없음. Phase 8g audit는 false negative 빈도순으로 진행.
+
+### 16.6 Amendment 영향 정리
+
+- v1.1 임계값(0.80)으로 v0.1 알고리즘 통과 가능성이 v1.0(0.85·0.90)보다 높아짐 → 결과 해석 시 양쪽 임계 모두 보고 의무
+- Y0070·Y0082·Y0092 cutoff 변경으로 영유아 라벨 분포가 v1.0 추정과 다를 수 있음 (Phase 8c 라벨링 결과로 측정)
+- Conditional include + clinical split 도입으로 Phase 8c 라벨링 코드 복잡도 증가. 단순 prefix matching 외 임상 정보 통합 로직 필요.
+
+---
+
 ## 14. 참고문헌 (References)
 
 1. Bossuyt PM, Reitsma JB, Bruns DE, et al. **STARD 2015**: An Updated List of Essential Items for Reporting Diagnostic Accuracy Studies. *BMJ*. 2015;351:h5527.
