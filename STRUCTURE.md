@@ -89,6 +89,14 @@ data/prektas-codebook.json                                │
 | `scripts/research/validate-v0_2.py` | **Phase 9d directional 통계** — 광주·전라 CSV 단일 패스 + 모순 검출. informational only. | v0.2 mapping + frozen ICD-10 cluster |
 | `research/validation-results-v0.2.json` | **Phase 9d 통계** — sens·spec·tier agreement 85.7% + Type-A/B/C/D 모순. 결정 X. | validate-v0_2.py |
 | `research/prektas-validation-report-v2.0.md` | **Phase 9e 보고서 v2.0** — 임상 정합성 reframe. 8 섹션. 통계 임계 폐기. | 위 산출물 + 매트릭스 v1.0 |
+| `research/vignettes-v1.0-draft.json` | **Phase 10a vignette set** — 30 임상 시나리오 (12 textbook · 8 fn_pattern · 5 fp_pattern · 5 consultant_change) | maintainer 작성 + v0.2 출력 |
+| `prektas-vignette-review.html` | **Phase 10b 자문 검토 도구** — 38.8KB SPA. 30개 vignette 평가 + JSON export. Tailscale + Vercel host. | vignettes-v1.0-draft + v0.2 출력 |
+| `research/vignette-review-2026-04-26-mofq7k1h.json` | **Phase 10c 자문 원본** — 14 appropriate / 10 partial / 6 inappropriate | vignette-review.html export |
+| `research/vignette-review-analysis.md` | **Phase 10c-1 분석** — 6 섹션 + v0.3 변경 권고 | 자문 원본 + maintainer 분석 |
+| `scripts/research/build-prektas-to-y-mapping-v0.3.mjs` | **Phase 11 v0.3 알고리즘** — vignette feedback 적용. ~480 lines, v0.2 fork. fp 좁히기 + over-firing 정리 + 임신 응급 강화 + 신규 질문 catalog 6개. | matrix v1.0 + codebook + y-code tier + vignette analysis |
+| `research/prektas-to-y-mapping-v0.3.json` | **Phase 11 v0.3 출력** — 4,689 entries. A:332/B:266/C:64/unmapped:4,027 | v0.3 알고리즘 |
+| `scripts/research/validate-v0_3.py` | **Phase 11d v0.2 vs v0.3 directional** — 광주·전라 CSV 단일 패스. v0.2 + v0.3 동시 평가. informational only. | v0.2 + v0.3 mapping + frozen ICD-10 cluster |
+| `research/validation-results-v0.3.json` | **Phase 11d 통계** — spec +0.029, F1 +0.008, tier +0.011 directional. 결정 X. | validate-v0_3.py |
 | `run.sh` | 포트 3489 로컬 서버 제어 (`start\|stop\|restart`) | python3, public/ |
 | `public/index.html` (심볼릭) | → `../prektas-hospital-recommender.html` | 루트 HTML |
 | `public/research.html` (심볼릭) | → `../prektas-research.html` | 루트 HTML |

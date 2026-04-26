@@ -1,5 +1,88 @@
 # Changelog
 
+## [2026-04-26] Phase 10–11 완료: vignette 기반 v0.3 + research page v3 reframe
+
+> 자문자가 30개 임상 시나리오로 v0.2 출력을 평가했다 (47% 적절, 33% partial, 20% 부적절). 그 피드백을 바탕으로 v0.3 알고리즘을 구현했다 — false positive 좁히기 + Y코드 over-firing 정리 + 임신 응급 강화 + 신규 질문 catalog 6개. v0.2 vs v0.3 광주·전라 directional 검증 완료. research.html v3 reframe.
+
+### 변경 동기
+- 자문자 의견: "통계만으론 모자라다. 시나리오를 직접 돌려봐야 안다." (Phase 10)
+- vignette 검토 결과 v0.2가 atypical chest pain·negative-stated 우울감·단순 결막 충혈 등에서 over-trigger
+- 자문자 본인 결정 두 건(VIG-26·27 임신 응급 약화)도 부적절 판정 → v0.3에서 강화 회복
+
+### Commits
+| # | 작업 | Commit |
+|---|---|---|
+| 1 | Phase 10c-1 — vignette 자문 결과 + 분석 보고서 | `5d82db1` |
+| 2 | Phase 10c-2~11e — v0.3 알고리즘 + directional 검증 + page v3 | (이번 commit) |
+
+### Phase 10 — vignette 검증
+- `research/vignettes-v1.0-draft.json` (30 vignettes)
+  - 12 textbook · 8 fn_pattern · 5 fp_pattern · 5 consultant_change
+- `prektas-vignette-review.html` (38.8KB SPA, Tailscale + Vercel)
+- `research/vignette-review-2026-04-26-mofq7k1h.json` (자문 원본)
+  - 14 appropriate / 10 partial / 6 inappropriate (47%/33%/20%)
+  - 부적절 패턴: VIG-20 (atypical chest pain → Y0010), VIG-21 (우울감 → Y0150), VIG-22 (단순 결막 충혈 → Y0160)
+  - 자문자 자기 결정 부적절: VIG-26·27 임신 응급 약화
+- `research/vignette-review-analysis.md` (6 섹션 분석 + v0.3 변경 권고)
+
+### Phase 11 — v0.3 알고리즘
+- `scripts/research/build-prektas-to-y-mapping-v0.3.mjs` (~480 lines, v0.2 fork)
+- `research/prektas-to-y-mapping-v0.3.json` (4,689 entries)
+  - A:332 / B:266 / C:64 / unmapped:4,027
+
+#### 주요 변경 (vignette feedback)
+1. **fp over-trigger 좁히기**
+   - Y0010: 흉통(심장성) level3 안에서만 trigger, 비심장성 흉통은 unmapped, level4 character로 confident vs candidate 분기
+   - Y0150: explicit positive marker만 (계획적 자살시도·뚜렷한 자살의도·급성 정신증·폭력)
+   - Y0160: 단순 결막 충혈 unmapped, 시력저하·천공·관통이 명시되어야 후보
+2. **Y코드 over-firing 정리**
+   - Y0100 자동 co-trigger 제거 (분만에 자동 따라오던 것)
+   - Y0131/Y0132 둘 다 후보 + replantation_part 질문으로 분기
+3. **임신 응급 강화 (자문자 자기 결정 재고)**
+   - 양수누출 + 임신 20주+ → Y0111+Y0100+Y0112 모두 후보
+   - 지속 질출혈/전치태반/태반박리 → Y0112 confident
+4. **신규 질문 catalog**
+   - dyspnea_history (호흡곤란 과거력)
+   - dyspnea_severity (중증도)
+   - rosc_status (CPR/ROSC 분기)
+   - neonatal_assessment (신생아 평가)
+   - pregnancy_emergency (임신 응급)
+   - airway_burn (기도 화상)
+
+### Phase 11d — v0.2 vs v0.3 directional
+- `scripts/research/validate-v0_3.py` (v0.2 + v0.3 동시 평가)
+- `research/validation-results-v0.3.json` (130,536 visits)
+
+| 지표 | v0.2 | v0.3 | Δ |
+|---|---|---|---|
+| Specificity (확정 only) | 0.934 | 0.963 | **+0.029** |
+| Specificity (확정+후보) | 0.845 | 0.874 | **+0.030** |
+| F1 (확정 only) | 0.162 | 0.170 | +0.008 |
+| Tier 일치율 | 0.857 | 0.868 | +0.011 |
+| Sensitivity (확정 only) | 0.134 | 0.120 | -0.014 (의도) |
+
+- specificity 상승 = vignette에서 본 over-trigger 좁힘이 실제 코호트에서도 confirm
+- sensitivity 약간 하락 = 확정 매핑 좁힌 비용 (의도된 trade-off)
+- tier agreement 상승 = grade 2 복통류·분만 임박 conservative shift 효과
+
+### Phase 11e — research.html v3 reframe
+- `scripts/build-research-page.mjs` 전면 재작성
+- `prektas-research.html` (rebuild)
+  - 헤드라인: "통계가 말하지 않는 것을, 30개 가상 시나리오가 말했다"
+  - vignette 결과 박스 (14·10·6)
+  - 부적절 6건 패턴 분석
+  - v0.3 변경 4 카테고리 (fp 좁히기 / over-firing 정리 / 임신 응급 / 질문 catalog)
+  - v0.2 vs v0.3 directional 비교 표
+  - vignette 통과 추정치 25/30 (자문자 재검토 필요 명시)
+
+### v0.4 후속
+- v0.3 vignette 재검토 (자문자 1시간)
+- 외부 cohort (수도권 데이터)
+- vignette 30 → 100, reference standard agreement (자문자 1 → 2)
+- 332개 확정 매핑 audit
+
+---
+
 ## [2026-04-26] Phase 9b–9e 완료: v0.2 임상 정합성 reframe + 보고서 v2.0
 
 > v1.0 framing("sens 0.394 → 임상 활용 불가") 폐기. 자문자 검토 frozen 매트릭스(10·6·11) + v0.2 알고리즘 + directional 통계 + 보고서·페이지 reframe. 3 commits.

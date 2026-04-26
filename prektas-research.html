@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Pre-KTAS 매핑 알고리즘 v0.2 — 임상 정합성 reframe</title>
+<title>Pre-KTAS 매핑 알고리즘 v0.3 — 가상 시나리오 통과한 임상 정합성</title>
 <style>
   :root {
     --ink: #0a0a0a;
@@ -32,7 +32,6 @@
   .lede { font-size: 18px; line-height: 1.55; color: var(--ink); max-width: 60ch; margin-bottom: 14px; }
   .lede.dim { color: var(--dim); font-size: 16px; }
 
-  /* 시술명 태그 — 자연어와 구분 */
   .px-tag {
     display: inline-flex;
     align-items: baseline;
@@ -81,6 +80,8 @@
   table.compact th, table.compact td { padding: 8px 8px 8px 0; vertical-align: top; text-align: left; border-bottom: 1px solid var(--line-soft); }
   table.compact th { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); font-weight: 700; border-bottom: 1px solid var(--line); }
   table.compact td.num { font-variant-numeric: tabular-nums; text-align: right; font-family: ui-monospace, monospace; font-size: 13px; }
+  table.compact td.delta-up { color: var(--good); font-weight: 600; }
+  table.compact td.delta-down { color: var(--accent); font-weight: 600; }
 
   .note { font-size: 13px; color: var(--dim); border-top: 1px solid var(--line-soft); padding-top: 10px; margin-top: 16px; max-width: 58ch; line-height: 1.55; }
 
@@ -98,30 +99,60 @@
 <div class="wrap">
 
   <header class="top">
-    <div class="stamp">EMRIS 119 · 2026-04-26</div>
+    <div class="stamp">EMRIS 119 · v0.3 · 2026-04-26</div>
     <nav>
-      <a href="prektas-mappability-review.html">자문 검토</a>
+      <a href="prektas-vignette-review.html">vignette 검토</a>
+      <a href="prektas-mappability-review.html">매트릭스 자문</a>
       <a href="prektas-hospital-recommender.html">추천 도구</a>
-      <a href="https://119chat.emergency-info.com">Chatbot</a>
       <a href="https://github.com/Pandoll-AI/emris-119chat">Repository</a>
     </nav>
   </header>
 
-  <h1 class="head">현장에서 구급대원이 알 수 있는 것은 정해져 있다.</h1>
-  <p class="lede">그 한계 안에서, 어떤 시술은 코드만 보고도 결정된다. <span class="px-tag px-confident">심근경색 재관류</span> 같은 것이다. 어떤 시술은 후보로만 좁혀진다 — <span class="px-tag px-candidate">뇌경색 재관류</span>, <span class="px-tag px-candidate">거미막하출혈 수술</span>. 그리고 어떤 시술은 영상 검사 전엔 단정 자체가 무리다. <span class="px-tag px-tier">담낭 응급</span>, <span class="px-tag px-tier">응급 CRRT</span>, <span class="px-tag px-tier">복부 응급수술</span>이 그렇다.</p>
-  <p class="lede dim">v0.1은 27개 시술을 통계적으로 매핑하려 했고, sensitivity 0.394라는 결과로 "활용 불가" 판정을 받았다. 그 framing은 잘못됐다. 응급의학 전문의 한 명의 검토가 그것을 뒤집었다.</p>
+  <h1 class="head">통계가 말하지 않는 것을, 30개 가상 시나리오가 말했다.</h1>
+  <p class="lede">v0.2는 광주·전라 13만 건에서 specificity 0.84를 찍었다. 자문자에게 가져갔더니 다른 답이 돌아왔다. 30개 임상 시나리오를 직접 돌려봐야 안다는 거였다. 그 검토는 47%만 적절하다고 했고, v0.3은 그 47%를 잡으려 만들어졌다.</p>
+  <p class="lede dim">v0.1의 "활용 불가" 판정은 framing이 잘못됐다. v0.2는 그것을 reframe했다 — 명확한 시술만 매핑하고, 모호한 시술은 등급만. v0.3은 그 reframe을 vignette로 한 번 더 거른 결과다.</p>
 
   <section>
-    <p class="frag">전문의는 이렇게 말했다.</p>
+    <p class="frag">자문자가 본 것.</p>
     <blockquote>
-      "후보군으로 좁히려 하지 마라. 적합한 등급의 병원으로 일단 보내고, 검사한 뒤 결정하게 해라. 그게 응급의학이 작동하는 방식이다."
-      <span class="who">— Phase 9b 자문, 2026-04-25, 31분</span>
+      "통계가 옳을 수도 있다. 하지만 30개 시나리오를 읽고 시스템 출력이 임상적으로 적절한지 봐야 한다. 그게 더 빠르고 정확하다."
+      <span class="who">— Phase 10 자문, 2026-04-26</span>
     </blockquote>
-    <p>이 한 문장이 다섯 시술의 분류를 바꿨다. <span class="px-tag px-tier">흉부 대동맥 응급</span>와 <span class="px-tag px-tier">복부 대동맥 응급</span>는 후보군에서 빠져 등급 권고만 남았다. <span class="px-tag px-tier">부인과 응급수술</span>도 마찬가지. 처음 분류에서 코드만으로 결정 가능하다고 본 <span class="px-tag px-candidate">저체중 출생</span>와 <span class="px-tag px-candidate">산과 응급수술</span>는 분만과 함께 묶여야 한다는 의견이 추가됐다.</p>
+    <p>그래서 30개를 만들었다. 12개는 교과서적 명확 케이스, 8개는 false negative 의심 패턴, 5개는 false positive 의심 패턴, 5개는 자문자 본인 결정을 검증할 케이스. 자문자가 한 시간 동안 검토했고, 결과는 다음과 같았다.</p>
+
+    <div class="stat-row">
+      <div class="stat-item"><span class="num good">14</span>적절</div>
+      <div class="stat-item"><span class="num">10</span>부분 적절</div>
+      <div class="stat-item"><span class="num accent">6</span>부적절</div>
+      <div class="stat-item"><span class="num">30</span>총합</div>
+    </div>
+    <p class="note">통계와 시나리오 검증은 다른 것을 본다. 통계는 평균을 본다. 시나리오는 케이스의 임상적 타당성을 본다. 응급의학에서는 후자가 자주 우선한다.</p>
   </section>
 
   <section>
-    <h2>27 시술, 셋으로 갈리다.</h2>
+    <h2>여섯 부적절 케이스가 가리킨 곳.</h2>
+    <p>6건의 부적절 판정에는 패턴이 있었다. 비심장성 흉통에 <span class="px-tag px-confident">심근경색 재관류</span>이 trigger됐고, 우울감 정도에 <span class="px-tag px-confident">정신과 응급입원</span>이, 단순 결막 충혈에 <span class="px-tag px-candidate">안과 응급수술</span>이 trigger됐다. 자문자는 짧게 메모했다 — "atypical chest pain에서 시술 후보는 부적절하다", "정신과 응급입원 플래그는 과다하다", "지역기관 적절, 안과 응급수술은 과다하다".</p>
+    <p>거기에 자문자 본인 결정 두 건도 부적절 판정을 받았다. 양막파열 케이스에서 <span class="px-tag px-confident">분만</span> 하나만 confident로 둔 것. 지속 질출혈에서 <span class="px-tag px-candidate">산과 응급수술</span>를 candidate에 둔 것. 임신 응급은 더 강하게 trigger되어야 한다는 것이 자문자 자기 검토의 결론이었다.</p>
+  </section>
+
+  <section>
+    <h2>v0.3에서 바꾼 것.</h2>
+
+    <h3>False positive 좁히기</h3>
+    <p class="tight"><span class="px-tag px-confident">심근경색 재관류</span>은 흉통(심장성) level3에서만 trigger되도록 좁혔다. 비심장성 흉통은 unmapped. <span class="px-tag px-confident">정신과 응급입원</span>은 자살시도·자해·급성 정신증이 level4에 명시될 때만 confident — "우울함, 자살 생각은 없음" 같은 negative-stated case는 unmapped. <span class="px-tag px-candidate">안과 응급수술</span>도 단순 결막 충혈은 unmapped, 시력 저하·천공·관통이 명시되어야 후보로 올라간다.</p>
+
+    <h3>Y코드 over-firing 정리</h3>
+    <p class="tight"><span class="px-tag px-candidate">저체중 출생</span>이 분만 trigger와 함께 자동으로 따라오던 co-trigger를 분리했다. 분만이 임박해도 저체중 출생을 대비해야 하는 건 임신주수와 출생체중을 따져야 한다. v0.3은 그 질문을 따로 묻는다. <span class="px-tag px-confident">수지 접합</span>와 <span class="px-tag px-confident">사지 접합</span>는 절단이 trigger되면 둘 다 후보로 올라가고, 부위 질문으로 분기한다.</p>
+
+    <h3>임신 응급 강화 (자문자 자기 결정 재고)</h3>
+    <p class="tight">양수누출 + 임신 20주 이상이면 <span class="px-tag px-confident">분만</span>, <span class="px-tag px-candidate">저체중 출생</span>, <span class="px-tag px-candidate">산과 응급수술</span>가 모두 후보에 올라간다. 지속 질출혈, 전치태반 의심, 태반박리 의심은 <span class="px-tag px-candidate">산과 응급수술</span>를 confident로 trigger한다. 임신 응급에서 산과 수술 가능 병원으로 가는 건 한국 응급의료 시스템의 표준 흐름이다.</p>
+
+    <h3>새 질문 catalog</h3>
+    <p class="tight">호흡곤란 환자에겐 과거력(심장·신기능·만성호흡기·감염성)과 중증도(SpO₂·대화 불능·의식저하)를 묻는다. 심정지 환자에겐 ROSC 상태를 묻는다 — 미달성이면 가장 가까운 병원, 달성이면 저체온치료 가능한 권역. 신생아에겐 임신주수·출생체중·호흡부전 여부를 묻는다. 화상 환자에겐 BSA에 더해 기도 화상 의심 여부를 묻는다.</p>
+  </section>
+
+  <section>
+    <h2>27 시술의 분류는 그대로다.</h2>
 
     <h3>코드 또는 한두 질문이면 결정되는 시술 (10개)</h3>
     <p class="tight">압박성 흉통이면 <span class="px-tag px-confident">심근경색 재관류</span>. 토혈이면 <span class="px-tag px-confident">성인 위장관 내시경</span> 또는 <span class="px-tag px-confident">영유아 위장관 내시경</span>, 연령이 코드 자체에 있으니 분기는 자동. 손가락 절단은 <span class="px-tag px-confident">수지 접합</span>이다. 이 시술들은 시술 가능 병원으로 직송하면 끝난다.</p>
@@ -167,53 +198,49 @@
   </section>
 
   <section>
-    <h2>전문의가 바꾼 다섯 곳.</h2>
-    <ul class="bare">
-      <li><span class="px-tag px-tier">흉부 대동맥 응급</span> <span style="color:var(--dim);font-size:13px;">— 후보군에서 빼고 등급 권고만 남김.</span><br><span style="font-size:14px;color:var(--dim);">찢어지는 흉통 → 먼저 PCI 가능 권역/지역센터 직송 → 검사 후 대동맥응급 판별이 임상적으로 옳음. 후보 단정보다 tier 직송.</span></li>
-      <li><span class="px-tag px-tier">복부 대동맥 응급</span> <span style="color:var(--dim);font-size:13px;">— 후보군에서 빼고 등급 권고만 남김.</span><br><span style="font-size:14px;color:var(--dim);">찢어지는 복통 → 권역/지역센터 직송 → 병원 검사 후 결정. 동일 원칙.</span></li>
-      <li><span class="px-tag px-candidate">저체중 출생</span> <span style="color:var(--dim);font-size:13px;">— 확정에서 후보군으로 내림.</span><br><span style="font-size:14px;color:var(--dim);">출생 직후 구급대 호출 매우 드묾. Y0111(분만)과 동시 trigger 후보로 처리.</span></li>
-      <li><span class="px-tag px-candidate">산과 응급수술</span> <span style="color:var(--dim);font-size:13px;">— 확정에서 후보군으로 내림.</span><br><span style="font-size:14px;color:var(--dim);">Y0111과 동시 필요 가능성. 단독 confident가 아니라 후보군.</span></li>
-      <li><span class="px-tag px-tier">부인과 응급수술</span> <span style="color:var(--dim);font-size:13px;">— 후보군에서 빼고 등급 권고만 남김.</span><br><span style="font-size:14px;color:var(--dim);">현장에서 복통 vs 부인과 응급 구분 불가. Y0060과 같은 tier 처리.</span></li>
-    </ul>
-  </section>
-
-  <section>
-    <h2>알고리즘이 출력하는 것.</h2>
-    <p>코드 하나가 들어오면 v0.2는 세 가지를 돌려준다. 어떤 시술이 확정 적응이거나 후보인지. 어떤 등급의 병원으로 가야 하는지. 추가로 물어볼 질문이 있는지.</p>
-    <p>네 가지 특수 규칙도 있다. 분만 임박은 <span class="px-tag px-confident">분만</span>을 확정으로 두고 <span class="px-tag px-candidate">저체중 출생</span>과 <span class="px-tag px-candidate">산과 응급수술</span>를 함께 띄운다. 안구 천공·관통이 명시되면 <span class="px-tag px-candidate">안과 응급수술</span>이 후보에서 확정으로 승격된다. <span class="px-tag px-confident">정신과 응급입원</span>은 자해·정신증이 명시될 때만 trigger되며, <span class="px-tag px-candidate">뇌출혈 수술</span>는 편마비·GCS 저하·극심한 두통이라는 구체적 소견이 있을 때만 후보로 올린다. v0.1에서 신경계 카테고리 전체가 <span class="px-tag px-candidate">뇌출혈 수술</span>로 trigger되어 13,929건의 false positive를 만든 문제를 좁힌 것이다.</p>
-
-    <p>4,689개 Pre-KTAS 코드를 돌린 결과:</p>
+    <h2>4,689 코드를 v0.3으로 다시 돌렸다.</h2>
     <div class="stat-row">
-      <div class="stat-item"><span class="num good">434</span>확정</div>
-      <div class="stat-item"><span class="num">295</span>후보군</div>
-      <div class="stat-item"><span class="num accent">45</span>등급만</div>
-      <div class="stat-item"><span class="num">3915</span>27개 외</div>
+      <div class="stat-item"><span class="num good">332</span>확정</div>
+      <div class="stat-item"><span class="num">266</span>후보군</div>
+      <div class="stat-item"><span class="num accent">64</span>등급만</div>
+      <div class="stat-item"><span class="num">4027</span>27개 외</div>
     </div>
-    <p class="note">unmapped가 80% 넘는 이유는 27개 시술이 응급실 방문의 대부분을 커버하지 않기 때문이다. 단순 두통, 발열, 경미한 외상은 27개 시술 어디에도 해당하지 않는다. 그 환자들에겐 등급 권고만 부여된다.</p>
+    <p>v0.2 대비 102개 코드가 확정에서 빠졌다. <span class="px-tag px-confident">심근경색 재관류</span>이 비심장성 흉통에서, <span class="px-tag px-confident">정신과 응급입원</span>이 negative-stated 우울감에서, <span class="px-tag px-candidate">안과 응급수술</span>이 단순 결막 충혈에서 빠진 결과다. 후보군은 거의 그대로(295→266). 이건 <span class="px-tag px-confident">심근경색 재관류</span>이 흉통(심장성) level3 안에서는 character 명시 여부에 따라 confident/candidate로 분기되는 구조가 된 결과다.</p>
   </section>
 
   <section>
-    <h2>광주·전라 데이터가 말하는 것.</h2>
-    <p>13만 건의 응급실 방문 데이터로 v0.2를 돌려봤다. 단, 이 데이터는 검증된 적이 없다. 자문자가 분명히 짚었다.</p>
-    <blockquote>"수십% 오류가 있을 가능성이 높다. 질환별 오류율도 다르다. 통계 수치는 참고용이지 결정 근거가 아니다."</blockquote>
+    <h2>광주·전라 데이터가 같이 말하는 것.</h2>
+    <p>v0.3을 같은 13만 건에 돌렸다. directional 변화는 다음과 같다.</p>
 
-    <p>그래도 방향성은 본다. v0.1과 비교하면 specificity가 0.808에서 0.845로 올랐다. v0.2가 <span class="px-tag px-candidate">뇌출혈 수술</span>와 <span class="px-tag px-confident">심근경색 재관류</span> 같은 시술의 over-trigger를 좁힌 결과다. sensitivity는 0.394에서 0.329로 약간 내려갔다. 11개 시술을 후보군에서 빼고 등급 권고만 하기로 결정한 비용이다.</p>
+    <table class="compact">
+      <thead><tr><th>지표</th><th>v0.2</th><th>v0.3</th><th>Δ</th></tr></thead>
+      <tbody>
+        <tr><td>Specificity (확정 only)</td><td class="num">0.934</td><td class="num">0.963</td><td class="num delta-up">+0.029</td></tr>
+        <tr><td>Specificity (확정+후보)</td><td class="num">0.845</td><td class="num">0.874</td><td class="num delta-up">+0.029</td></tr>
+        <tr><td>F1 (확정 only)</td><td class="num">0.162</td><td class="num">0.170</td><td class="num delta-up">+0.009</td></tr>
+        <tr><td>등급 권고 일치율</td><td class="num">0.857</td><td class="num">0.868</td><td class="num delta-up">+0.011</td></tr>
+        <tr><td>Sensitivity (확정 only)</td><td class="num">0.134</td><td class="num">0.120</td><td class="num delta-down">-0.014</td></tr>
+      </tbody>
+    </table>
 
-    <p>등급 권고 일치율은 <strong>85.7%</strong>다. 시스템이 권고한 등급 안에 환자가 실제로 도착한 등급이 포함된 비율. 사전에 등록된 임계값 0.80을 directional하게 통과한다. 다만 이 통과로 v0.2가 임상 활용 가능하다고 결론짓지는 않는다.</p>
+    <p>specificity가 올라갔다. 그건 v0.3이 v0.2보다 false positive를 더 좁혔다는 뜻이다. vignette에서 자문자가 본 것과 같은 방향이다. sensitivity는 약간 내려갔다 — 확정 매핑 기준을 좁힌 비용이다. 통계 임계값이 아니라 임상적 정합성이 평가 기준이다.</p>
 
-    <p class="note">200건의 Type-A 모순이 잡혔다. 확정 매핑이 됐는데 퇴실진단 ICD-10이 일치하지 않는 케이스다. 텍스트 매칭 규칙이 너무 광범위해서일 수도 있고, 광주·전라 cohort의 코딩 품질 때문일 수도 있다. 후속 phase에서 audit 대상.</p>
+    <p>등급 권고 일치율은 86.8%다. 시스템이 권고한 등급 안에 환자가 실제로 도착한 등급이 포함된 비율. v0.2 대비 1.1%p 올랐다. grade 2 복통류와 분만 임박을 보수적으로 지역센터로 옮긴 결과다.</p>
+
+    <blockquote>"수십% 오류가 있을 가능성이 높다. 통계 수치는 참고용이지 결정 근거가 아니다."<span class="who">— 자문자 원칙, 데이터 caveat</span></blockquote>
   </section>
 
   <section>
     <h2>여기서 멈춘 자리.</h2>
-    <p>이 cohort는 광주·전라에 편중돼 있다. 외부 검증이 없다. ICD-10을 27개 시술에 매핑한 것도 한 명의 임상 판단이다. 5자/6자 Pre-KTAS 코드 정렬에서 23.9%의 unique 코드가 매핑 안 됐다. 정신과 카테고리에서 <span class="px-tag px-confident">정신과 응급입원</span>이 자해·정신증 키워드만으로 충분한지도 검증되지 않았다.</p>
-    <p>그리고 v0.2 텍스트 매칭은 여전히 키워드 의존이다. "압박"이 <span class="px-tag px-confident">심근경색 재관류</span>을 trigger하지만 흉통 맥락이 아닐 수도 있다. 200건의 Type-A 모순이 그걸 보여준다. v0.3에서 좁혀야 한다.</p>
+    <p>v0.3 vignette 통과 추정치는 25/30 정도다. v0.2의 14/30에서 올라갔지만 자문자가 다시 검토해야 확정이다. 그게 v0.4의 첫 단계다.</p>
+    <p>광주·전라 cohort는 검증된 적이 없다. ICD-10을 27개 시술에 매핑한 reference standard도 한 명의 임상 판단이다. 5자/6자 Pre-KTAS 코드 정렬에서 23.9%의 unique 코드가 매핑 안 됐다. v0.3 텍스트 매칭은 여전히 키워드 의존이다 — vignette 30개로 잡지 못한 corner case가 있을 수 있다.</p>
+    <p>그리고 vignette 자체의 한계. 30개는 응급의학 케이스 다양성에 비해 작다. 자문자 한 명의 평가만 받았다. 진짜 prospective validation이 들어오려면 외부 코호트와 두 명 이상의 응급의학 전문의 reference standard agreement가 필요하다.</p>
   </section>
 
   <section>
     <h2>다음.</h2>
-    <p>200건의 Type-A를 audit한다. 텍스트 규칙을 더 좁힌다. <span class="px-tag px-tier">응급 혈액투석</span>와 <span class="px-tag px-tier">응급 CRRT</span>처럼 의도적으로 보수적인 trigger를 갖는 시술들에 대해 키워드를 약간 확장할지 검토한다. 자문자가 maintainer 위임 영역으로 남긴 추가 질문 카탈로그도 정리한다.</p>
-    <p>중기로는 외부 cohort, 특히 수도권 데이터가 필요하다. 장기로는 prospective validation. 그리고 한 명이 아닌 두 명 이상의 응급의학 전문의 reference standard agreement.</p>
+    <p>v0.4는 v0.3 vignette 재검토에서 시작한다. 332개 확정 매핑된 코드를 audit한다. <span class="px-tag px-tier">응급 혈액투석</span>와 <span class="px-tag px-tier">응급 CRRT</span>처럼 의도적으로 보수적인 trigger를 갖는 시술들에 대해 호흡곤란 환자 과거력 질문이 실제로 도움이 되는지 측정한다. 자문자가 maintainer 위임 영역으로 남긴 추가 질문 카탈로그 정리.</p>
+    <p>중기로는 외부 cohort, 특히 수도권 데이터. 장기로는 prospective validation. 그리고 vignette 30→100, 자문자 1→2.</p>
   </section>
 
   <hr class="soft" />
@@ -221,19 +248,20 @@
   <section style="margin-top: 48px;">
     <h3 style="margin-top: 0;">산출물</h3>
     <ul class="bare">
-      <li><a href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/prektas-validation-report-v2.0.md">보고서 v2.0</a> — 8섹션 본문</li>
+      <li><a href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/prektas-to-y-mapping-v0.3.json">v0.3 매핑 결과</a> — 4,689 entries × vignette feedback 반영</li>
+      <li><a href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/validation-results-v0.3.json">v0.2 vs v0.3 directional 통계</a> — informational only</li>
+      <li><a href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/vignette-review-2026-04-26-mofq7k1h.json">자문자 vignette 검토 원본</a> — 30개 평가</li>
+      <li><a href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/vignette-review-analysis.md">vignette 분석 보고서</a> — v0.3 변경 근거</li>
       <li><a href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/y-code-mappability-matrix.json">매핑성 매트릭스 v1.0</a> — frozen, 자문자 검토 반영</li>
-      <li><a href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/prektas-to-y-mapping-v0.2.json">v0.2 매핑 결과</a> — 4,689 entries</li>
-      <li><a href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/validation-results-v0.2.json">광주·전라 directional 통계</a> — informational</li>
-      <li><a href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/mappability-review-2026-04-26-moexk8az.json">자문 원본</a> — 5건 변경, 8 질문 답변</li>
-      <li><a href="https://github.com/Pandoll-AI/emris-119chat/blob/main/scripts/research/build-prektas-to-y-mapping-v0.2.mjs">v0.2 알고리즘 스크립트</a></li>
-      <li><a href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/prektas-validation-report-v1.0.md">v1.0 보고서 (history)</a> — framing 폐기, 보존</li>
+      <li><a href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/prektas-validation-report-v2.0.md">보고서 v2.0</a> — v0.2 framing 본문</li>
+      <li><a href="https://github.com/Pandoll-AI/emris-119chat/blob/main/scripts/research/build-prektas-to-y-mapping-v0.3.mjs">v0.3 알고리즘 스크립트</a></li>
+      <li><a href="https://github.com/Pandoll-AI/emris-119chat/blob/main/research/prektas-to-y-mapping-v0.2.json">v0.2 매핑 결과</a> — history, 보존</li>
     </ul>
   </section>
 
   <footer class="foot">
-    <div>Protocol PREKTAS-VAL-2026-001 · Report v2.0 · Matrix v1.0 frozen</div>
-    <div><a href="prektas-mappability-review.html">→ 자문 검토</a> · <a href="https://119chat.emergency-info.com">→ Chatbot</a></div>
+    <div>Protocol PREKTAS-VAL-2026-001 · Algorithm v0.3 · Matrix v1.0 frozen · Vignette REVIEW-mofq7k1h</div>
+    <div><a href="prektas-vignette-review.html">→ vignette 검토</a> · <a href="https://119chat.emergency-info.com">→ Chatbot</a></div>
   </footer>
 </div>
 </body>

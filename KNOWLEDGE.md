@@ -397,15 +397,65 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 
 > 위 prevalence는 ICD-10 prefix만 기준한 raw 추정. Phase 8a-2의 frozen Y-code → ICD-10 cluster 적용 후 재산출 예정.
 
+## Phase 10–11 Actions (2026-04-26) — vignette 검증 + v0.3 알고리즘
+
+| Date | Action | Actor | Target | Detail |
+|---|---|---|---|---|
+| 2026-04-26 | request | user | clinical validation | "통계가 모자라다. 30개 시나리오 직접 검토하자." Phase 10 vignette validation 시작. |
+| 2026-04-26 | author | claude | `research/vignettes-v1.0-draft.json` | 30 vignette (12 textbook · 8 fn · 5 fp · 5 consultant_change). v0.2 출력 enriched. |
+| 2026-04-26 | feedback | user | vignette codes | "전부 중등도 호흡곤란이라 비현실적." 13건 level4 swap. |
+| 2026-04-26 | build | claude | `prektas-vignette-review.html` | 38.8KB SPA, localStorage auto-save, JSON export. Tailscale + Vercel host. |
+| 2026-04-26 | review | consultant | 30 vignettes | 14 appropriate / 10 partial / 6 inappropriate. 1시간 검토. |
+| 2026-04-26 | analyze | claude | `research/vignette-review-analysis.md` | 6 섹션 분석 + v0.3 변경 권고. critical: VIG-20·21·22 fp · VIG-26·27 임신 응급 약화 |
+| 2026-04-26 | build | claude | `scripts/research/build-prektas-to-y-mapping-v0.3.mjs` | v0.2 fork. fp 좁히기 + over-firing 정리 + 임신 응급 강화 + 신규 질문 catalog 6개. |
+| 2026-04-26 | run | claude | v0.3 algorithm | A:332 / B:266 / C:64 / unmapped:4,027. v0.2 대비 over-trigger 102건 unmapped로 이동. |
+| 2026-04-26 | validate | claude | `scripts/research/validate-v0_3.py` | v0.2 + v0.3 동시 평가. spec +0.029, F1 +0.008, tier +0.011. directional only. |
+| 2026-04-26 | rewrite | claude | `scripts/build-research-page.mjs` | 헤드라인 "통계가 말하지 않는 것을, 30개 가상 시나리오가 말했다". v0.2 vs v0.3 비교 표 + vignette 결과. |
+| 2026-04-26 | commit | claude | (이번 phase) | Phase 10c-2 ~ 11e 통합 commit. |
+
+## Phase 10 vignette 검증 결과 (자문자)
+
+| 카테고리 | 케이스 수 | appropriate | partial | inappropriate |
+|---|---|---|---|---|
+| textbook | 12 | 5 | 7 | 0 |
+| fn_pattern | 8 | 5 | 3 | 0 |
+| fp_pattern | 5 | 1 | 0 | 4 |
+| consultant_change | 5 | 3 | 0 | 2 |
+| **총합** | **30** | **14 (47%)** | **10 (33%)** | **6 (20%)** |
+
+### 부적절 6건 패턴
+- VIG-20 CIDBC: atypical chest pain → Y0010 부적절 (비심장성 흉통)
+- VIG-21 CBECA: 우울감(자살 생각 없음) → Y0150 과다
+- VIG-22 CDECB: 단순 결막 충혈 → Y0160 과다
+- VIG-14 CJMBA: 복부 종괴 → tier 권고 과다 (지역센터/지역기관 적절)
+- VIG-26 CKHCB: 양막파열 → Y0111만 (저체중·산과수술 누락) — 자문자 자기 결정 재고
+- VIG-27 CKHCQ: 지속 질출혈 → Y0112 candidate (confident이어야) — 자문자 자기 결정 재고
+
+## Phase 11 v0.3 변경 (vignette 기반)
+
+| 카테고리 | 변경 | vignette 출처 |
+|---|---|---|
+| Y0010 | 흉통(심장성) level3 안에서만 trigger, level4 character로 confident/candidate 분기 | VIG-20 |
+| Y0150 | level4 explicit positive marker만 (계획적 자살시도/자해/급성정신증) | VIG-21 |
+| Y0160 | 단순 결막 충혈 unmapped, 시력저하·천공·관통 명시 시만 | VIG-22 |
+| Y0100 | 분만 자동 co-trigger 제거 | VIG-04 |
+| Y0131/Y0132 | 부위 미상 시 둘 다 후보 + replantation_part 질문 | VIG-05 |
+| 임신 응급 | 양수누출 + 임신 20주+ → Y0111+Y0100+Y0112 모두 후보 | VIG-26 |
+| 임신 응급 | 지속 질출혈/태반 → Y0112 confident | VIG-27 |
+| CPR/ROSC | rosc_status 질문으로 분기 | VIG-07 |
+| 호흡곤란 | dyspnea_history + dyspnea_severity 질문 | VIG-12, VIG-15 |
+| 화상 | airway_burn 질문 + Y0091 추가 candidate | VIG-09 |
+| 신생아 | neonatal_assessment 질문 | VIG-29 |
+
 ## Next Phase Candidates
 
-Phase 4 리포트 §7에서 승계.
-
-1. **실측 검증 (최우선)** — `source-prektas.csv` 225k 방문으로 false negative rate 측정. "중증인데 지역기관 추천" 비율 정량화 없이는 배포 불가.
-2. **Y-tier 1차안 응급의학 전문의 리뷰** — 특히 Y0131/0132/0120 분류 정합성.
-3. **v0.1 rule gap 보강** — Y0042 복부대동맥(현재 2건만), Y0141/0142 투석(현재 0건), Y0070 장중첩 등.
-4. **EMRIS 실시간 병상 데이터 통합** — `acceptable_tiers`의 "여유시 권역" 판정을 실제 `emris-data/devdocs/{hospitals,beds,messages}.json`로 구체화.
-5. **지역별 병원 capability 매트릭스** — 행정 등급(권역/지역센터/지역기관) 대신 실제 Y코드 커버 능력 기반 추천.
+1. **v0.4 vignette 재검토** (최우선) — v0.3 출력을 30개 vignette에 대해 자문자 재평가. 25/30 추정치 confirm. 1시간 검토 추정.
+2. **v0.3 332 A 코드 audit** — 확정 매핑된 entries 임상 적절성 검토.
+3. **외부 cohort** — 광주·전라 외 (특히 수도권). cohort representativeness 확보.
+4. **Reference standard agreement** — 응급의학 전문의 1 → 2명 (Y → ICD-10 cluster + vignette 평가).
+5. **vignette 30 → 100** — 응급의학 케이스 다양성 확보 (현재 5 카테고리 외 — 외상·중독·소아·고령자 등).
+6. **EMRIS 실시간 병상 데이터 통합** — `acceptable_tiers`의 "여유시 권역" 판정을 실제 `emris-data/devdocs/{hospitals,beds,messages}.json`로 구체화.
+7. **지역별 병원 capability 매트릭스** — 행정 등급(권역/지역센터/지역기관) 대신 실제 Y코드 커버 능력 기반 추천.
 
 ### 운영 action items
 
