@@ -26,7 +26,13 @@ print_url() {
     echo "Tailscale: http://${ip}:${PORT}/research.html"
   fi
   echo ""
-  echo "── Phase 9b 자문자 검토 (/mappability-review.html) ──"
+  echo "── Phase 10b vignette 검토 (/vignette-review.html) ──"
+  echo "Local:     http://127.0.0.1:${PORT}/vignette-review.html"
+  if [[ -n "$ip" ]]; then
+    echo "Tailscale: http://${ip}:${PORT}/vignette-review.html"
+  fi
+  echo ""
+  echo "── Phase 9b 매핑성 매트릭스 검토 (/mappability-review.html) ──"
   echo "Local:     http://127.0.0.1:${PORT}/mappability-review.html"
   if [[ -n "$ip" ]]; then
     echo "Tailscale: http://${ip}:${PORT}/mappability-review.html"
