@@ -1,0 +1,3072 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Phase 11f-prep — vignette 30개 v0.3 재평가</title>
+<style>
+  :root {
+    --ink: #0a0a0a;
+    --bg: #fafaf8;
+    --surface: #ffffff;
+    --dim: #6b6b68;
+    --muted: #94948f;
+    --line: rgba(10,10,10,0.14);
+    --line-soft: rgba(10,10,10,0.07);
+    --accent: #a8231c;
+    --accent-soft: rgba(168,35,28,0.07);
+    --good: #1f7a3d;
+    --good-soft: rgba(31,122,61,0.08);
+    --warn: #b8860b;
+    --warn-soft: rgba(184,134,11,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { background: var(--bg); color: var(--ink); font-family: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Helvetica Neue", sans-serif; font-feature-settings: "tnum"; line-height: 1.55; font-size: 15px; }
+
+  .app { display: grid; grid-template-columns: 320px 1fr; min-height: 100vh; }
+  @media (max-width: 920px) { .app { grid-template-columns: 1fr; } .sidebar { position: fixed; bottom: 0; left: 0; right: 0; max-height: 50vh; overflow-y: auto; z-index: 10; border-top: 2px solid var(--ink); background: var(--surface); } .main { padding-bottom: 50vh; } }
+
+  .sidebar { border-right: 1px solid var(--line); background: var(--surface); padding: 20px 0; overflow-y: auto; max-height: 100vh; position: sticky; top: 0; }
+  .sidebar h1 { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; padding: 0 22px; margin-bottom: 6px; font-weight: 800; }
+  .sidebar .sub { font-size: 11px; color: var(--dim); padding: 0 22px 16px; border-bottom: 1px solid var(--line); }
+
+  .progress-bar { padding: 14px 22px; border-top: 1px solid var(--line); margin-top: 10px; }
+  .bar-bg { width: 100%; height: 4px; background: var(--line-soft); position: relative; }
+  .bar-fill { position: absolute; left: 0; top: 0; height: 100%; background: var(--accent); transition: width 0.2s; }
+  .bar-text { font-size: 11px; color: var(--dim); margin-top: 6px; font-family: ui-monospace, monospace; }
+
+  .nav-section { padding: 14px 22px 6px; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 6px 22px; cursor: pointer; font-size: 13px; border-left: 2px solid transparent; transition: background 0.1s; }
+  .nav-item:hover { background: var(--accent-soft); }
+  .nav-item.active { border-left-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+  .nav-item .nav-id { font-family: ui-monospace, monospace; font-size: 11px; color: var(--dim); flex-shrink: 0; width: 50px; }
+  .nav-item.active .nav-id { color: var(--accent); }
+  .nav-item .nav-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+  .nav-item .nav-eval { font-size: 9px; padding: 2px 4px; border: 1px solid; flex-shrink: 0; font-weight: 700; }
+  .nav-eval.appropriate { color: var(--good); border-color: var(--good); background: var(--good-soft); }
+  .nav-eval.partial { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+  .nav-eval.inappropriate { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .nav-eval.unable { color: var(--muted); border-color: var(--muted); }
+  .nav-eval.empty { color: var(--line); border-color: var(--line); }
+
+  .actions { padding: 12px 22px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); }
+  .btn { padding: 8px 14px; border: 1px solid var(--accent); background: var(--surface); color: var(--accent); font-weight: 700; cursor: pointer; font-family: inherit; font-size: 13px; text-align: center; transition: background 0.1s, color 0.1s; }
+  .btn:hover { background: var(--accent); color: #fff; }
+  .btn.secondary { border-color: var(--line); color: var(--ink); }
+  .btn.secondary:hover { background: var(--ink); color: #fff; }
+  .btn.danger { border-color: var(--accent); color: var(--accent); }
+
+  .main { padding: 36px 44px 80px; max-width: 920px; }
+  @media (max-width: 920px) { .main { padding: 22px 18px 60px; } }
+
+  .preamble { padding-bottom: 22px; border-bottom: 2px solid var(--ink); margin-bottom: 28px; }
+  .preamble .kicker { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 6px; }
+  .preamble h1 { font-size: clamp(22px, 3vw, 32px); line-height: 1.15; letter-spacing: -0.02em; font-weight: 900; margin-bottom: 10px; }
+  .preamble .lede { font-size: 14px; color: var(--dim); max-width: 64ch; line-height: 1.6; }
+  .preamble .meta { display: flex; gap: 16px; margin-top: 12px; font-size: 11px; color: var(--dim); flex-wrap: wrap; font-family: ui-monospace, monospace; }
+
+  section[data-section] { display: none; padding: 12px 0; }
+  section[data-section].active { display: block; }
+
+  .welcome ul { padding-left: 20px; margin: 12px 0; }
+  .welcome li { margin: 6px 0; line-height: 1.55; }
+  .welcome h2 { font-size: 22px; font-weight: 800; margin-bottom: 12px; letter-spacing: -0.02em; }
+  .welcome h3 { margin-top: 18px; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+
+  .vig-card .v-header { display: flex; align-items: baseline; gap: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 18px; flex-wrap: wrap; }
+  .v-id { font-family: ui-monospace, monospace; font-size: 13px; font-weight: 700; color: var(--accent); }
+  .v-cat { font-size: 11px; padding: 2px 7px; border: 1px solid var(--dim); color: var(--dim); letter-spacing: 0.04em; text-transform: uppercase; }
+  .v-cat.textbook { color: var(--good); border-color: var(--good); }
+  .v-cat.fn_pattern { color: var(--accent); border-color: var(--accent); }
+  .v-cat.fp_pattern { color: var(--warn); border-color: var(--warn); }
+  .v-cat.consultant_change { color: var(--ink); border-color: var(--ink); font-weight: 700; }
+  .v-meta { font-size: 11px; color: var(--dim); margin-left: auto; font-family: ui-monospace, monospace; }
+
+  .field-group { margin-bottom: 20px; }
+  .field-group h3 { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); font-weight: 700; margin-bottom: 6px; }
+  .field-group .help { font-size: 12px; color: var(--dim); margin-bottom: 8px; line-height: 1.5; }
+
+  .scenario-block { padding: 14px 16px; background: var(--surface); border-left: 3px solid var(--ink); font-size: 14.5px; line-height: 1.65; margin-bottom: 14px; }
+  .key-feats { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 14px; }
+  .key-feat { font-size: 11px; padding: 2px 7px; border: 1px solid var(--line); color: var(--dim); }
+
+  .system-output { padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); margin-bottom: 14px; }
+  .system-output .o-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 8px; }
+  .system-output .o-row { padding: 6px 0; border-bottom: 1px solid var(--line-soft); display: grid; grid-template-columns: 110px 1fr; gap: 12px; font-size: 13px; line-height: 1.5; }
+  .system-output .o-row:last-child { border-bottom: 0; }
+  .o-lbl { color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; padding-top: 1px; }
+  .o-val { color: var(--ink); }
+  .o-val .px-tag { display: inline-block; padding: 1px 6px; border: 1px solid; font-size: 12px; font-weight: 600; margin-right: 4px; line-height: 1.3; }
+  .o-val .px-tag::before { content: "·"; opacity: 0.55; margin-right: 3px; font-weight: 400; }
+  .px-tag.confident { color: var(--good); border-color: var(--good); background: var(--good-soft); }
+  .px-tag.candidate { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+  .px-tag.tier { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .o-mappability { font-weight: 700; }
+  .o-mappability.A { color: var(--good); }
+  .o-mappability.B { color: var(--warn); }
+  .o-mappability.C { color: var(--accent); }
+  .o-mappability.unmapped { color: var(--dim); }
+
+  .test-intent { padding: 10px 14px; background: var(--accent-soft); border-left: 3px solid var(--accent); font-size: 13px; line-height: 1.55; margin: 12px 0 18px; color: var(--ink); }
+
+  .eval-radio { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 8px 0; }
+  @media (max-width: 580px) { .eval-radio { grid-template-columns: 1fr; } }
+  .eval-radio label { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border: 1.5px solid var(--line); cursor: pointer; transition: all 0.1s; font-size: 13px; line-height: 1.4; }
+  .eval-radio label:hover { background: var(--accent-soft); }
+  .eval-radio label.selected.appropriate { background: var(--good-soft); border-color: var(--good); color: var(--good); font-weight: 700; }
+  .eval-radio label.selected.partial { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); font-weight: 700; }
+  .eval-radio label.selected.inappropriate { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  .eval-radio label.selected.unable { background: #f0f0eb; border-color: var(--ink); font-weight: 700; }
+  .eval-radio input[type="radio"] { accent-color: var(--accent); margin-top: 1px; }
+
+  textarea.notes { width: 100%; padding: 10px 12px; border: 1px solid var(--line); font-family: inherit; font-size: 13px; line-height: 1.5; min-height: 70px; resize: vertical; }
+  textarea.notes:focus { outline: 2px solid var(--accent); }
+
+  .nav-buttons { display: flex; justify-content: space-between; gap: 10px; margin-top: 26px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .nav-buttons .btn { flex: 0 1 auto; min-width: 100px; }
+
+  .question-card { border: 1px solid var(--line); padding: 14px 16px; background: var(--surface); margin: 12px 0; }
+  .question-card .q-num { font-size: 18px; font-weight: 900; color: var(--accent); margin-bottom: 6px; letter-spacing: -0.02em; }
+  .question-card .q-text { font-size: 14px; line-height: 1.55; margin-bottom: 8px; font-weight: 600; }
+  .question-card textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); font-family: inherit; font-size: 13px; min-height: 70px; resize: vertical; }
+  .question-card textarea:focus { outline: 2px solid var(--accent); }
+
+  .export-preview { background: var(--surface); border: 1px solid var(--line); padding: 12px; margin: 14px 0; max-height: 380px; overflow: auto; font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
+  .export-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+
+  .summary-block { padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); margin: 12px 0; font-size: 13px; line-height: 1.55; }
+
+  h2.section-title { font-size: 22px; font-weight: 800; margin-bottom: 12px; letter-spacing: -0.02em; }
+  p.section-help { color: var(--dim); margin-bottom: 14px; max-width: 64ch; line-height: 1.55; font-size: 13px; }
+
+  code { font-family: ui-monospace, monospace; font-size: 0.9em; background: var(--line-soft); padding: 1px 4px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <h1>Phase 11f-prep 재검토</h1>
+    <div class="sub">vignette 30개 임상 적절성 평가</div>
+
+    <div class="progress-bar">
+      <div class="bar-bg"><div class="bar-fill" id="progress-fill"></div></div>
+      <div class="bar-text" id="progress-text">0 / 30 평가</div>
+    </div>
+
+    <nav id="nav-list"></nav>
+
+    <div class="actions">
+      <button class="btn secondary" id="nav-welcome">📖 안내</button>
+      <button class="btn secondary" id="nav-questions">❓ 종합 질문 5개</button>
+      <button class="btn" id="nav-export">⬇ 결과 내보내기</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="preamble">
+      <div class="kicker">Phase 11f-prep · v0.3 재평가 (production 통합 전 confirm)</div>
+      <h1>같은 30개에 v0.3 출력을 다시 본다</h1>
+      <p class="lede">지난번(2026-04-26) v0.2 검토 결과 14 적절 / 10 부분 / 6 부적절. 그 피드백으로 v0.3을 만들었다. 이번엔 같은 30개에 v0.3 출력을 보고 재평가한다. v0.2 출력과 지난번 본인 평가도 같이 보여주니 무엇이 달라졌는지 한눈에 보인다. v0.3 통과가 confirm되면 production 챗봇·마법사에 깊게 통합한다.</p>
+      <div class="meta">
+        <span>vignettes v1.0</span>
+        <span>v0.3 alg</span>
+        <span>prev review: REVIEW-mofq7k1h</span>
+        <span>Session: <span id="session-id">―</span></span>
+        <span>Last saved: <span id="last-saved">―</span></span>
+      </div>
+    </div>
+
+    <section class="welcome active" data-section="welcome" id="section-welcome"></section>
+
+    <div id="vignette-sections"></div>
+
+    <section data-section="questions" id="section-questions"></section>
+
+    <section data-section="export" id="section-export"></section>
+  </main>
+</div>
+
+<script>
+'use strict';
+
+function el(tag, attrs, children) {
+  const e = document.createElement(tag);
+  if (attrs) for (const k in attrs) {
+    if (k === 'class') e.className = attrs[k];
+    else if (k === 'style') e.style.cssText = attrs[k];
+    else if (k === 'text') e.textContent = attrs[k];
+    else if (k.indexOf('data-') === 0) e.setAttribute(k, attrs[k]);
+    else e.setAttribute(k, attrs[k]);
+  }
+  if (children) children.forEach(c => {
+    if (c == null) return;
+    if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+    else e.appendChild(c);
+  });
+  return e;
+}
+function clearChildren(node) { while (node && node.firstChild) node.removeChild(node.firstChild); }
+
+// 시술명 매핑 (Y 코드 → 한글 시술명)
+const PROC = {
+  Y0010:'심근경색 재관류', Y0020:'뇌경색 재관류', Y0031:'거미막하출혈 수술', Y0032:'뇌출혈 수술',
+  Y0041:'흉부 대동맥 응급', Y0042:'복부 대동맥 응급', Y0051:'담낭 응급', Y0052:'담도 응급',
+  Y0060:'복부 응급수술', Y0070:'영유아 장폐색', Y0081:'성인 위장관 내시경', Y0082:'영유아 위장관 내시경',
+  Y0091:'성인 기관지 내시경', Y0092:'영유아 기관지 내시경', Y0100:'저체중 출생',
+  Y0111:'분만', Y0112:'산과 응급수술', Y0113:'부인과 응급수술', Y0120:'중증 화상',
+  Y0131:'수지 접합', Y0132:'사지 접합', Y0141:'응급 혈액투석', Y0142:'응급 CRRT',
+  Y0150:'정신과 응급입원', Y0160:'안과 응급수술', Y0171:'성인 혈관중재', Y0172:'영유아 혈관중재',
+};
+
+// vignette 데이터 (build-time embed via fetch — 또는 inline)
+const VIGNETTES_DATA = {
+  "version": "1.0-draft",
+  "drafted_at": "2026-04-26",
+  "drafter": "maintainer (Claude Opus 4.7)",
+  "purpose": "v0.2 알고리즘의 case-level qualitative validation. 응급의학 표준 케이스 + v0.1 FN/FP 패턴 + 자문자 변경 5건 검증 케이스로 30개 구성.",
+  "framing": "자문자(응급의학 전문의 1인)가 각 vignette을 보고 v0.2 시스템 출력의 임상 적절성을 평가. 통계가 아닌 logical chain validation.",
+  "categories": {
+    "textbook": "응급의학 표준 케이스 (전형적, A 그룹 confident 검증)",
+    "fn_pattern": "v0.1 false negative top 패턴 (놓친 ground truth)",
+    "fp_pattern": "v0.1 false positive top 패턴 (over-trigger)",
+    "consultant_change": "자문자 5건 변경의 v0.2 동작 검증 (Y0041·Y0042·Y0100·Y0112·Y0113)"
+  },
+  "evaluation_options": [
+    "appropriate — 시스템 출력이 임상적으로 적절. 그대로 활용 가능.",
+    "partial — 일부 적절하나 부족·과잉. 메모로 보강 필요 사항 명시.",
+    "inappropriate — 임상적으로 부적절. 시스템이 잘못된 방향을 제시.",
+    "unable_to_evaluate — vignette 정보 부족 또는 평가 불가."
+  ],
+  "vignettes": [
+    {
+      "id": "VIG-01",
+      "category": "textbook",
+      "scenario": "65세 남성. 30분 전부터 갑자기 시작된 가슴 중앙의 짓누르는 통증. 식은땀, 호흡곤란 동반. 의식 명료, 활력징후 정상. 발병 시점 명확.",
+      "estimated_pre_code": "CICCA",
+      "key_features": [
+        "압박성 흉통",
+        "성인",
+        "발병 30분",
+        "식은땀"
+      ],
+      "test_intent": "전형적 STEMI 의심 케이스 — A 그룹 ·심근경색 재관류· confident 매핑이 작동하는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)",
+        "level4": "심장성 통증"
+      },
+      "v02_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0010",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "chest_pain_character"
+        ],
+        "rationale": "흉통 character 미명시 → Y0010 후보, 질문으로 분기",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0010",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "chest_pain_character"
+        ],
+        "rationale": "흉통(심장성) + 심장성 features → ·심근경색 재관류· confident",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v02_review": {
+        "category": "textbook",
+        "pre_code": "CICCA",
+        "mappability": "A",
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-02",
+      "category": "textbook",
+      "scenario": "72세 여성. 1시간 전부터 우측 편마비 + 구음장애. FAST 양성. 가족이 마지막으로 정상 본 시각이 오늘 아침 8시.",
+      "estimated_pre_code": "CCGCC",
+      "key_features": [
+        "편마비",
+        "구음장애",
+        "발병시각 명확",
+        "성인"
+      ],
+      "test_intent": "전형적 뇌경색 재관류 시간창 케이스 — B 그룹 ·뇌경색 재관류· 후보군 + 영상 후 결정 framing이 적절한가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "신경계",
+        "level3": "사지약화/뇌졸중 증상",
+        "level4": "발병시간 24시간 이내"
+      },
+      "v02_output": {
+        "mappability": "B",
+        "y_candidates": [
+          {
+            "code": "Y0020",
+            "confidence": "candidate"
+          },
+          {
+            "code": "Y0032",
+            "confidence": "candidate"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "onset_time_stroke",
+          "trauma_or_spontaneous"
+        ],
+        "rationale": "국소 신경결손 → Y0020/Y0032 후보 (시간·외상 분기)",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "B",
+        "y_candidates": [
+          {
+            "code": "Y0020",
+            "confidence": "candidate"
+          },
+          {
+            "code": "Y0032",
+            "confidence": "candidate"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "onset_time_stroke",
+          "trauma_or_spontaneous"
+        ],
+        "rationale": "국소 신경결손 → ·뇌경색 재관류·/·뇌출혈 수술· 후보",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v02_review": {
+        "category": "textbook",
+        "pre_code": "CCGCC",
+        "mappability": "B",
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-03",
+      "category": "textbook",
+      "scenario": "28세 남성. 2시간 전부터 점차 심해진 우하복부 통증. 발열 38.5°C, 식욕 없음, 구토 1회. 압박 시 rebound tenderness.",
+      "estimated_pre_code": "CJABA",
+      "key_features": [
+        "우하복부 통증",
+        "발열",
+        "복막자극"
+      ],
+      "test_intent": "전형적 충수염 의심 — C 그룹 ·복부 응급수술· tier 권고만 적절한가 (단정 회피)",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "소화기계",
+        "level3": "복통",
+        "level4": "급성 통증(8-10)"
+      },
+      "v02_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched — grade 기반 tier만",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "v03_conservative_abdpain"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": true,
+        "questions_changed": false,
+        "any_change": true
+      },
+      "v02_review": {
+        "category": "textbook",
+        "pre_code": "CJABA",
+        "mappability": "unmapped",
+        "evaluation": "partial",
+        "notes": "28세 남자환자의 복통은 지역응급의료센터를 기본으로"
+      }
+    },
+    {
+      "id": "VIG-04",
+      "category": "textbook",
+      "scenario": "임신 38주 35세 여성. 30분 전부터 규칙적 진통, 양막 파열. 자궁수축 5분 간격. 자궁구 5cm 개대.",
+      "estimated_pre_code": "CKHCM",
+      "key_features": [
+        "임신 38주",
+        "분만 진행",
+        "자궁수축 5분 이내",
+        "성인"
+      ],
+      "test_intent": "전형적 분만 임박 — A 그룹 ·분만· confident + Y0100·Y0112 co-trigger 작동하는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "임신/여성생식계",
+        "level3": "20주 이상의 임신",
+        "level4": "진통(자궁수축 ≤5분)"
+      },
+      "v02_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0111",
+            "confidence": "confident"
+          },
+          {
+            "code": "Y0100",
+            "confidence": "candidate"
+          },
+          {
+            "code": "Y0112",
+            "confidence": "candidate"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "pregnancy_weeks"
+        ],
+        "rationale": "분만 임박 → Y0111 confident + Y0100/Y0112 co-trigger 후보 (자문자)",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0111",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "regional"
+          ],
+          "source": "v03_labor_local_center"
+        },
+        "questions": [],
+        "rationale": "분만 임박 → ·분만· confident",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": true,
+        "mappability_changed": false,
+        "tier_changed": true,
+        "questions_changed": true,
+        "any_change": true
+      },
+      "v02_review": {
+        "category": "textbook",
+        "pre_code": "CKHCM",
+        "mappability": "A",
+        "evaluation": "partial",
+        "notes": "저체중출생 트리거가 될 이유가 없다. 산과 출산이 가능하면 굳이 권역센터를 올 필요가 없다."
+      }
+    },
+    {
+      "id": "VIG-05",
+      "category": "textbook",
+      "scenario": "45세 남성. 작업장에서 절단기에 우측 검지·중지 완전 절단. 출혈 활동성. 절단된 손가락은 따로 보관.",
+      "estimated_pre_code": "CMCCC",
+      "key_features": [
+        "손가락 절단",
+        "성인"
+      ],
+      "test_intent": "전형적 ·수지 접합· 케이스 — A confident 매핑 작동 확인",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "근골격계",
+        "level3": "절단",
+        "level4": "손가락의 외상성 절단"
+      },
+      "v02_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0131",
+            "confidence": "confident"
+          },
+          {
+            "code": "Y0132",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "replantation_part"
+        ],
+        "rationale": "절단/접합 → Y0131/Y0132 부위 분기",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0131",
+            "confidence": "confident"
+          },
+          {
+            "code": "Y0132",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "replantation_part"
+        ],
+        "rationale": "절단 → ·수지 접합·/·사지 접합· 후보 (부위 질문으로 분기)",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v02_review": {
+        "category": "textbook",
+        "pre_code": "CMCCC",
+        "mappability": "A",
+        "evaluation": "partial",
+        "notes": "\"손가락의 외상성 절단\"이 골라졌다면 \"수지접합\"만 Y코드로 호출되어도 된다. \"사지접합\"은 호출 안되도 된다는ㄴ 뜻\n"
+      }
+    },
+    {
+      "id": "VIG-06",
+      "category": "textbook",
+      "scenario": "23세 여성. 약물 과다복용 후 발견. 1시간 전 자살시도 메모 발견. GCS 12. 본인 자해 의도 명시.",
+      "estimated_pre_code": "CBECE",
+      "key_features": [
+        "자살시도",
+        "약물 과다복용",
+        "자해 의도 명시"
+      ],
+      "test_intent": "전형적 ·정신과 응급입원· — A 그룹 confident 작동 (Y0150 specific feature)",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "정신건강",
+        "level3": "우울증/자살/자해",
+        "level4": "계획적인 자살시도"
+      },
+      "v02_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0150",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "psychiatric_risk"
+        ],
+        "rationale": "자해/정신증 명시 → Y0150 confident (v0.2: 정신건강 카테고리 전체 trigger 금지)",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0150",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "psychiatric_intent"
+        ],
+        "rationale": "자해/명시적 자살시도/급성 정신증 → ·정신과 응급입원· confident (v0.3: level4 specific feature 명시 시만)",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": true,
+        "any_change": true
+      },
+      "v02_review": {
+        "category": "textbook",
+        "pre_code": "CBECE",
+        "mappability": "A",
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-07",
+      "category": "textbook",
+      "scenario": "55세 남성. 거실에서 갑작스런 의식소실 후 발견. 1시간 후 발견 시 맥박 없음, 자발 호흡 없음. 가족 CPR 시행 중. AED 적용.",
+      "estimated_pre_code": "CIACB",
+      "key_features": [
+        "심정지",
+        "CPR 진행중",
+        "성인"
+      ],
+      "test_intent": "심정지는 27 Y코드 외. unmapped 처리 + grade 1 권역 fallback이 적절한가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 1,
+        "level2": "심혈관계",
+        "level3": "심정지(비외상성)",
+        "level4": "심정지(비외상성)"
+      },
+      "v02_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched — grade 기반 tier만",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center",
+            "local_institution"
+          ],
+          "source": "cpr_rosc_dependent",
+          "note": "ROSC 미달성 → preferred=local_institution (가장 가까운). 달성 → preferred=regional (저체온치료)."
+        },
+        "questions": [
+          "rosc_status"
+        ],
+        "rationale": "심정지 → ROSC 상태 질문으로 tier 결정 (ROSC 미달성 → 가장 가까운, 달성 → 권역)",
+        "cpr_special": true
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": true,
+        "questions_changed": true,
+        "any_change": true
+      },
+      "v02_review": {
+        "category": "textbook",
+        "pre_code": "CIACB",
+        "mappability": "unmapped",
+        "evaluation": "partial",
+        "notes": "CPR 은 ROSC 가 되지 않은 경우 가장 가까운 병원으로(기관급이든 권역이든 무관), ROSC 가 된경우 저체온치료 등의 전문의료기관으로 보내는 것이 맞아(현재처럼  권역급/센터 고려)"
+      }
+    },
+    {
+      "id": "VIG-08",
+      "category": "textbook",
+      "scenario": "3세 남아. 식사 중 갑자기 사례 들리며 심한 기침. 청색증 발생. 호흡 곤란.",
+      "estimated_pre_code": "DHFAA",
+      "key_features": [
+        "영유아 기도 이물",
+        "청색증"
+      ],
+      "test_intent": "전형적 ·영유아 기관지 내시경· — A 그룹 confident 작동",
+      "codebook_info": {
+        "group": "pediatric",
+        "grade": 1,
+        "level2": "호흡기계",
+        "level3": "호흡기 이물질",
+        "level4": "중증 호흡곤란"
+      },
+      "v02_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0092",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "foreign_body_site"
+        ],
+        "rationale": "기도 이물 → Y0092 confident",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0092",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "foreign_body_site"
+        ],
+        "rationale": "기도 이물 → ·영유아 기관지 내시경· confident",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v02_review": {
+        "category": "textbook",
+        "pre_code": "DHFAA",
+        "mappability": "A",
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-09",
+      "category": "textbook",
+      "scenario": "40세 남성. 화재 현장에서 구조. 안면 + 양측 상지 화상. BSA 약 30% 추정. 그을음 흡입 의심.",
+      "estimated_pre_code": "CPECE",
+      "key_features": [
+        "BSA 25%+ 화상",
+        "호흡기 화상 의심",
+        "성인"
+      ],
+      "test_intent": "전형적 ·중증 화상· — A 그룹 confident, BSA 임계 + 호흡기 화상 처리",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 1,
+        "level2": "피부",
+        "level3": "화상",
+        "level4": "체표면적 25% 이상의 화상"
+      },
+      "v02_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0120",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "burn_severity"
+        ],
+        "rationale": "화상 → Y0120 (BSA로 중증도 분기)",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0120",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "burn_severity",
+          "airway_burn"
+        ],
+        "rationale": "화상 → ·중증 화상· (BSA 분기) + 기도 화상 의심 시 ·성인 기관지 내시경· 추가",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": true,
+        "any_change": true
+      },
+      "v02_review": {
+        "category": "textbook",
+        "pre_code": "CPECE",
+        "mappability": "A",
+        "evaluation": "partial",
+        "notes": "추가질문으로 기도 화상이 의심되면 기관지내시경도 시술후보에 넣었다면 더 좋았겠다."
+      }
+    },
+    {
+      "id": "VIG-10",
+      "category": "textbook",
+      "scenario": "60세 남성. 흑색변 2회 + 토혈 1회. 평소 NSAID 복용. 혈압 90/60 (저하), 맥박 110.",
+      "estimated_pre_code": "CJICC",
+      "key_features": [
+        "토혈",
+        "흑색변",
+        "성인",
+        "혈역학 불안정"
+      ],
+      "test_intent": "전형적 ·성인 위장관 내시경· — A 그룹 confident 작동",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "소화기계",
+        "level3": "토혈",
+        "level4": "활동성 또는 증상을 동반한 토혈"
+      },
+      "v02_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0081",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "bleeding_site"
+        ],
+        "rationale": "토혈/흑색변 → Y0081 confident",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0081",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "bleeding_site"
+        ],
+        "rationale": "토혈/흑색변 → ·성인 위장관 내시경· confident",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v02_review": {
+        "category": "textbook",
+        "pre_code": "CJICC",
+        "mappability": "A",
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-11",
+      "category": "fn_pattern",
+      "scenario": "70세 여성. 오심·구토 + 황달 + 우상복부 통증. 발열 38°C. 의식 명료.",
+      "estimated_pre_code": "CJKAI",
+      "key_features": [
+        "황달",
+        "우상복부 통증",
+        "발열"
+      ],
+      "test_intent": "v0.1에서 Y0051·Y0052 recall 0% — v0.2 C 그룹 처리. 후보 단정 없이 tier 권고만 임상적으로 적절한가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "소화기계",
+        "level3": "황달",
+        "level4": "열, 면역저하 상태"
+      },
+      "v02_output": {
+        "mappability": "C",
+        "y_candidates": [],
+        "c_tier_codes": [
+          "Y0051",
+          "Y0052"
+        ],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "담낭/담도 의심 → C 그룹 (영상 전 구별 불가, tier만)",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "C",
+        "y_candidates": [],
+        "c_tier_codes": [
+          "Y0051",
+          "Y0052"
+        ],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "담낭/담도 의심 → tier만 (영상 전 구별 불가)",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v02_review": {
+        "category": "fn_pattern",
+        "pre_code": "CJKAI",
+        "mappability": "C",
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-12",
+      "category": "fn_pattern",
+      "scenario": "60세 남성. 만성 신부전 환자. 4일째 투석 미시행. 호흡곤란 + 다리 부종. 의식 변화 없음. 칼륨 6.8 의심.",
+      "estimated_pre_code": "CHAAA",
+      "key_features": [
+        "만성 신부전",
+        "투석 지연",
+        "고칼륨 의심"
+      ],
+      "test_intent": "v0.1에서 Y0141 recall 0% — v0.2 C 그룹. dialysis-specific Pre-KTAS code 부재 framing이 적절한가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 1,
+        "level2": "호흡기계",
+        "level3": "숨참",
+        "level4": "중증 호흡곤란"
+      },
+      "v02_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched — grade 기반 tier만",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "dyspnea_history",
+          "dyspnea_severity"
+        ],
+        "rationale": "호흡곤란 → 과거력·중증도 질문 (Y코드 단정 X, tier 결정용)",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": true,
+        "any_change": true
+      },
+      "v02_review": {
+        "category": "fn_pattern",
+        "pre_code": "CHAAA",
+        "mappability": "unmapped",
+        "evaluation": "partial",
+        "notes": "먼저 주어진 pre-ktas는 숨참 증상이다. 숨찬 원인들에 대해 버튼형 질문이 있다면 유용할 거 같아. \nQ. 다음의 질환중 환자의 과거력에 해당하는 것이 있나요?\n- 심장질환\n- 신기능 저하/투석 필요 \n- 만성 호흡기 질환\n- 감염성 질환 → 격리병상 필요\n\n두번쨰 질문으로는 심각한 정도.\nQ: 다음에 해당하는 증상을 보이나요. → 하나라도 해당하면 기계호흡기 필요\n- 산소포화도 92 이하\n- 대화 어려운 수준의 호흡곤란\n- 의식 저하 / 혼수\n- (추가할 아이디어가 있으면 추가하라)"
+      }
+    },
+    {
+      "id": "VIG-13",
+      "category": "fn_pattern",
+      "scenario": "55세 남성. 패혈증 의심 (체온 39.5°C, 빈맥, 저혈압). 의식 변화 V. 다발 장기 부전 의심. 신기능 급격 저하 의심.",
+      "estimated_pre_code": "CQBAJ",
+      "key_features": [
+        "패혈증",
+        "혈역학 불안정",
+        "급성 신부전"
+      ],
+      "test_intent": "v0.1에서 Y0142 recall 0% — v0.2 C 그룹 처리 + tier 권고만. 임상적으로 적절한가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "일반",
+        "level3": "열",
+        "level4": "패혈증 의증(3개 이상의 SIRS 기준 만족)"
+      },
+      "v02_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched — grade 기반 tier만",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v02_review": {
+        "category": "fn_pattern",
+        "pre_code": "CQBAJ",
+        "mappability": "unmapped",
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-14",
+      "category": "fn_pattern",
+      "scenario": "50세 남성. 전반적 복통 + 복부 팽만 + 4시간째 가스·대변 배출 없음. 의식 명료, 활력징후 안정.",
+      "estimated_pre_code": "CJMBA",
+      "key_features": [
+        "전반적 복통",
+        "장폐색 의심",
+        "성인"
+      ],
+      "test_intent": "v0.1에서 Y0060 recall 0% — v0.2 C 그룹 tier 권고. 시술 단정 회피가 적절한가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "소화기계",
+        "level3": "복부종괴/팽만",
+        "level4": "급성 통증(8-10)"
+      },
+      "v02_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched — grade 기반 tier만",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v02_review": {
+        "category": "fn_pattern",
+        "pre_code": "CJMBA",
+        "mappability": "unmapped",
+        "evaluation": "inappropriate",
+        "notes": "지역센터급/지역기관급이 적절하다."
+      }
+    },
+    {
+      "id": "VIG-15",
+      "category": "fn_pattern",
+      "scenario": "35세 여성. 가슴 두근거림 + 갑작스러운 호흡곤란 + 한쪽 다리 부종. 최근 장거리 비행 후. 산소포화도 89%.",
+      "estimated_pre_code": "CHAAB",
+      "key_features": [
+        "호흡곤란",
+        "단측 다리 부종",
+        "PE 의심"
+      ],
+      "test_intent": "v0.1에서 Y0171(혈관중재) 평가 외. v0.2에서 어떻게 처리되는가 — IR 시술 적응 결정은 병원 영역",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "호흡기계",
+        "level3": "숨참",
+        "level4": "중등도 호흡곤란"
+      },
+      "v02_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched — grade 기반 tier만",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "dyspnea_history",
+          "dyspnea_severity"
+        ],
+        "rationale": "호흡곤란 → 과거력·중증도 질문 (Y코드 단정 X, tier 결정용)",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": true,
+        "any_change": true
+      },
+      "v02_review": {
+        "category": "fn_pattern",
+        "pre_code": "CHAAB",
+        "mappability": "unmapped",
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-16",
+      "category": "fn_pattern",
+      "scenario": "62세 남성. 갑자기 시작된 좌측 하지 통증 + 창백 + 차가움 + 맥박 없음. 의식 명료.",
+      "estimated_pre_code": "CIKCB",
+      "key_features": [
+        "급성 동맥 폐색",
+        "사지 허혈"
+      ],
+      "test_intent": "Y0171 ·성인 혈관중재· 적응 의심 — v0.2 C 그룹 tier 권고. IR 가능 권역 직송 framing 적절한가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "심혈관계",
+        "level3": "맥박이 없거나 차가운 사지",
+        "level4": "사지 말단에 맥박이 없음"
+      },
+      "v02_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched — grade 기반 tier만",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v02_review": {
+        "category": "fn_pattern",
+        "pre_code": "CIKCB",
+        "mappability": "unmapped",
+        "evaluation": "appropriate",
+        "notes": "너의 의도는 잘 이해간다. 이 경우에 성인 혈관중재 적응이 가능하다. 하지만 임상적으로 rare한  경우이므로 일단 큰 병원(권역)을 가는게 한국 시스템에 잘 맞다"
+      }
+    },
+    {
+      "id": "VIG-17",
+      "category": "fn_pattern",
+      "scenario": "45세 여성. 갑작스런 우상복부 통증 + 황달 + 발열 + 혼돈. Charcot triad 의심.",
+      "estimated_pre_code": "CJKAH",
+      "key_features": [
+        "담관염 의심",
+        "Charcot triad"
+      ],
+      "test_intent": "v0.1에서 Y0052 recall 0.3% — v0.2 C 그룹. ·담도 응급· tier 권고만이 적절한가 (영상 전 단정 불가)",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "소화기계",
+        "level3": "황달",
+        "level4": "의식변화(V/P, GCS 9-13)"
+      },
+      "v02_output": {
+        "mappability": "C",
+        "y_candidates": [],
+        "c_tier_codes": [
+          "Y0051",
+          "Y0052"
+        ],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "담낭/담도 의심 → C 그룹 (영상 전 구별 불가, tier만)",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "C",
+        "y_candidates": [],
+        "c_tier_codes": [
+          "Y0051",
+          "Y0052"
+        ],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "담낭/담도 의심 → tier만 (영상 전 구별 불가)",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v02_review": {
+        "category": "fn_pattern",
+        "pre_code": "CJKAH",
+        "mappability": "C",
+        "evaluation": "partial",
+        "notes": "담낭담도가 필수이면 과다하긴 하겠다 \n"
+      }
+    },
+    {
+      "id": "VIG-18",
+      "category": "fn_pattern",
+      "scenario": "8세 남아. 6시간 전부터 간헐적 복통 + 구토. 1시간 전 currant jelly 양상 혈변 1회. 의식 명료.",
+      "estimated_pre_code": "DJJCB",
+      "key_features": [
+        "영유아 복통",
+        "currant jelly 혈변",
+        "장중첩 의심"
+      ],
+      "test_intent": "자문자 결정 — Y0070 영유아 장중첩은 currant jelly로도 단정 안 함, C 그룹 유지. v0.2 출력이 그렇게 작동하는가",
+      "codebook_info": {
+        "group": "pediatric",
+        "grade": 3,
+        "level2": "소화기계",
+        "level3": "혈변/흑색변",
+        "level4": "중등도 양의 흑색변 또는 직장출혈"
+      },
+      "v02_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0082",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "bleeding_site"
+        ],
+        "rationale": "토혈/흑색변 → Y0082 confident",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0082",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "bleeding_site"
+        ],
+        "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v02_review": {
+        "category": "fn_pattern",
+        "pre_code": "DJJCB",
+        "mappability": "A",
+        "evaluation": "partial",
+        "notes": "일단 소아 중증으로..... 위장관 내시경을 처음부터 제시하는게 곤란하다."
+      }
+    },
+    {
+      "id": "VIG-19",
+      "category": "fp_pattern",
+      "scenario": "50세 남성. 하루 전부터 시작된 둔한 두통. 의식 명료, 신경학적 결손 없음. 활력징후 정상. CT 정상.",
+      "estimated_pre_code": "CCDBC",
+      "key_features": [
+        "단순 두통",
+        "신경학적 결손 없음",
+        "활력징후 정상"
+      ],
+      "test_intent": "v0.1에서 Y0032 over-trigger 13,929 FP — v0.2 specific feature only로 unmapped 또는 등급만 처리되는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 4,
+        "level2": "신경계",
+        "level3": "두통",
+        "level4": "급성 통증(<4)"
+      },
+      "v02_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_institution",
+          "acceptable": [
+            "local_institution",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched — grade 기반 tier만",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_institution",
+          "acceptable": [
+            "local_institution",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v02_review": {
+        "category": "fp_pattern",
+        "pre_code": "CCDBC",
+        "mappability": "unmapped",
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-20",
+      "category": "fp_pattern",
+      "scenario": "30세 여성. 어제부터 가벼운 가슴 답답함 + 가끔 두근거림. 활력징후 정상. ECG 정상. 기립성 저혈압 없음.",
+      "estimated_pre_code": "CIDBC",
+      "key_features": [
+        "비특이적 흉부 불편감",
+        "활력징후 정상"
+      ],
+      "test_intent": "v0.1에서 Y0010 over-trigger — v0.2 압박성/찢어지는 character 명시 없으면 trigger 안 함이 적절한가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 4,
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)",
+        "level4": "급성 통증(<4)"
+      },
+      "v02_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0010",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_institution",
+          "acceptable": [
+            "local_institution",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "chest_pain_character"
+        ],
+        "rationale": "흉통 character 미명시 → Y0010 후보, 질문으로 분기",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_institution",
+          "acceptable": [
+            "local_institution",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": true,
+        "mappability_changed": true,
+        "tier_changed": false,
+        "questions_changed": true,
+        "any_change": true
+      },
+      "v02_review": {
+        "category": "fp_pattern",
+        "pre_code": "CIDBC",
+        "mappability": "A",
+        "evaluation": "inappropriate",
+        "notes": "시술후보는 부적절하다. atypical chest pain 에서는 과다하다."
+      }
+    },
+    {
+      "id": "VIG-21",
+      "category": "fp_pattern",
+      "scenario": "25세 남성. 만성 우울증 외래 진료 중. 1주일째 식욕 저하 + 수면 장애. 자살·자해 의도 부인. 활력징후 정상.",
+      "estimated_pre_code": "CBECA",
+      "key_features": [
+        "만성 우울증",
+        "자해 의도 없음"
+      ],
+      "test_intent": "v0.1에서 Y0150 over-trigger 929 FP — v0.2 specific feature only (자해·정신증 명시 시만)로 unmapped 처리되는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 4,
+        "level2": "정신건강",
+        "level3": "우울증/자살/자해",
+        "level4": "우울함, 자살 생각은 없음"
+      },
+      "v02_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0150",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_institution",
+          "acceptable": [
+            "local_institution",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "psychiatric_risk"
+        ],
+        "rationale": "자해/정신증 명시 → Y0150 confident (v0.2: 정신건강 카테고리 전체 trigger 금지)",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_institution",
+          "acceptable": [
+            "local_institution",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": true,
+        "mappability_changed": true,
+        "tier_changed": false,
+        "questions_changed": true,
+        "any_change": true
+      },
+      "v02_review": {
+        "category": "fp_pattern",
+        "pre_code": "CBECA",
+        "mappability": "A",
+        "evaluation": "inappropriate",
+        "notes": "정신과 응급입원 플래그는 과다하다. "
+      }
+    },
+    {
+      "id": "VIG-22",
+      "category": "fp_pattern",
+      "scenario": "40세 여성. 아침부터 결막 충혈 + 가벼운 통증. 시력 저하 없음. 분비물 약간. 외상력 없음.",
+      "estimated_pre_code": "CDECB",
+      "key_features": [
+        "결막 충혈",
+        "시력 정상",
+        "외상 없음"
+      ],
+      "test_intent": "v0.1 Y0160 over-trigger — v0.2에서 단순 눈병 제외 키워드로 unmapped 처리되는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 4,
+        "level2": "눈",
+        "level3": "눈충혈,분비물",
+        "level4": "눈충혈/분비물, 급성"
+      },
+      "v02_output": {
+        "mappability": "B",
+        "y_candidates": [
+          {
+            "code": "Y0160",
+            "confidence": "candidate"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_institution",
+          "acceptable": [
+            "local_institution",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "eye_emergency_kind"
+        ],
+        "rationale": "안과 응급 → Y0160 후보",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_institution",
+          "acceptable": [
+            "local_institution",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": true,
+        "mappability_changed": true,
+        "tier_changed": false,
+        "questions_changed": true,
+        "any_change": true
+      },
+      "v02_review": {
+        "category": "fp_pattern",
+        "pre_code": "CDECB",
+        "mappability": "B",
+        "evaluation": "inappropriate",
+        "notes": "지역기관은 적절, \"안과 응급수술\"은 과다하다."
+      }
+    },
+    {
+      "id": "VIG-23",
+      "category": "fp_pattern",
+      "scenario": "70세 남성. 가벼운 어지러움 + 무기력. 의식 명료. 사지 마비 없음, 구음장애 없음, FAST 음성. 활력징후 안정.",
+      "estimated_pre_code": "CCCCB",
+      "key_features": [
+        "비특이적 의식변화",
+        "FAST 음성"
+      ],
+      "test_intent": "v0.1 신경계 의식변화 광범위 trigger — v0.2 Y0032 specific feature only로 좁혀져 unmapped 또는 후보 적게 처리되는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 3,
+        "level2": "신경계",
+        "level3": "현훈",
+        "level4": "자세변화에 의해 발생, 다른 신경학적 증상 없음"
+      },
+      "v02_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched — grade 기반 tier만",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v02_review": {
+        "category": "fp_pattern",
+        "pre_code": "CCCCB",
+        "mappability": "unmapped",
+        "evaluation": "appropriate",
+        "notes": "이 정도면 괜찮다."
+      }
+    },
+    {
+      "id": "VIG-24",
+      "category": "consultant_change",
+      "scenario": "55세 남성. 갑작스러운 등으로 방사되는 찢어지는 듯한 흉통. 발병 1시간. 양쪽 팔 혈압 차이 의심. 활력징후 빈맥.",
+      "estimated_pre_code": "CICCA",
+      "key_features": [
+        "찢어지는 흉통",
+        "등 방사",
+        "AAA·박리 의심"
+      ],
+      "test_intent": "자문자 변경 — Y0041 흉부 대동맥은 B→C로 옮김. v0.2가 ·심근경색 재관류· 후보 + 권역/지역센터 tier만 출력하는가 (대동맥 단정 X)",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)",
+        "level4": "심장성 통증"
+      },
+      "v02_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0010",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "chest_pain_character"
+        ],
+        "rationale": "흉통 character 미명시 → Y0010 후보, 질문으로 분기",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0010",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "chest_pain_character"
+        ],
+        "rationale": "흉통(심장성) + 심장성 features → ·심근경색 재관류· confident",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v02_review": {
+        "category": "consultant_change",
+        "pre_code": "CICCA",
+        "mappability": "A",
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-25",
+      "category": "consultant_change",
+      "scenario": "78세 남성. 갑작스러운 박동성 복통 + 좌측 측복부 통증. 혈압 80/50, 식은땀, 의식 변화 없음.",
+      "estimated_pre_code": "CJAAD",
+      "key_features": [
+        "박동성 복통",
+        "쇼크",
+        "고령",
+        "AAA rupture 의심"
+      ],
+      "test_intent": "자문자 변경 — Y0042 복부 대동맥은 B→C로 옮김. v0.2가 단정 없이 권역 tier만 권고하는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 1,
+        "level2": "소화기계",
+        "level3": "복통",
+        "level4": "쇼크"
+      },
+      "v02_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched — grade 기반 tier만",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "C",
+        "y_candidates": [],
+        "c_tier_codes": [
+          "Y0060",
+          "Y0042"
+        ],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "복부 응급 → tier만",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": true,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": true
+      },
+      "v02_review": {
+        "category": "consultant_change",
+        "pre_code": "CJAAD",
+        "mappability": "unmapped",
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-26",
+      "category": "consultant_change",
+      "scenario": "임신 32주 30세 여성. 갑자기 시작된 양막 파열. 진통 없음. 자궁수축 시작. 산소포화도 정상.",
+      "estimated_pre_code": "CKHCB",
+      "key_features": [
+        "임신 32주",
+        "PROM",
+        "조기진통 시작"
+      ],
+      "test_intent": "자문자 변경 — Y0100·Y0111·Y0112 co-trigger. v0.2가 ·분만· confident + ·저체중 출생·, ·산과 응급수술·을 후보로 함께 출력하는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 3,
+        "level2": "임신/여성생식계",
+        "level3": "20주 이상의 임신",
+        "level4": "양수누출"
+      },
+      "v02_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched — grade 기반 tier만",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0111",
+            "confidence": "confident"
+          },
+          {
+            "code": "Y0100",
+            "confidence": "candidate"
+          },
+          {
+            "code": "Y0112",
+            "confidence": "candidate"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "pregnancy_emergency",
+          "neonatal_assessment"
+        ],
+        "rationale": "양수누출 + 임신 20주+ → ·분만·/·저체중 출생·/·산과 응급수술· 모두 후보",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": true,
+        "mappability_changed": true,
+        "tier_changed": false,
+        "questions_changed": true,
+        "any_change": true
+      },
+      "v02_review": {
+        "category": "consultant_change",
+        "pre_code": "CKHCB",
+        "mappability": "unmapped",
+        "evaluation": "inappropriate",
+        "notes": "양막파열(양수누출) 이 있다면 엄연히 분만, 저체중 출생, 산과응급, 분만실 여유 등이 전부 고려되어야 한다."
+      }
+    },
+    {
+      "id": "VIG-27",
+      "category": "consultant_change",
+      "scenario": "임신 28주 32세 여성. 갑작스러운 다량 질출혈. 통증 없음. 혈압 안정. 태아 심박 정상.",
+      "estimated_pre_code": "CKHCQ",
+      "key_features": [
+        "임신 28주",
+        "무통성 다량 출혈",
+        "전치태반 의심"
+      ],
+      "test_intent": "자문자 변경 — Y0112 산과수술은 A→B. v0.2가 confident가 아닌 후보로 출력하는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 1,
+        "level2": "임신/여성생식계",
+        "level3": "20주 이상의 임신",
+        "level4": "지속되는 질 출혈"
+      },
+      "v02_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched — grade 기반 tier만",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "B",
+        "y_candidates": [
+          {
+            "code": "Y0112",
+            "confidence": "candidate"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "pregnancy_emergency"
+        ],
+        "rationale": "임신 응급 출혈/태반/자간 → ·산과 응급수술· confident",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": true,
+        "mappability_changed": true,
+        "tier_changed": false,
+        "questions_changed": true,
+        "any_change": true
+      },
+      "v02_review": {
+        "category": "consultant_change",
+        "pre_code": "CKHCQ",
+        "mappability": "unmapped",
+        "evaluation": "inappropriate",
+        "notes": "산과 수술 대비하는 곳이 맞겠다. 수술실 여유 확인은 아니더라도 태반박리 등 산과 수술 가능해야 한다."
+      }
+    },
+    {
+      "id": "VIG-28",
+      "category": "consultant_change",
+      "scenario": "25세 여성. 우하복부 통증 6시간 + 미열 + 오심. 마지막 월경 4주 전. 임신반응 미상. 압통 + rebound.",
+      "estimated_pre_code": "CJABA",
+      "key_features": [
+        "우하복부 통증",
+        "복막자극",
+        "여성 가임기"
+      ],
+      "test_intent": "자문자 변경 — Y0113 부인과 응급은 B→C. v0.2가 부인과 후보 단정 X, ·복부 응급수술· tier만 권고하는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "소화기계",
+        "level3": "복통",
+        "level4": "급성 통증(8-10)"
+      },
+      "v02_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched — grade 기반 tier만",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "v03_conservative_abdpain"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": true,
+        "questions_changed": false,
+        "any_change": true
+      },
+      "v02_review": {
+        "category": "consultant_change",
+        "pre_code": "CJABA",
+        "mappability": "unmapped",
+        "evaluation": "partial",
+        "notes": "지역센터/지역기관이 적절하다."
+      }
+    },
+    {
+      "id": "VIG-29",
+      "category": "textbook",
+      "scenario": "신생아 (임신 30주 출생, 출생체중 1,400g). 출생 5분 후 호흡 부전 + 청색증. 보온 + 산소 적용. 출생 15분 후 구급 호출.",
+      "estimated_pre_code": "DQQAA",
+      "key_features": [
+        "미숙아 30주",
+        "초저체중 1400g",
+        "신생아 호흡부전"
+      ],
+      "test_intent": "·저체중 출생· 단독 trigger 케이스 — 자문자 의견 따라 분만 임박 trigger와 동시 발화 안 되는 시나리오. 시스템 출력 확인.",
+      "codebook_info": {
+        "group": "pediatric",
+        "grade": 1,
+        "level2": "일반",
+        "level3": "방금 태어난 신생아",
+        "level4": "중증 호흡곤란"
+      },
+      "v02_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched — grade 기반 tier만",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "B",
+        "y_candidates": [
+          {
+            "code": "Y0100",
+            "confidence": "candidate"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "neonatal_assessment"
+        ],
+        "rationale": "신생아 평가 → ·저체중 출생· candidate (질문으로 정밀화)",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": true,
+        "mappability_changed": true,
+        "tier_changed": false,
+        "questions_changed": true,
+        "any_change": true
+      },
+      "v02_review": {
+        "category": "textbook",
+        "pre_code": "DQQAA",
+        "mappability": "unmapped",
+        "evaluation": "partial",
+        "notes": "방금태어난 신생아.... 라는 정보가 있다면 너가 저체중 해당여부, 낮은 임신주수 여부 등을 물어서 추가 자원 필요를 매칭할 수 있을거 같다. 그리고 케이스에 \"출생시 호흡부전/청색증\" 이라는게 있는데 이런건 질문을 통해서 캐치해서 신생아 중환자실 여부를 확인해야하는 항목이 된다. \n"
+      }
+    },
+    {
+      "id": "VIG-30",
+      "category": "textbook",
+      "scenario": "33세 남성. 작업 중 직접 안구 외상 (날카로운 금속 파편). 우안 통증 + 시력 급격 저하 + 안내 출혈 의심. 안구 천공 의심.",
+      "estimated_pre_code": "CDBCB",
+      "key_features": [
+        "안구 천공 명시",
+        "시력 저하",
+        "외상"
+      ],
+      "test_intent": "Y0160 conditional A 승격 — 안구 천공 명시 시 confident로 출력되는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "눈",
+        "level3": "눈의 이물질",
+        "level4": "이물질의 안구 관통"
+      },
+      "v02_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0160",
+            "confidence": "confident",
+            "promoted": true
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "eye_emergency_kind"
+        ],
+        "rationale": "안구 천공/관통 명시 → Y0160 confident (자문자 conditional A 승격)",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0160",
+            "confidence": "confident",
+            "promoted": true
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "eye_severity"
+        ],
+        "rationale": "안구 천공/관통 → ·안과 응급수술· confident",
+        "cpr_special": false
+      },
+      "v02_to_v03_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": true,
+        "any_change": true
+      },
+      "v02_review": {
+        "category": "textbook",
+        "pre_code": "CDBCB",
+        "mappability": "A",
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    }
+  ],
+  "consultant_review_questions": [
+    "전체 30개 중 시스템 출력이 임상적으로 적절한 비율은?",
+    "v0.2가 가장 잘 작동한 카테고리는? 가장 취약한 카테고리는?",
+    "자문자 본인 결정 (B→C 5건, A→B 2건)이 vignette 검증으로 임상적으로 정당화되는가?",
+    "추가로 vignette을 만들어야 할 시나리오가 있는가?",
+    "v0.2 알고리즘에 대한 전반적 평가 — 임상 활용을 위한 다음 단계?"
+  ],
+  "status": "enriched_with_v03_output_and_v02_comparison",
+  "enriched_at": "2026-04-26T23:37:41.395Z",
+  "source_v02_review": "research/vignette-review-2026-04-26-mofq7k1h.json",
+  "v03_target": "v0.3 vignette confirm 후 production 통합 (Phase 11f)"
+};
+
+const REVIEW_QUESTIONS = [
+  { id: 1, q: "v0.3 30개 중 임상적으로 적절한 비율은? v0.2의 14/30(47%)에서 어디까지 개선됐는가?" },
+  { id: 2, q: "v0.2 → v0.3 변경 16건 중 의도대로 작동한 변경은? 의도와 다른 변경은? (특히 비심장성 흉통·negative-stated 우울감·단순 결막 충혈 unmapped 처리)" },
+  { id: 3, q: "지난번 부적절 6건(VIG-14·20·21·22·26·27) 중 v0.3에서 해결된 것은? 여전히 문제인 것은?" },
+  { id: 4, q: "v0.3 신규 질문 6개(dyspnea_history·dyspnea_severity·rosc_status·neonatal_assessment·pregnancy_emergency·airway_burn)가 마법사 UI에 통합될 가치가 있는가?" },
+  { id: 5, q: "production 챗봇·마법사에 v0.3을 깊게 통합해도 임상 안전성에 문제 없는가? blocker가 있다면?" },
+];
+
+const STORAGE_KEY = 'emris_vignette_review_v0_3';
+
+const EVAL_OPTIONS = [
+  { v: 'appropriate', l: '적절 — 임상적으로 합리적, 그대로 활용 가능' },
+  { v: 'partial', l: '부분 적절 — 일부 부족·과잉, 메모로 보강' },
+  { v: 'inappropriate', l: '부적절 — 임상적으로 잘못된 방향' },
+  { v: 'unable', l: '평가 불가 — 정보 부족' },
+];
+
+// State
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return initState();
+}
+function initState() {
+  const vigs = {};
+  VIGNETTES_DATA.vignettes.forEach(v => {
+    vigs[v.id] = { evaluation: '', notes: '' };
+  });
+  const qa = {};
+  REVIEW_QUESTIONS.forEach(q => qa[q.id] = '');
+  return {
+    review_id: 'VIGNETTE-REVIEW-V03-' + Date.now().toString(36),
+    algorithm_version: 'v0.3',
+    previous_review_id: 'VIGNETTE-REVIEW-mofq7k1h',
+    started_at: new Date().toISOString(),
+    last_saved: null,
+    vignettes_version: VIGNETTES_DATA.version,
+    vignette_evaluations: vigs,
+    review_question_answers: qa,
+    additional_comments: '',
+  };
+}
+function saveState() {
+  state.last_saved = new Date().toISOString();
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch (e) {}
+  document.getElementById('last-saved').textContent = new Date().toLocaleTimeString('ko-KR', {hour12:false});
+  updateProgress();
+}
+function resetAll() {
+  localStorage.removeItem(STORAGE_KEY);
+  state = initState();
+  renderAll();
+  goToSection('welcome');
+}
+
+// Welcome
+function renderWelcome() {
+  const w = document.getElementById('section-welcome');
+  clearChildren(w);
+  w.appendChild(el('div', {class:'welcome'}, [
+    el('h2', {text:'재검토 안내 (v0.3)'}),
+    el('p', {text:'지난번(2026-04-26) 같은 30개 vignette를 v0.2로 평가했고 결과는 14 적절 · 10 부분 · 6 부적절. 그 피드백으로 v0.3을 만들었다. 이제 같은 30개에 v0.3 출력을 보고 재평가한다.'}),
+    (() => {
+      const c = el('div', {class:'summary-block'});
+      c.appendChild(el('strong', {text:'각 vignette에서 보이는 것'}));
+      c.appendChild(el('br'));
+      c.appendChild(document.createTextNode('① v0.3 시스템 출력 (현재 평가 대상) ② v0.2 → v0.3 변경 배지 (어디가 바뀌었는지) ③ v0.2 출력 펼쳐 보기 (변경 있을 때만, 비교용) ④ 지난번 본인 평가 (당시 메모 포함). 무엇이 어떻게 바뀌었는지 한눈에 비교할 수 있다.'));
+      return c;
+    })(),
+    (() => {
+      const c = el('div', {class:'summary-block'});
+      c.appendChild(el('strong', {text:'평가 4가지'}));
+      c.appendChild(el('br'));
+      c.appendChild(document.createTextNode('적절 / 부분 적절 / 부적절 / 평가 불가. 지난번 평가가 그대로 적절했더라도 v0.3 출력에 다시 평가해 주세요. 메모는 자유.'));
+      return c;
+    })(),
+    (() => {
+      const c = el('div', {class:'summary-block'});
+      c.appendChild(el('strong', {text:'주요 v0.3 변경 (vignette feedback 반영)'}));
+      c.appendChild(el('br'));
+      const ul = el('ul', {style:'margin-top:6px;padding-left:18px;'});
+      ul.appendChild(el('li', {text:'비심장성 흉통 → 시술 후보 제거 (VIG-20)'}));
+      ul.appendChild(el('li', {text:'우울감 (자살 생각 없음) → 정신과 응급 제거 (VIG-21)'}));
+      ul.appendChild(el('li', {text:'단순 결막 충혈 → 안과 응급 제거 (VIG-22)'}));
+      ul.appendChild(el('li', {text:'양수누출 + 임신 20주+ → 분만·저체중·산과수술 모두 후보 (VIG-26 자기 결정 재고)'}));
+      ul.appendChild(el('li', {text:'지속 질출혈 → 산과수술 confident 회복 (VIG-27 자기 결정 재고)'}));
+      ul.appendChild(el('li', {text:'호흡곤란·심정지·신생아·화상에 신규 질문 catalog 6개'}));
+      c.appendChild(ul);
+      return c;
+    })(),
+    el('h3', {text:'카테고리'}),
+    (() => {
+      const ul = el('ul');
+      ul.appendChild(el('li', {}, [el('strong', {style:'color:var(--good)', text:'textbook (12):'}), ' 응급의학 표준 케이스']));
+      ul.appendChild(el('li', {}, [el('strong', {style:'color:var(--accent)', text:'fn_pattern (8):'}), ' v0.1 false negative 패턴']));
+      ul.appendChild(el('li', {}, [el('strong', {style:'color:var(--warn)', text:'fp_pattern (5):'}), ' v0.1 false positive 패턴 — v0.3에서 가장 많이 좁혔다']));
+      ul.appendChild(el('li', {}, [el('strong', {text:'consultant_change (5):'}), ' 자문자 본인 결정 — v0.3에서 임신 응급 강화로 일부 회복']));
+      return ul;
+    })(),
+    el('h3', {text:'작업 방법'}),
+    (() => {
+      const ul = el('ul');
+      ['왼쪽 사이드바에서 VIG-01부터 차례로. 변경된 16개부터 보고 싶다면 그것부터.',
+       '각 vignette: v0.3 출력 → v0.2 → v0.3 변경 배지 → 펼쳐 본 v0.2 → 지난번 본인 평가 → 검증 의도 → 4가지 평가 + 자유 메모.',
+       '진행 후 종합 질문 5개 (production 통합 가능 여부 포함).',
+       '⬇ 결과 내보내기 → JSON 다운로드. 모든 입력 자동 저장 (v0.2 검토와 별도 키).',
+       '예상 소요 20-30분 (지난번 검토 컨텍스트 있어 빠를 것).'].forEach(t => ul.appendChild(el('li', {text:t})));
+      return ul;
+    })(),
+    (() => {
+      const navDiv = el('div', {class:'nav-buttons'});
+      navDiv.appendChild(el('div'));
+      const start = el('button', {class:'btn', text:'▶ 시작 (VIG-01)'});
+      start.addEventListener('click', () => goToSection('VIG-01'));
+      navDiv.appendChild(start);
+      return navDiv;
+    })(),
+  ]));
+}
+
+// Nav
+function renderNav() {
+  const nav = document.getElementById('nav-list');
+  clearChildren(nav);
+
+  const cats = {
+    textbook: 'textbook · 표준 케이스',
+    fn_pattern: 'fn_pattern · 놓친 패턴',
+    fp_pattern: 'fp_pattern · over-trigger',
+    consultant_change: 'consultant_change · 변경 검증',
+  };
+
+  Object.keys(cats).forEach(catKey => {
+    const items = VIGNETTES_DATA.vignettes.filter(v => v.category === catKey);
+    if (items.length === 0) return;
+    nav.appendChild(el('div', {class:'nav-section', text: cats[catKey]}));
+    items.forEach(v => {
+      const evalu = state.vignette_evaluations[v.id].evaluation;
+      const item = el('div', {class:'nav-item', 'data-section':v.id});
+      item.appendChild(el('span', {class:'nav-id', text:v.id}));
+      const lbl = v.scenario.split('.')[0].slice(0, 28) + '…';
+      item.appendChild(el('span', {class:'nav-label', text:lbl}));
+      const eClass = evalu || 'empty';
+      item.appendChild(el('span', {class:'nav-eval ' + eClass, text:
+        evalu === 'appropriate' ? '적' :
+        evalu === 'partial' ? '부' :
+        evalu === 'inappropriate' ? '×' :
+        evalu === 'unable' ? '?' : '○'
+      }));
+      item.addEventListener('click', () => goToSection(v.id));
+      nav.appendChild(item);
+    });
+  });
+}
+
+// Vignette card
+function renderVignettes() {
+  const container = document.getElementById('vignette-sections');
+  clearChildren(container);
+
+  VIGNETTES_DATA.vignettes.forEach((v, idx) => {
+    const sec = el('section', {class:'vig-card', 'data-section':v.id});
+
+    // Header
+    const hdr = el('div', {class:'v-header'});
+    hdr.appendChild(el('span', {class:'v-id', text:v.id}));
+    hdr.appendChild(el('span', {class:'v-cat ' + v.category, text:v.category}));
+    if (v.codebook_info) {
+      hdr.appendChild(el('span', {class:'v-meta', text:'pre_code=' + v.estimated_pre_code + ' · grade=' + v.codebook_info.grade + ' · ' + v.codebook_info.group}));
+    } else {
+      hdr.appendChild(el('span', {class:'v-meta', text:'pre_code=' + v.estimated_pre_code}));
+    }
+    sec.appendChild(hdr);
+
+    // Scenario
+    const sc = el('div', {class:'scenario-block', text: v.scenario});
+    sec.appendChild(sc);
+
+    // Key features
+    if (v.key_features && v.key_features.length) {
+      const kf = el('div', {class:'key-feats'});
+      v.key_features.forEach(f => kf.appendChild(el('span', {class:'key-feat', text: f})));
+      sec.appendChild(kf);
+    }
+
+    // Codebook info
+    if (v.codebook_info) {
+      const cb = el('div', {class:'system-output', style:'background:var(--bg)'});
+      cb.appendChild(el('div', {class:'o-label', text:'정본 codebook entry'}));
+      const r1 = el('div', {class:'o-row'});
+      r1.appendChild(el('span', {class:'o-lbl', text:'level2/3/4'}));
+      r1.appendChild(el('span', {class:'o-val', text: v.codebook_info.level2 + ' / ' + v.codebook_info.level3 + ' / ' + v.codebook_info.level4}));
+      cb.appendChild(r1);
+      sec.appendChild(cb);
+    }
+
+    // ── v0.3 시스템 출력 (primary) + v0.2 비교 + 지난번 본인 평가 ──
+    function renderSystemOutput(so, label, primary) {
+      const out = el('div', {class:'system-output', style: primary ? '' : 'background:var(--bg);opacity:0.92;'});
+      out.appendChild(el('div', {class:'o-label', text: label}));
+
+      const r1 = el('div', {class:'o-row'});
+      r1.appendChild(el('span', {class:'o-lbl', text:'mappability'}));
+      r1.appendChild(el('span', {class:'o-val'}, [el('span', {class:'o-mappability ' + so.mappability, text: so.mappability + (
+        so.mappability === 'A' ? ' — 확정 매핑' :
+        so.mappability === 'B' ? ' — 후보군' :
+        so.mappability === 'C' ? ' — tier 권고만' :
+        ' — 27개 외'
+      )})]));
+      out.appendChild(r1);
+
+      if (so.y_candidates && so.y_candidates.length) {
+        const r2 = el('div', {class:'o-row'});
+        r2.appendChild(el('span', {class:'o-lbl', text:'시술 후보'}));
+        const v2 = el('span', {class:'o-val'});
+        so.y_candidates.forEach(c => {
+          const procName = PROC[c.code] || c.code;
+          v2.appendChild(el('span', {class:'px-tag ' + c.confidence, text: procName + (c.promoted ? ' (승격)' : '')}));
+        });
+        r2.appendChild(v2);
+        out.appendChild(r2);
+      }
+
+      if (so.c_tier_codes && so.c_tier_codes.length) {
+        const r3 = el('div', {class:'o-row'});
+        r3.appendChild(el('span', {class:'o-lbl', text:'등급 권고용 (단정 X)'}));
+        const v3 = el('span', {class:'o-val'});
+        so.c_tier_codes.forEach(yc => {
+          const procName = PROC[yc] || yc;
+          v3.appendChild(el('span', {class:'px-tag tier', text: procName}));
+        });
+        r3.appendChild(v3);
+        out.appendChild(r3);
+      }
+
+      if (so.tier_recommendation) {
+        const tr = so.tier_recommendation;
+        const r4 = el('div', {class:'o-row'});
+        r4.appendChild(el('span', {class:'o-lbl', text:'권고 등급'}));
+        const tierLabel = (t) => t === 'regional' ? '권역응급의료센터' : t === 'local_center' ? '지역응급의료센터' : '지역응급의료기관';
+        const accStr = (tr.acceptable || []).map(tierLabel).join(' / ');
+        r4.appendChild(el('span', {class:'o-val', text: tierLabel(tr.preferred) + ' (수용 가능: ' + accStr + ')'}));
+        out.appendChild(r4);
+      }
+
+      if (so.questions && so.questions.length) {
+        const r5 = el('div', {class:'o-row'});
+        r5.appendChild(el('span', {class:'o-lbl', text:'추가 질문'}));
+        r5.appendChild(el('span', {class:'o-val', text: so.questions.join(', ')}));
+        out.appendChild(r5);
+      }
+
+      if (so.rationale) {
+        const r6 = el('div', {class:'o-row'});
+        r6.appendChild(el('span', {class:'o-lbl', text:'rationale'}));
+        r6.appendChild(el('span', {class:'o-val', style:'font-size:12px;color:var(--dim);', text: so.rationale}));
+        out.appendChild(r6);
+      }
+
+      return out;
+    }
+
+    // v0.3 (primary)
+    if (v.v03_output && !v.v03_output.error) {
+      sec.appendChild(renderSystemOutput(v.v03_output, 'v0.3 시스템 출력 (현재 평가 대상)', true));
+    } else if (v.v03_output && v.v03_output.error) {
+      const err = el('div', {class:'system-output', style:'border-color:var(--accent)'});
+      err.appendChild(el('div', {class:'o-label', style:'color:var(--accent)', text:'v0.3 출력 오류'}));
+      err.appendChild(el('div', {style:'font-size:12px;color:var(--accent)', text: v.v03_output.error}));
+      sec.appendChild(err);
+    }
+
+    // v0.2 → v0.3 변경 배지
+    if (v.v02_to_v03_changes) {
+      const ch = v.v02_to_v03_changes;
+      const badge = el('div', {class:'system-output', style:'background:'+(ch.any_change?'var(--good-soft)':'var(--line-soft)')+';border-color:'+(ch.any_change?'var(--good)':'var(--line)')+';margin-top:-6px;padding:8px 12px;'});
+      const fields = [
+        ch.mappability_changed ? 'mappability' : null,
+        ch.y_candidates_changed ? '시술 후보' : null,
+        ch.tier_changed ? '권고 등급' : null,
+        ch.questions_changed ? '추가 질문' : null,
+      ].filter(Boolean);
+      const txt = ch.any_change ? 'v0.2 → v0.3 변경: ' + fields.join(', ') : 'v0.2 ≡ v0.3 (변경 없음)';
+      badge.appendChild(el('div', {style:'font-size:12px;font-weight:700;color:'+(ch.any_change?'var(--good)':'var(--dim)'), text: txt}));
+      sec.appendChild(badge);
+    }
+
+    // v0.2 출력 (변경 있을 때만 펼쳐 보기)
+    if (v.v02_output && !v.v02_output.error && v.v02_to_v03_changes && v.v02_to_v03_changes.any_change) {
+      const det = document.createElement('details');
+      det.style = 'margin-top:6px;';
+      const sum = document.createElement('summary');
+      sum.style = 'cursor:pointer;font-size:12px;color:var(--dim);padding:6px 0;';
+      sum.textContent = '⊕ v0.2 출력 펼쳐 보기 (참고용 비교)';
+      det.appendChild(sum);
+      det.appendChild(renderSystemOutput(v.v02_output, 'v0.2 시스템 출력 (이전, 비교용)', false));
+      sec.appendChild(det);
+    }
+
+    // 지난번 본인 v0.2 평가
+    if (v.v02_review) {
+      const prev = v.v02_review;
+      const prevBox = el('div', {class:'system-output', style:'background:var(--accent-soft);border-color:var(--accent);'});
+      prevBox.appendChild(el('div', {class:'o-label', style:'color:var(--accent);', text:'지난번 본인 평가 (v0.2, 2026-04-26)'}));
+      const evalText = prev.evaluation === 'appropriate' ? '적절' :
+                       prev.evaluation === 'partial' ? '부분 적절' :
+                       prev.evaluation === 'inappropriate' ? '부적절' :
+                       prev.evaluation === 'unable' ? '판정 불가' : (prev.evaluation || '미평가');
+      const er = el('div', {class:'o-row'});
+      er.appendChild(el('span', {class:'o-lbl', text:'평가'}));
+      er.appendChild(el('span', {class:'o-val', text: evalText + (prev.mappability ? ' · mappability=' + prev.mappability : '')}));
+      prevBox.appendChild(er);
+      if (prev.notes) {
+        const nr = el('div', {class:'o-row'});
+        nr.appendChild(el('span', {class:'o-lbl', text:'당시 메모'}));
+        nr.appendChild(el('span', {class:'o-val', style:'font-size:12px;color:var(--dim);white-space:pre-wrap;', text: prev.notes}));
+        prevBox.appendChild(nr);
+      }
+      sec.appendChild(prevBox);
+    }
+
+    // Test intent
+    if (v.test_intent) {
+      const ti = el('div', {class:'test-intent'});
+      ti.appendChild(el('strong', {text:'검증 의도: '}));
+      ti.appendChild(document.createTextNode(v.test_intent));
+      sec.appendChild(ti);
+    }
+
+    // Evaluation radio
+    const fg = el('div', {class:'field-group'});
+    fg.appendChild(el('h3', {text:'임상 적절성 평가'}));
+    fg.appendChild(el('div', {class:'help', text:'시나리오의 환자에게 시스템 출력이 임상적으로 적절한가?'}));
+    const radio = el('div', {class:'eval-radio'});
+    EVAL_OPTIONS.forEach(opt => {
+      const lbl = el('label', {class: opt.v});
+      const r = document.createElement('input');
+      r.type = 'radio';
+      r.name = v.id + '-eval';
+      r.value = opt.v;
+      if (state.vignette_evaluations[v.id].evaluation === opt.v) {
+        r.checked = true;
+        lbl.classList.add('selected');
+      }
+      r.addEventListener('change', () => {
+        state.vignette_evaluations[v.id].evaluation = opt.v;
+        saveState();
+        radio.querySelectorAll('label').forEach(l => l.classList.remove('selected'));
+        lbl.classList.add('selected');
+        renderNav();
+      });
+      lbl.appendChild(r);
+      lbl.appendChild(document.createTextNode(' ' + opt.l));
+      radio.appendChild(lbl);
+    });
+    fg.appendChild(radio);
+    sec.appendChild(fg);
+
+    // Notes
+    const fg2 = el('div', {class:'field-group'});
+    fg2.appendChild(el('h3', {text:'자문자 메모 (자유)'}));
+    fg2.appendChild(el('div', {class:'help', text:'적절성 판단 사유 / 보강 필요 / 알고리즘 개선 의견 등.'}));
+    const notes = document.createElement('textarea');
+    notes.className = 'notes';
+    notes.placeholder = '예: 시스템이 ·심근경색 재관류·만 후보로 출력하지만 노인 환자는 ·흉부 대동맥 응급·도 함께 고려가 필요할 수 있다.';
+    notes.value = state.vignette_evaluations[v.id].notes;
+    notes.addEventListener('input', () => {
+      state.vignette_evaluations[v.id].notes = notes.value;
+      saveState();
+    });
+    fg2.appendChild(notes);
+    sec.appendChild(fg2);
+
+    // Nav
+    const navDiv = el('div', {class:'nav-buttons'});
+    if (idx > 0) {
+      const prev = VIGNETTES_DATA.vignettes[idx-1];
+      const b = el('button', {class:'btn secondary', text:'◀ ' + prev.id});
+      b.addEventListener('click', () => goToSection(prev.id));
+      navDiv.appendChild(b);
+    } else navDiv.appendChild(el('div'));
+    if (idx < VIGNETTES_DATA.vignettes.length - 1) {
+      const next = VIGNETTES_DATA.vignettes[idx+1];
+      const b = el('button', {class:'btn', text: next.id + ' ▶'});
+      b.addEventListener('click', () => goToSection(next.id));
+      navDiv.appendChild(b);
+    } else {
+      const b = el('button', {class:'btn', text:'❓ 종합 질문 ▶'});
+      b.addEventListener('click', () => goToSection('questions'));
+      navDiv.appendChild(b);
+    }
+    sec.appendChild(navDiv);
+
+    container.appendChild(sec);
+  });
+}
+
+// Questions
+function renderQuestions() {
+  const sec = document.getElementById('section-questions');
+  clearChildren(sec);
+  sec.appendChild(el('h2', {class:'section-title', text:'종합 질문 5개'}));
+  sec.appendChild(el('p', {class:'section-help', text:'30개 vignette 검토를 마친 후 v0.2 알고리즘 전반에 대한 인상·평가.'}));
+
+  REVIEW_QUESTIONS.forEach(q => {
+    const card = el('div', {class:'question-card'});
+    card.appendChild(el('div', {class:'q-num', text:'Q' + q.id}));
+    card.appendChild(el('div', {class:'q-text', text:q.q}));
+    const ta = document.createElement('textarea');
+    ta.placeholder = '답변 자유 작성';
+    ta.value = state.review_question_answers[q.id] || '';
+    ta.addEventListener('input', () => {
+      state.review_question_answers[q.id] = ta.value;
+      saveState();
+    });
+    card.appendChild(ta);
+    sec.appendChild(card);
+  });
+
+  const ac = el('div', {class:'field-group', style:'margin-top:20px;'});
+  ac.appendChild(el('h3', {text:'추가 의견 (자유)'}));
+  const ata = document.createElement('textarea');
+  ata.className = 'notes';
+  ata.style.minHeight = '110px';
+  ata.value = state.additional_comments;
+  ata.addEventListener('input', () => {
+    state.additional_comments = ata.value;
+    saveState();
+  });
+  ac.appendChild(ata);
+  sec.appendChild(ac);
+
+  const navDiv = el('div', {class:'nav-buttons'});
+  const back = el('button', {class:'btn secondary', text:'◀ 마지막 vignette'});
+  back.addEventListener('click', () => goToSection('VIG-30'));
+  navDiv.appendChild(back);
+  const fwd = el('button', {class:'btn', text:'⬇ 결과 내보내기 ▶'});
+  fwd.addEventListener('click', () => goToSection('export'));
+  navDiv.appendChild(fwd);
+  sec.appendChild(navDiv);
+}
+
+// Export
+function renderExport() {
+  const sec = document.getElementById('section-export');
+  clearChildren(sec);
+  sec.appendChild(el('h2', {class:'section-title', text:'결과 내보내기'}));
+  sec.appendChild(el('p', {class:'section-help', text:'JSON 다운로드 또는 클립보드 복사 후 maintainer에게 전달.'}));
+
+  // Summary
+  const counts = {appropriate:0, partial:0, inappropriate:0, unable:0, empty:0};
+  VIGNETTES_DATA.vignettes.forEach(v => {
+    const e = state.vignette_evaluations[v.id].evaluation || 'empty';
+    counts[e]++;
+  });
+  const summary = el('div', {class:'summary-block'});
+  summary.appendChild(el('strong', {text:'요약'}));
+  summary.appendChild(el('br'));
+  summary.appendChild(document.createTextNode(`적절 ${counts.appropriate} / 부분 ${counts.partial} / 부적절 ${counts.inappropriate} / 평가불가 ${counts.unable} / 미평가 ${counts.empty}`));
+  summary.appendChild(el('br'));
+  const answeredQs = Object.values(state.review_question_answers).filter(a => a.trim()).length;
+  summary.appendChild(document.createTextNode(`종합 질문 답변: ${answeredQs} / 5`));
+  sec.appendChild(summary);
+
+  const preview = el('div', {class:'export-preview', id:'export-preview', text:'―'});
+  sec.appendChild(preview);
+
+  const actions = el('div', {class:'export-actions'});
+  const dl = el('button', {class:'btn', text:'⬇ JSON 다운로드'});
+  dl.addEventListener('click', downloadJSON);
+  const cp = el('button', {class:'btn secondary', text:'📋 클립보드 복사'});
+  cp.addEventListener('click', copyJSON);
+  const rs = el('button', {class:'btn danger', text:'⚠ 초기화'});
+  rs.addEventListener('click', () => { if (confirm('정말 초기화?')) resetAll(); });
+  actions.appendChild(dl); actions.appendChild(cp); actions.appendChild(rs);
+  sec.appendChild(actions);
+
+  sec.appendChild(el('p', {id:'export-status', style:'margin-top:12px;font-size:13px;color:var(--good);'}));
+  renderExportPreview();
+}
+
+function buildExport() {
+  const evals = {};
+  VIGNETTES_DATA.vignettes.forEach(v => {
+    const s = state.vignette_evaluations[v.id];
+    evals[v.id] = {
+      category: v.category,
+      pre_code: v.estimated_pre_code,
+      mappability: v.system_output ? v.system_output.mappability : null,
+      evaluation: s.evaluation,
+      notes: s.notes || '',
+    };
+  });
+  const qa = REVIEW_QUESTIONS.map(q => ({
+    id: q.id, question: q.q, answer: state.review_question_answers[q.id] || '',
+  }));
+  const counts = {appropriate:0, partial:0, inappropriate:0, unable:0, empty:0};
+  Object.values(evals).forEach(e => counts[e.evaluation || 'empty']++);
+  return {
+    review_id: state.review_id,
+    algorithm_version: state.algorithm_version || 'v0.3',
+    previous_review_id: state.previous_review_id || 'VIGNETTE-REVIEW-mofq7k1h',
+    vignettes_version: state.vignettes_version,
+    consultation_role: 'emergency_medicine_specialist',
+    started_at: state.started_at,
+    completed_at: new Date().toISOString(),
+    last_saved: state.last_saved,
+    schema_version: '1.1',
+    summary: {
+      total: VIGNETTES_DATA.vignettes.length,
+      ...counts,
+      answered_questions: qa.filter(x => x.answer.trim()).length,
+    },
+    vignette_evaluations: evals,
+    review_question_answers: qa,
+    additional_comments: state.additional_comments || '',
+  };
+}
+
+function renderExportPreview() {
+  const p = document.getElementById('export-preview');
+  if (p) p.textContent = JSON.stringify(buildExport(), null, 2);
+}
+
+function downloadJSON() {
+  const data = buildExport();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const date = new Date().toISOString().slice(0, 10);
+  a.download = 'vignette-review-' + date + '-' + state.review_id.slice(-8) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  const s = document.getElementById('export-status');
+  if (s) s.textContent = '✓ JSON 다운로드 완료';
+}
+
+function copyJSON() {
+  const text = JSON.stringify(buildExport(), null, 2);
+  navigator.clipboard.writeText(text).then(() => {
+    const s = document.getElementById('export-status');
+    if (s) s.textContent = '✓ 클립보드 복사 완료';
+  }, (e) => {
+    const s = document.getElementById('export-status');
+    if (s) s.textContent = '✗ 복사 실패: ' + e.message;
+  });
+}
+
+// Nav
+function goToSection(name) {
+  document.querySelectorAll('section[data-section]').forEach(s => s.classList.remove('active'));
+  const target = document.querySelector('section[data-section="' + name + '"]');
+  if (target) {
+    target.classList.add('active');
+    if (name === 'export') renderExportPreview();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.toggle('active', item.getAttribute('data-section') === name);
+  });
+}
+
+function updateProgress() {
+  const total = VIGNETTES_DATA.vignettes.length;
+  let done = 0;
+  VIGNETTES_DATA.vignettes.forEach(v => {
+    if (state.vignette_evaluations[v.id].evaluation) done++;
+  });
+  const fill = document.getElementById('progress-fill');
+  if (fill) fill.style.width = (done/total*100) + '%';
+  const txt = document.getElementById('progress-text');
+  if (txt) txt.textContent = done + ' / ' + total + ' 평가';
+}
+
+function renderAll() {
+  renderWelcome();
+  renderNav();
+  renderVignettes();
+  renderQuestions();
+  renderExport();
+  updateProgress();
+  document.getElementById('session-id').textContent = state.review_id.slice(-8);
+  if (state.last_saved) {
+    document.getElementById('last-saved').textContent = new Date(state.last_saved).toLocaleTimeString('ko-KR', {hour12:false});
+  }
+}
+
+document.getElementById('nav-welcome').addEventListener('click', () => goToSection('welcome'));
+document.getElementById('nav-questions').addEventListener('click', () => goToSection('questions'));
+document.getElementById('nav-export').addEventListener('click', () => goToSection('export'));
+
+renderAll();
+</script>
+</body>
+</html>

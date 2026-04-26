@@ -26,6 +26,12 @@ print_url() {
     echo "Tailscale: http://${ip}:${PORT}/research.html"
   fi
   echo ""
+  echo "── Phase 11f-prep v0.3 vignette 재평가 (/vignette-review-v0_3.html) ──"
+  echo "Local:     http://127.0.0.1:${PORT}/vignette-review-v0_3.html"
+  if [[ -n "$ip" ]]; then
+    echo "Tailscale: http://${ip}:${PORT}/vignette-review-v0_3.html"
+  fi
+  echo ""
   echo "── Phase 10b vignette 검토 (/vignette-review.html) ──"
   echo "Local:     http://127.0.0.1:${PORT}/vignette-review.html"
   if [[ -n "$ip" ]]; then
