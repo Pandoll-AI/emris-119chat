@@ -21,7 +21,7 @@
       "id": "VIG-01",
       "category": "textbook",
       "scenario": "65세 남성. 30분 전부터 갑자기 시작된 가슴 중앙의 짓누르는 통증. 식은땀, 호흡곤란 동반. 의식 명료, 활력징후 정상. 발병 시점 명확.",
-      "estimated_pre_code": "CICAA",
+      "estimated_pre_code": "CICCA",
       "key_features": [
         "압박성 흉통",
         "성인",
@@ -34,7 +34,7 @@
       "id": "VIG-02",
       "category": "textbook",
       "scenario": "72세 여성. 1시간 전부터 우측 편마비 + 구음장애. FAST 양성. 가족이 마지막으로 정상 본 시각이 오늘 아침 8시.",
-      "estimated_pre_code": "CCGAA",
+      "estimated_pre_code": "CCGCC",
       "key_features": [
         "편마비",
         "구음장애",
@@ -47,7 +47,7 @@
       "id": "VIG-03",
       "category": "textbook",
       "scenario": "28세 남성. 2시간 전부터 점차 심해진 우하복부 통증. 발열 38.5°C, 식욕 없음, 구토 1회. 압박 시 rebound tenderness.",
-      "estimated_pre_code": "CJAAB",
+      "estimated_pre_code": "CJABA",
       "key_features": [
         "우하복부 통증",
         "발열",
@@ -72,7 +72,7 @@
       "id": "VIG-05",
       "category": "textbook",
       "scenario": "45세 남성. 작업장에서 절단기에 우측 검지·중지 완전 절단. 출혈 활동성. 절단된 손가락은 따로 보관.",
-      "estimated_pre_code": "CMCAA",
+      "estimated_pre_code": "CMCCC",
       "key_features": [
         "손가락 절단",
         "성인"
@@ -130,7 +130,7 @@
       "id": "VIG-10",
       "category": "textbook",
       "scenario": "60세 남성. 흑색변 2회 + 토혈 1회. 평소 NSAID 복용. 혈압 90/60 (저하), 맥박 110.",
-      "estimated_pre_code": "CJIAA",
+      "estimated_pre_code": "CJICC",
       "key_features": [
         "토혈",
         "흑색변",
@@ -143,7 +143,7 @@
       "id": "VIG-11",
       "category": "fn_pattern",
       "scenario": "70세 여성. 오심·구토 + 황달 + 우상복부 통증. 발열 38°C. 의식 명료.",
-      "estimated_pre_code": "CJKAB",
+      "estimated_pre_code": "CJKAI",
       "key_features": [
         "황달",
         "우상복부 통증",
@@ -179,7 +179,7 @@
       "id": "VIG-14",
       "category": "fn_pattern",
       "scenario": "50세 남성. 전반적 복통 + 복부 팽만 + 4시간째 가스·대변 배출 없음. 의식 명료, 활력징후 안정.",
-      "estimated_pre_code": "CJMAB",
+      "estimated_pre_code": "CJMBA",
       "key_features": [
         "전반적 복통",
         "장폐색 의심",
@@ -203,7 +203,7 @@
       "id": "VIG-16",
       "category": "fn_pattern",
       "scenario": "62세 남성. 갑자기 시작된 좌측 하지 통증 + 창백 + 차가움 + 맥박 없음. 의식 명료.",
-      "estimated_pre_code": "CIKAA",
+      "estimated_pre_code": "CIKCB",
       "key_features": [
         "급성 동맥 폐색",
         "사지 허혈"
@@ -225,7 +225,7 @@
       "id": "VIG-18",
       "category": "fn_pattern",
       "scenario": "8세 남아. 6시간 전부터 간헐적 복통 + 구토. 1시간 전 currant jelly 양상 혈변 1회. 의식 명료.",
-      "estimated_pre_code": "DJJAB",
+      "estimated_pre_code": "DJJCB",
       "key_features": [
         "영유아 복통",
         "currant jelly 혈변",
@@ -237,7 +237,7 @@
       "id": "VIG-19",
       "category": "fp_pattern",
       "scenario": "50세 남성. 하루 전부터 시작된 둔한 두통. 의식 명료, 신경학적 결손 없음. 활력징후 정상. CT 정상.",
-      "estimated_pre_code": "CCDAM",
+      "estimated_pre_code": "CCDBC",
       "key_features": [
         "단순 두통",
         "신경학적 결손 없음",
@@ -249,7 +249,7 @@
       "id": "VIG-20",
       "category": "fp_pattern",
       "scenario": "30세 여성. 어제부터 가벼운 가슴 답답함 + 가끔 두근거림. 활력징후 정상. ECG 정상. 기립성 저혈압 없음.",
-      "estimated_pre_code": "CIDAM",
+      "estimated_pre_code": "CIDBC",
       "key_features": [
         "비특이적 흉부 불편감",
         "활력징후 정상"
@@ -283,7 +283,7 @@
       "id": "VIG-23",
       "category": "fp_pattern",
       "scenario": "70세 남성. 가벼운 어지러움 + 무기력. 의식 명료. 사지 마비 없음, 구음장애 없음, FAST 음성. 활력징후 안정.",
-      "estimated_pre_code": "CCCAC",
+      "estimated_pre_code": "CCCCB",
       "key_features": [
         "비특이적 의식변화",
         "FAST 음성"
@@ -294,7 +294,7 @@
       "id": "VIG-24",
       "category": "consultant_change",
       "scenario": "55세 남성. 갑작스러운 등으로 방사되는 찢어지는 듯한 흉통. 발병 1시간. 양쪽 팔 혈압 차이 의심. 활력징후 빈맥.",
-      "estimated_pre_code": "CICAA",
+      "estimated_pre_code": "CICCA",
       "key_features": [
         "찢어지는 흉통",
         "등 방사",
@@ -306,7 +306,7 @@
       "id": "VIG-25",
       "category": "consultant_change",
       "scenario": "78세 남성. 갑작스러운 박동성 복통 + 좌측 측복부 통증. 혈압 80/50, 식은땀, 의식 변화 없음.",
-      "estimated_pre_code": "CIHAA",
+      "estimated_pre_code": "CJAAD",
       "key_features": [
         "박동성 복통",
         "쇼크",
@@ -343,7 +343,7 @@
       "id": "VIG-28",
       "category": "consultant_change",
       "scenario": "25세 여성. 우하복부 통증 6시간 + 미열 + 오심. 마지막 월경 4주 전. 임신반응 미상. 압통 + rebound.",
-      "estimated_pre_code": "CJAAB",
+      "estimated_pre_code": "CJABA",
       "key_features": [
         "우하복부 통증",
         "복막자극",
