@@ -1,5 +1,62 @@
 # Changelog
 
+## [2026-04-27] v0.3 자문자 90% 통과 + production 런칭
+
+> 자문자(응급의학 전문의)가 같은 30개 vignette를 v0.3 출력으로 재평가. **27/30 적절 (90%)**, 2 부분, 1 부적절. v0.2 14/30 (47%) → v0.3 27/30 (90%). v0.2 inappropriate 6건 중 5건 해결, partial 9건 해결. 잔여 3건 모두 임상 안전성 위반 아닌 정제 사항. production 런칭 진행.
+
+### 검토 데이터
+- `research/vignette-review-v0_3-2026-04-27-mogf0py8.json` (자문 원본)
+- review_id: `VIGNETTE-REVIEW-V03-mogf0py8`
+- 검토 시간: 2시간 (지난번 v0.2 검토 컨텍스트 활용)
+
+### v0.2 → v0.3 자문자 평가 변화
+| 평가 | v0.2 | v0.3 | Δ |
+|---|---|---|---|
+| 적절 | 14 | 27 | **+13** |
+| 부분 적절 | 10 | 2 | -8 |
+| 부적절 | 6 | 1 | -5 |
+
+### v0.2 inappropriate 6건 → v0.3
+- VIG-20 비심장성 흉통 → ↑ appropriate (Y0010 제거 작동)
+- VIG-21 우울감(자살 생각 없음) → ↑ appropriate (Y0150 제거 작동)
+- VIG-22 단순 결막 충혈 → ↑ appropriate (Y0160 제거 작동)
+- VIG-26 양막파열 → ↑ appropriate (Y0111+Y0100+Y0112 강화 작동)
+- VIG-27 지속 질출혈 → ↑ appropriate (Y0112 confident 회복)
+- VIG-14 복부종괴 grade 2 → → partial (개선됐으나 여전히 tier 부적절)
+
+### 런칭
+- **Production URL**: `https://119chat.emergency-info.com/` (v0.3 배포 완료)
+- payload size: 1.58MB, mapping_version 0.3.0, matrix v1.0
+- 신규 질문 6개(dyspnea_history·dyspnea_severity·rosc_status·neonatal_assessment·pregnancy_emergency·airway_burn) 모두 작동
+- equipment_dimensions tags + cpr_special 로직 반영
+- npir 라벨 버그 fix 반영
+
+### 잔여 3건 (v0.4 후보)
+- **VIG-14 CJMBA partial**: 복부종괴/팽만 grade 2 → tier=regional이지만 자문자 의견 "지역센터/지역기관". v0.3 conservative shift이 grade 2 "복통"만 다뤘고 "복부종괴/팽만"은 빠짐.
+- **VIG-18 DJJCB partial**: 영유아 흑색변 grade 3 → Y0082 confident → candidate demote 요청. fix 옵션: matrix Y0082 A→B (broad) vs entry-level grade 3 mild case demote (정밀, 권장).
+- **VIG-25 CJAAD inappropriate**: 자문자 자기 이해 정정. c_tier_codes(단정 X)를 "시술 권고"로 착각. 안전성 issue 아니지만 UI 명확화 + tier preferred=regional → local_center 보수적 shift 양쪽 후보.
+
+### v0.4 후보 (런칭 후 plan)
+1. **잔여 3건 패치** — VIG-14 복부종괴 conservative shift, VIG-18 entry-level confidence demote, VIG-25 c_tier_codes UI 명확화
+2. **Equipment dimensions 매칭 로직** — 현재는 LLM 해석 의존. 룰 기반 매칭 추가 (isolation_required → npir/general/cohort 가용성 자동 체크 등)
+3. **recommender HTML 마이그레이션** — `prektas-hospital-recommender.html` (educational 도구) v0.1 → v0.3
+4. **payload 크기 압축** — 671KB → 1.58MB. v0.3 추가 필드 정규화 검토 (예: rec.t를 yTier에서 derive 등)
+5. **vignette 30 → 100** — 응급의학 케이스 다양성 확보 (외상·중독·소아·고령자 등)
+6. **외부 cohort** — 광주·전라 외 (특히 수도권). cohort representativeness 확보
+7. **Reference standard agreement** — 응급의학 전문의 1 → 2명
+
+### Commits (이번 phase)
+| # | 작업 | Commit |
+|---|---|---|
+| 1 | Phase 10c — vignette 자문 결과 + 분석 | `5d82db1` |
+| 2 | Phase 11 — v0.3 알고리즘 + directional 검증 + page reframe | `cb0f50a` |
+| 3 | Phase 11f-prep — v0.3 vignette 재평가 도구 | `7442b44` |
+| 4 | Phase 11f — v0.3 production 통합 | `5ee76c9` |
+| 5 | Phase 11f 자문 결과 (자문자 90% 통과) | `4faa025` |
+| 6 | v0.3 런칭 (Vercel production) | (이번 commit) |
+
+---
+
 ## [2026-04-27] Phase 11f: v0.3 production 통합
 
 > 챗봇·마법사가 v0.3 매핑 출력(mappability + confidence + 신규 질문 catalog 6개)을 직접 사용. lib/chatbot-payload.js v0.1 → v0.3 schema. HARNESS 프롬프트가 mappability·equipment_dimensions 해석 추가. npir 라벨 버그 fix.
