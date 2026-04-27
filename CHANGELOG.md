@@ -1,5 +1,73 @@
 # Changelog
 
+## [2026-04-27] v0.3.1 잔여 3건 패치 + production 재배포
+
+> 자문자 90% 통과(VIGNETTE-REVIEW-V03-mogf0py8) 후 잔여 3건(VIG-14·18·25)을 빠르게 follow-up. matrix 변경 없이 알고리즘 entry-level 패치 + UI 명확화. production 재배포 완료.
+
+### 변경 (algorithm v0.3.0 → v0.3.1)
+
+| Patch | vignette | 변경 | 영향 entries |
+|---|---|---|---|
+| 1 | VIG-14 복부종괴 partial | computeTier conservative shift L3 확장 (복통 → 복통+복부종괴/팽만) grade 2 → local_center | 13 |
+| 2 | VIG-18 영유아 흑색변 partial | ruleGi+classify confidenceOverrides 도입 (영유아+grade≥3+hematemesis → Y0082 candidate) | ~16 |
+| 3a | VIG-25 복통+쇼크 inappropriate | computeTier 새 보수적 shift (c_tier-only + 복통/복부종괴 + 쇼크/혈역학 + grade 1+2 → local_center) | 5 |
+| 3b | VIG-25 UI 명확화 | HARNESS_INTERPRET_PROMPT mappability="C" 표현 강화 (c_tier_codes 시술명 절대 노출 X) | n/a |
+
+총 영향: 46 entries 변경 (의미있는 변화 ~25개 + source 라벨 변경 ~21개).
+
+### 검증
+
+**Smoke test 5개 핵심 케이스** 모두 통과:
+- CJMBA → tier=local_center (Patch 1 동작)
+- DJJCB → mappability=B, Y0082 candidate, entry_demoted=true (Patch 2 동작)
+- DJJCC grade 2 → mappability=A, confident 유지 (Patch 2 over-correct 안 함)
+- CJAAD → tier=local_center, source=v031_abd_shock_grade12_conservative (Patch 3 동작)
+- CJAAA grade 1 → tier 변경 없음 (Patch 3 over-correct 안 함)
+
+**30 vignette 자동 평가** — VIG-14·18·25 모두 의도대로 fix, 다른 27개 mappability·tier 회귀 없음.
+
+**광주·전라 directional (130k visits)**:
+| 지표 | v0.3 | v0.3.1 | Δ |
+|---|---|---|---|
+| Mappability A (visits) | 6,394 | 6,175 | -219 (Y0082 demote) |
+| Mappability B (visits) | 14,379 | 14,598 | +219 (demote 흡수) |
+| Specificity (확정 only) | 0.9628 | 0.9635 | +0.0007 |
+| F1 (확정 only) | 0.1701 | 0.1614 | -0.0087 |
+| Tier 일치율 | 0.8681 | 0.8680 | -0.0001 |
+
+회귀 없음. F1 미세 감소는 Y0082 confident → candidate 이동의 의도된 trade-off.
+
+### 자문자 30개 vignette 예상 결과 (자동 평가 기반, 자문자 재검토 없음)
+- VIG-14 partial → 적절 (tier=local_center 자문자 의견 일치)
+- VIG-18 partial → 적절 (Y0082 candidate, 자문자 명시 의견 일치)
+- VIG-25 inappropriate → 적절 (tier=local_center + UI 명확화)
+- 다른 27개 그대로
+
+**예상 30/30 적절 (100%)**. 자문자 재검토는 v0.4 재평가 시점으로 deferred.
+
+### Production 재배포
+- payload size: 1.38MB → 1.38MB (사실상 동일, +1KB)
+- mapping_version: 0.3.0 → 0.3.1
+- Vercel deployment: https://chatbot-o4yi6owcl-emergency-lee.vercel.app
+- Domain: https://119chat.emergency-info.com/
+
+### 산출물
+- `research/prektas-to-y-mapping-v0.3.json` (v0.3.1, 4,689 entries)
+- `research/validation-results-v0.3.1.json` (130,536 visits directional)
+- `lib/chatbot-payload.js` (재빌드)
+
+### Files
+- `scripts/research/build-prektas-to-y-mapping-v0.3.mjs` (3 patches)
+- `index.html` (HARNESS prompt c_tier_codes 표현 강화)
+- `CHANGELOG.md` (이 항목)
+
+### Commits
+| # | 작업 | Commit |
+|---|---|---|
+| 1 | v0.3.1 패치 + 검증 + production 재배포 | (이번 commit) |
+
+---
+
 ## [2026-04-27] v0.3 자문자 90% 통과 + production 런칭
 
 > 자문자(응급의학 전문의)가 같은 30개 vignette를 v0.3 출력으로 재평가. **27/30 적절 (90%)**, 2 부분, 1 부적절. v0.2 14/30 (47%) → v0.3 27/30 (90%). v0.2 inappropriate 6건 중 5건 해결, partial 9건 해결. 잔여 3건 모두 임상 안전성 위반 아닌 정제 사항. production 런칭 진행.

@@ -1,0 +1,509 @@
+{
+  "protocol_id": "PREKTAS-VAL-2026-001",
+  "algorithm_compared": [
+    "v0.2",
+    "v0.3.1"
+  ],
+  "reference_standard": "research/y-code-icd10-clusters.json v1.0",
+  "mappability_matrix": "research/y-code-mappability-matrix.json v1.0 (frozen)",
+  "analysis_at": "2026-04-27T02:54:22Z",
+  "data_caveat": "광주·전라 데이터는 검증 안 됨. 본 결과는 directional probe (informational only). 결정의 근거가 아니다.",
+  "sample": {
+    "total_rows": 225017,
+    "matched": 179924,
+    "included": 130536,
+    "excluded": {
+      "unmatched": 45093,
+      "no_v03_mapping": 48697,
+      "no_code": 149,
+      "no_dx": 542
+    }
+  },
+  "severe_prevalence": {
+    "count": 16839,
+    "pct": 11.19,
+    "per_y": {
+      "Y0020": 3258,
+      "Y0081": 1723,
+      "Y0141": 1703,
+      "Y0060": 1615,
+      "Y0142": 1598,
+      "Y0082": 1485,
+      "Y0032": 1336,
+      "Y0010": 920,
+      "Y0052": 732,
+      "Y0150": 621,
+      "Y0051": 584,
+      "Y0031": 471,
+      "Y0120": 151,
+      "Y0041": 128,
+      "Y0113": 118,
+      "Y0091": 66,
+      "Y0092": 66,
+      "Y0112": 59,
+      "Y0070": 57,
+      "Y0042": 39,
+      "Y0160": 36,
+      "Y0171": 32,
+      "Y0131": 25,
+      "Y0172": 12,
+      "Y0132": 3,
+      "Y0111": 1
+    }
+  },
+  "v02": {
+    "mappability_distribution": {
+      "unmapped": 105838,
+      "B": 14548,
+      "A": 10109,
+      "C": 41
+    },
+    "binary_confident_only": {
+      "tp": 1957,
+      "fp": 7655,
+      "tn": 108276,
+      "fn": 12648,
+      "n": 130536,
+      "sensitivity": 0.134,
+      "sensitivity_95CI": [
+        0.1286,
+        0.1396
+      ],
+      "specificity": 0.934,
+      "specificity_95CI": [
+        0.9325,
+        0.9354
+      ],
+      "ppv": 0.2036,
+      "npv": 0.8954,
+      "f1": 0.1616
+    },
+    "binary_with_candidate": {
+      "tp": 4807,
+      "fp": 17993,
+      "tn": 97938,
+      "fn": 9798,
+      "n": 130536,
+      "sensitivity": 0.3291,
+      "sensitivity_95CI": [
+        0.3216,
+        0.3368
+      ],
+      "specificity": 0.8448,
+      "specificity_95CI": [
+        0.8427,
+        0.8469
+      ],
+      "ppv": 0.2108,
+      "npv": 0.9091,
+      "f1": 0.257
+    },
+    "type_a_contradictions": 200,
+    "type_b_match_rate": 0.6753,
+    "tier_agreement_rate": 0.857
+  },
+  "vignette_validation_reference": {
+    "review_id": "VIGNETTE-REVIEW-mofq7k1h",
+    "completed_at": "2026-04-26",
+    "v02_appropriateness": "14/30 appropriate, 10/30 partial, 6/30 inappropriate",
+    "v03_target": "24/30+ appropriate (vignette feedback 반영)",
+    "note": "vignette validation이 본 통계보다 우선 권위 (자문자 임상 추론)."
+  },
+  "note": "v0.3.1 patches: VIG-14 복부종괴 conservative shift, VIG-18 Y0082 entry-level demote, VIG-25 복통+쇼크 보수적 shift",
+  "v031": {
+    "mappability_distribution": {
+      "unmapped": 109556,
+      "B": 14598,
+      "A": 6175,
+      "C": 207
+    },
+    "binary_confident_only": {
+      "tp": 1654,
+      "fp": 4232,
+      "tn": 111699,
+      "fn": 12951,
+      "n": 130536,
+      "sensitivity": 0.1132,
+      "sensitivity_95CI": [
+        0.1082,
+        0.1185
+      ],
+      "specificity": 0.9635,
+      "specificity_95CI": [
+        0.9624,
+        0.9646
+      ],
+      "ppv": 0.281,
+      "npv": 0.8961,
+      "f1": 0.1614
+    },
+    "binary_with_candidate": {
+      "tp": 4581,
+      "fp": 14567,
+      "tn": 101364,
+      "fn": 10024,
+      "n": 130536,
+      "sensitivity": 0.3137,
+      "sensitivity_95CI": [
+        0.3062,
+        0.3212
+      ],
+      "specificity": 0.8743,
+      "specificity_95CI": [
+        0.8724,
+        0.8762
+      ],
+      "ppv": 0.2392,
+      "npv": 0.91,
+      "f1": 0.2714
+    },
+    "type_a_contradictions": 200,
+    "type_b_match_rate": 0.6866,
+    "tier_agreement_rate": 0.868,
+    "type_a_sample": [
+      {
+        "code": "COECC",
+        "level2": "환경손상",
+        "level3": "화학물질 노출",
+        "confident_y": [
+          "Y0120"
+        ],
+        "gt_y": [
+          "Y0150"
+        ]
+      },
+      {
+        "code": "CJICC",
+        "level2": "소화기계",
+        "level3": "토혈",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0141",
+          "Y0142"
+        ]
+      },
+      {
+        "code": "CICCA",
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0052"
+        ]
+      },
+      {
+        "code": "DJICC",
+        "level2": "소화기계",
+        "level3": "토혈",
+        "confident_y": [
+          "Y0082"
+        ],
+        "gt_y": [
+          "Y0142"
+        ]
+      },
+      {
+        "code": "CICCA",
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ]
+      },
+      {
+        "code": "CJJCB",
+        "level2": "소화기계",
+        "level3": "혈변/흑색변",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0060"
+        ]
+      },
+      {
+        "code": "CJJAD",
+        "level2": "소화기계",
+        "level3": "혈변/흑색변",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0060"
+        ]
+      },
+      {
+        "code": "CJJAD",
+        "level2": "소화기계",
+        "level3": "혈변/흑색변",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0141",
+          "Y0142"
+        ]
+      },
+      {
+        "code": "CJICB",
+        "level2": "소화기계",
+        "level3": "토혈",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0142"
+        ]
+      },
+      {
+        "code": "CICCA",
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0032"
+        ]
+      },
+      {
+        "code": "CICCA",
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0081",
+          "Y0082"
+        ]
+      },
+      {
+        "code": "CJIAD",
+        "level2": "소화기계",
+        "level3": "토혈",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0141",
+          "Y0142"
+        ]
+      },
+      {
+        "code": "CICCA",
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ]
+      },
+      {
+        "code": "CJFCF",
+        "level2": "소화기계",
+        "level3": "구토/구역",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0150"
+        ]
+      },
+      {
+        "code": "DJJAJ",
+        "level2": "소화기계",
+        "level3": "혈변/흑색변",
+        "confident_y": [
+          "Y0082"
+        ],
+        "gt_y": [
+          "Y0141"
+        ]
+      },
+      {
+        "code": "CJJCA",
+        "level2": "소화기계",
+        "level3": "혈변/흑색변",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0142"
+        ]
+      },
+      {
+        "code": "CICCA",
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0060"
+        ]
+      },
+      {
+        "code": "DICCA",
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ]
+      },
+      {
+        "code": "DICCA",
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0041"
+        ]
+      },
+      {
+        "code": "CICCA",
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0052"
+        ]
+      },
+      {
+        "code": "CJJAJ",
+        "level2": "소화기계",
+        "level3": "혈변/흑색변",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0051"
+        ]
+      },
+      {
+        "code": "CJFCF",
+        "level2": "소화기계",
+        "level3": "구토/구역",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0051"
+        ]
+      },
+      {
+        "code": "CJICC",
+        "level2": "소화기계",
+        "level3": "토혈",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0141"
+        ]
+      },
+      {
+        "code": "CICCA",
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0052"
+        ]
+      },
+      {
+        "code": "CBECD",
+        "level2": "정신건강",
+        "level3": "우울증/자살/자해",
+        "confident_y": [
+          "Y0150"
+        ],
+        "gt_y": [
+          "Y0141"
+        ]
+      },
+      {
+        "code": "CJFCF",
+        "level2": "소화기계",
+        "level3": "구토/구역",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0150"
+        ]
+      },
+      {
+        "code": "CJIAJ",
+        "level2": "소화기계",
+        "level3": "토혈",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0150"
+        ]
+      },
+      {
+        "code": "DJIAJ",
+        "level2": "소화기계",
+        "level3": "토혈",
+        "confident_y": [
+          "Y0082"
+        ],
+        "gt_y": [
+          "Y0142"
+        ]
+      },
+      {
+        "code": "CJJCA",
+        "level2": "소화기계",
+        "level3": "혈변/흑색변",
+        "confident_y": [
+          "Y0081"
+        ],
+        "gt_y": [
+          "Y0032"
+        ]
+      },
+      {
+        "code": "CICCA",
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)",
+        "confident_y": [
+          "Y0010"
+        ],
+        "gt_y": [
+          "Y0060"
+        ]
+      }
+    ]
+  },
+  "directional_changes_v02_to_v031": {
+    "sensitivity_confident_delta": -0.0208,
+    "specificity_confident_delta": 0.0295,
+    "sensitivity_with_candidate_delta": -0.0154,
+    "specificity_with_candidate_delta": 0.0295,
+    "tier_agreement_delta": 0.011,
+    "type_a_count_delta": 0,
+    "note": "sens 음(-) shift는 confident 좁힘의 의도된 결과. 임계값 평가 X — directional only."
+  }
+}

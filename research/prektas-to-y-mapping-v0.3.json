@@ -1,12 +1,13 @@
 {
-  "version": "0.3.0",
-  "algorithm": "v0.3 — vignette validation feedback applied",
-  "generated_at": "2026-04-26T16:15:31.761Z",
+  "version": "0.3.1",
+  "algorithm": "v0.3.1 — 잔여 3건 패치 (VIG-14·18·25)",
+  "generated_at": "2026-04-27T02:52:56.624Z",
   "inputs": {
     "codebook": "data/prektas-codebook.json",
     "mappability_matrix": "research/y-code-mappability-matrix.json v1.0",
     "vignette_review": "research/vignette-review-2026-04-26-mofq7k1h.json",
-    "analysis": "research/vignette-review-analysis.md"
+    "analysis": "research/vignette-review-analysis.md",
+    "v03_review": "research/vignette-review-v0_3-2026-04-27-mogf0py8.json"
   },
   "changes_from_v02": [
     "fp over-trigger 좁히기: ·심근경색 재관류·(흉통 character 명시), ·정신과 응급입원·(level4 자살시도/급성정신증), ·안과 응급수술·(시력저하/외상 명시)",
@@ -16,6 +17,11 @@
     "임신 응급 강화: 양수누출+임신주수 → 분만/저체중/산과수술 모두 trigger; 무통성 출혈/태반 → 산과수술 confident",
     "tier conservative shift: grade 2 복통류 → local_center, 분만 임박 → local_center",
     "신규 질문 catalog: dyspnea_history, dyspnea_severity, rosc_status, neonatal_assessment, pregnancy_emergency, airway_burn"
+  ],
+  "changes_from_v03": [
+    "VIG-14: tier conservative shift L3 확장 — 복통 → 복통/복부종괴/팽만 grade 2 모두 local_center 우선",
+    "VIG-18: 영유아 + grade≥3 + hematemesis trigger → Y0082 confidence demote (entry-level, matrix 변경 X)",
+    "VIG-25: 복통/복부종괴 + 쇼크/혈역학 grade 1+2 c_tier-only → local_center 우선"
   ],
   "question_catalog": {
     "onset_time_stroke": {
@@ -132,8 +138,8 @@
   },
   "summary": {
     "by_mappability": {
-      "A": 332,
-      "B": 266,
+      "A": 316,
+      "B": 282,
       "C": 64,
       "unmapped": 4027
     },
@@ -203,8 +209,8 @@
       },
       "소화기계": {
         "total": 543,
-        "A": 113,
-        "B": 25,
+        "A": 97,
+        "B": 41,
         "C": 64,
         "unmapped": 341
       },
@@ -283,8 +289,8 @@
       "Y0070": 25
     },
     "by_tier_preferred": {
-      "regional": 2342,
-      "local_center": 1475,
+      "regional": 2325,
+      "local_center": 1492,
       "local_institution": 872
     }
   },
@@ -19284,7 +19290,7 @@
           "local_institution",
           "regional"
         ],
-        "source": "v03_conservative_abdpain"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -19327,12 +19333,12 @@
         "Y0042"
       ],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_abd_shock_grade12_conservative"
       },
       "questions": [],
       "rationale": "복부 응급 → tier만",
@@ -19355,10 +19361,9 @@
         "preferred": "local_center",
         "acceptable": [
           "local_center",
-          "local_institution",
           "regional"
         ],
-        "source": "v03_conservative_abdpain"
+        "source": "v031_abd_shock_grade12_conservative"
       },
       "questions": [],
       "rationale": "복부 응급 → tier만",
@@ -19426,7 +19431,7 @@
           "local_institution",
           "regional"
         ],
-        "source": "v03_conservative_abdpain"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -19449,7 +19454,7 @@
           "local_institution",
           "regional"
         ],
-        "source": "v03_conservative_abdpain"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -19472,7 +19477,7 @@
           "local_institution",
           "regional"
         ],
-        "source": "v03_conservative_abdpain"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -19563,7 +19568,7 @@
           "local_institution",
           "regional"
         ],
-        "source": "v03_conservative_abdpain"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -23932,12 +23937,13 @@
       "y_candidates": [],
       "c_tier_codes": [],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "local_institution",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -23980,12 +23986,12 @@
         "Y0042"
       ],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_abd_shock_grade12_conservative"
       },
       "questions": [],
       "rationale": "복부 응급 → tier만",
@@ -24005,12 +24011,12 @@
         "Y0042"
       ],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_abd_shock_grade12_conservative"
       },
       "questions": [],
       "rationale": "복부 응급 → tier만",
@@ -24072,12 +24078,13 @@
       "y_candidates": [],
       "c_tier_codes": [],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "local_institution",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -24094,12 +24101,13 @@
       "y_candidates": [],
       "c_tier_codes": [],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "local_institution",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -24116,12 +24124,13 @@
       "y_candidates": [],
       "c_tier_codes": [],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "local_institution",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -24206,12 +24215,13 @@
       "y_candidates": [],
       "c_tier_codes": [],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "local_institution",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -74004,7 +74014,7 @@
           "local_institution",
           "regional"
         ],
-        "source": "v03_conservative_abdpain"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -74046,12 +74056,12 @@
         "Y0070"
       ],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_abd_shock_grade12_conservative"
       },
       "questions": [],
       "rationale": "소아 복부 응급 → tier만",
@@ -74073,10 +74083,9 @@
         "preferred": "local_center",
         "acceptable": [
           "local_center",
-          "local_institution",
           "regional"
         ],
-        "source": "v03_conservative_abdpain"
+        "source": "v031_abd_shock_grade12_conservative"
       },
       "questions": [],
       "rationale": "소아 복부 응급 → tier만",
@@ -74144,7 +74153,7 @@
           "local_institution",
           "regional"
         ],
-        "source": "v03_conservative_abdpain"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -74167,7 +74176,7 @@
           "local_institution",
           "regional"
         ],
-        "source": "v03_conservative_abdpain"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -74190,7 +74199,7 @@
           "local_institution",
           "regional"
         ],
-        "source": "v03_conservative_abdpain"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -74213,7 +74222,7 @@
           "local_institution",
           "regional"
         ],
-        "source": "v03_conservative_abdpain"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -74304,7 +74313,7 @@
           "local_institution",
           "regional"
         ],
-        "source": "v03_conservative_abdpain"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -76415,11 +76424,12 @@
       "level2": "소화기계",
       "level3": "구토/구역",
       "level4": "커피찌꺼기 모양 구토/흑색변",
-      "mappability": "A",
+      "mappability": "B",
       "y_candidates": [
         {
           "code": "Y0082",
-          "confidence": "confident"
+          "confidence": "candidate",
+          "entry_demoted": true
         }
       ],
       "c_tier_codes": [],
@@ -76435,7 +76445,7 @@
       "questions": [
         "bleeding_site"
       ],
-      "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+      "rationale": "영유아 mild 흑색변 (grade 3) → ·영유아 위장관 내시경· candidate (entry-level demote)",
       "cpr_special": false
     },
     {
@@ -77408,11 +77418,12 @@
       "level2": "소화기계",
       "level3": "토혈",
       "level4": "경증 호흡곤란",
-      "mappability": "A",
+      "mappability": "B",
       "y_candidates": [
         {
           "code": "Y0082",
-          "confidence": "confident"
+          "confidence": "candidate",
+          "entry_demoted": true
         }
       ],
       "c_tier_codes": [],
@@ -77428,7 +77439,7 @@
       "questions": [
         "bleeding_site"
       ],
-      "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+      "rationale": "영유아 mild 흑색변 (grade 3) → ·영유아 위장관 내시경· candidate (entry-level demote)",
       "cpr_special": false
     },
     {
@@ -77500,11 +77511,12 @@
       "level2": "소화기계",
       "level3": "토혈",
       "level4": "정상 범위 밖의 활력징후",
-      "mappability": "A",
+      "mappability": "B",
       "y_candidates": [
         {
           "code": "Y0082",
-          "confidence": "confident"
+          "confidence": "candidate",
+          "entry_demoted": true
         }
       ],
       "c_tier_codes": [],
@@ -77520,7 +77532,7 @@
       "questions": [
         "bleeding_site"
       ],
-      "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+      "rationale": "영유아 mild 흑색변 (grade 3) → ·영유아 위장관 내시경· candidate (entry-level demote)",
       "cpr_special": false
     },
     {
@@ -77675,11 +77687,12 @@
       "level2": "소화기계",
       "level3": "토혈",
       "level4": "3-18 개월이면서 T≥38℃이고 건강해 보임",
-      "mappability": "A",
+      "mappability": "B",
       "y_candidates": [
         {
           "code": "Y0082",
-          "confidence": "confident"
+          "confidence": "candidate",
+          "entry_demoted": true
         }
       ],
       "c_tier_codes": [],
@@ -77695,7 +77708,7 @@
       "questions": [
         "bleeding_site"
       ],
-      "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+      "rationale": "영유아 mild 흑색변 (grade 3) → ·영유아 위장관 내시경· candidate (entry-level demote)",
       "cpr_special": false
     },
     {
@@ -77705,11 +77718,12 @@
       "level2": "소화기계",
       "level3": "토혈",
       "level4": ">18 개월이면서 T≥38℃이고 아파 보임",
-      "mappability": "A",
+      "mappability": "B",
       "y_candidates": [
         {
           "code": "Y0082",
-          "confidence": "confident"
+          "confidence": "candidate",
+          "entry_demoted": true
         }
       ],
       "c_tier_codes": [],
@@ -77725,7 +77739,7 @@
       "questions": [
         "bleeding_site"
       ],
-      "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+      "rationale": "영유아 mild 흑색변 (grade 3) → ·영유아 위장관 내시경· candidate (entry-level demote)",
       "cpr_special": false
     },
     {
@@ -77764,11 +77778,12 @@
       "level2": "소화기계",
       "level3": "토혈",
       "level4": "출혈성 질환(중등도나 경도의 출혈)",
-      "mappability": "A",
+      "mappability": "B",
       "y_candidates": [
         {
           "code": "Y0082",
-          "confidence": "confident"
+          "confidence": "candidate",
+          "entry_demoted": true
         }
       ],
       "c_tier_codes": [],
@@ -77784,7 +77799,7 @@
       "questions": [
         "bleeding_site"
       ],
-      "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+      "rationale": "영유아 mild 흑색변 (grade 3) → ·영유아 위장관 내시경· candidate (entry-level demote)",
       "cpr_special": false
     },
     {
@@ -77794,11 +77809,12 @@
       "level2": "소화기계",
       "level3": "토혈",
       "level4": "구토에 극소량이 섞인 경우, 정상 활력징후",
-      "mappability": "A",
+      "mappability": "B",
       "y_candidates": [
         {
           "code": "Y0082",
-          "confidence": "confident"
+          "confidence": "candidate",
+          "entry_demoted": true
         }
       ],
       "c_tier_codes": [],
@@ -77814,7 +77830,7 @@
       "questions": [
         "bleeding_site"
       ],
-      "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+      "rationale": "영유아 mild 흑색변 (grade 3) → ·영유아 위장관 내시경· candidate (entry-level demote)",
       "cpr_special": false
     },
     {
@@ -77824,11 +77840,12 @@
       "level2": "소화기계",
       "level3": "토혈",
       "level4": "커피찌꺼기 모양 구토/흑색변",
-      "mappability": "A",
+      "mappability": "B",
       "y_candidates": [
         {
           "code": "Y0082",
-          "confidence": "confident"
+          "confidence": "candidate",
+          "entry_demoted": true
         }
       ],
       "c_tier_codes": [],
@@ -77844,7 +77861,7 @@
       "questions": [
         "bleeding_site"
       ],
-      "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+      "rationale": "영유아 mild 흑색변 (grade 3) → ·영유아 위장관 내시경· candidate (entry-level demote)",
       "cpr_special": false
     },
     {
@@ -77941,11 +77958,12 @@
       "level2": "소화기계",
       "level3": "혈변/흑색변",
       "level4": "경증 호흡곤란",
-      "mappability": "A",
+      "mappability": "B",
       "y_candidates": [
         {
           "code": "Y0082",
-          "confidence": "confident"
+          "confidence": "candidate",
+          "entry_demoted": true
         }
       ],
       "c_tier_codes": [],
@@ -77961,7 +77979,7 @@
       "questions": [
         "bleeding_site"
       ],
-      "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+      "rationale": "영유아 mild 흑색변 (grade 3) → ·영유아 위장관 내시경· candidate (entry-level demote)",
       "cpr_special": false
     },
     {
@@ -78033,11 +78051,12 @@
       "level2": "소화기계",
       "level3": "혈변/흑색변",
       "level4": "정상 범위 밖의 활력징후",
-      "mappability": "A",
+      "mappability": "B",
       "y_candidates": [
         {
           "code": "Y0082",
-          "confidence": "confident"
+          "confidence": "candidate",
+          "entry_demoted": true
         }
       ],
       "c_tier_codes": [],
@@ -78053,7 +78072,7 @@
       "questions": [
         "bleeding_site"
       ],
-      "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+      "rationale": "영유아 mild 흑색변 (grade 3) → ·영유아 위장관 내시경· candidate (entry-level demote)",
       "cpr_special": false
     },
     {
@@ -78208,11 +78227,12 @@
       "level2": "소화기계",
       "level3": "혈변/흑색변",
       "level4": "3-18 개월이면서 T≥38℃이고 건강해 보임",
-      "mappability": "A",
+      "mappability": "B",
       "y_candidates": [
         {
           "code": "Y0082",
-          "confidence": "confident"
+          "confidence": "candidate",
+          "entry_demoted": true
         }
       ],
       "c_tier_codes": [],
@@ -78228,7 +78248,7 @@
       "questions": [
         "bleeding_site"
       ],
-      "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+      "rationale": "영유아 mild 흑색변 (grade 3) → ·영유아 위장관 내시경· candidate (entry-level demote)",
       "cpr_special": false
     },
     {
@@ -78238,11 +78258,12 @@
       "level2": "소화기계",
       "level3": "혈변/흑색변",
       "level4": ">18 개월이면서 T≥38℃이고 아파 보임",
-      "mappability": "A",
+      "mappability": "B",
       "y_candidates": [
         {
           "code": "Y0082",
-          "confidence": "confident"
+          "confidence": "candidate",
+          "entry_demoted": true
         }
       ],
       "c_tier_codes": [],
@@ -78258,7 +78279,7 @@
       "questions": [
         "bleeding_site"
       ],
-      "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+      "rationale": "영유아 mild 흑색변 (grade 3) → ·영유아 위장관 내시경· candidate (entry-level demote)",
       "cpr_special": false
     },
     {
@@ -78268,11 +78289,12 @@
       "level2": "소화기계",
       "level3": "혈변/흑색변",
       "level4": ">18 개월이면서 T≥38℃이지만 건강해 보임",
-      "mappability": "A",
+      "mappability": "B",
       "y_candidates": [
         {
           "code": "Y0082",
-          "confidence": "confident"
+          "confidence": "candidate",
+          "entry_demoted": true
         }
       ],
       "c_tier_codes": [],
@@ -78287,7 +78309,7 @@
       "questions": [
         "bleeding_site"
       ],
-      "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+      "rationale": "영유아 mild 흑색변 (grade 4) → ·영유아 위장관 내시경· candidate (entry-level demote)",
       "cpr_special": false
     },
     {
@@ -78326,11 +78348,12 @@
       "level2": "소화기계",
       "level3": "혈변/흑색변",
       "level4": "출혈성 질환(중등도나 경도의 출혈)",
-      "mappability": "A",
+      "mappability": "B",
       "y_candidates": [
         {
           "code": "Y0082",
-          "confidence": "confident"
+          "confidence": "candidate",
+          "entry_demoted": true
         }
       ],
       "c_tier_codes": [],
@@ -78346,7 +78369,7 @@
       "questions": [
         "bleeding_site"
       ],
-      "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+      "rationale": "영유아 mild 흑색변 (grade 3) → ·영유아 위장관 내시경· candidate (entry-level demote)",
       "cpr_special": false
     },
     {
@@ -78356,11 +78379,12 @@
       "level2": "소화기계",
       "level3": "혈변/흑색변",
       "level4": "적은양의 직장출혈",
-      "mappability": "A",
+      "mappability": "B",
       "y_candidates": [
         {
           "code": "Y0082",
-          "confidence": "confident"
+          "confidence": "candidate",
+          "entry_demoted": true
         }
       ],
       "c_tier_codes": [],
@@ -78375,7 +78399,7 @@
       "questions": [
         "bleeding_site"
       ],
-      "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+      "rationale": "영유아 mild 흑색변 (grade 4) → ·영유아 위장관 내시경· candidate (entry-level demote)",
       "cpr_special": false
     },
     {
@@ -78385,11 +78409,12 @@
       "level2": "소화기계",
       "level3": "혈변/흑색변",
       "level4": "중등도 양의 흑색변 또는 직장출혈",
-      "mappability": "A",
+      "mappability": "B",
       "y_candidates": [
         {
           "code": "Y0082",
-          "confidence": "confident"
+          "confidence": "candidate",
+          "entry_demoted": true
         }
       ],
       "c_tier_codes": [],
@@ -78405,7 +78430,7 @@
       "questions": [
         "bleeding_site"
       ],
-      "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+      "rationale": "영유아 mild 흑색변 (grade 3) → ·영유아 위장관 내시경· candidate (entry-level demote)",
       "cpr_special": false
     },
     {
@@ -79150,12 +79175,13 @@
       "y_candidates": [],
       "c_tier_codes": [],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "local_institution",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -79197,12 +79223,12 @@
         "Y0070"
       ],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_abd_shock_grade12_conservative"
       },
       "questions": [],
       "rationale": "소아 복부 응급 → tier만",
@@ -79221,12 +79247,12 @@
         "Y0070"
       ],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_abd_shock_grade12_conservative"
       },
       "questions": [],
       "rationale": "소아 복부 응급 → tier만",
@@ -79288,12 +79314,13 @@
       "y_candidates": [],
       "c_tier_codes": [],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "local_institution",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -79310,12 +79337,13 @@
       "y_candidates": [],
       "c_tier_codes": [],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "local_institution",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -79332,12 +79360,13 @@
       "y_candidates": [],
       "c_tier_codes": [],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "local_institution",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -79354,12 +79383,13 @@
       "y_candidates": [],
       "c_tier_codes": [],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "local_institution",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",
@@ -79444,12 +79474,13 @@
       "y_candidates": [],
       "c_tier_codes": [],
       "tier_recommendation": {
-        "preferred": "regional",
+        "preferred": "local_center",
         "acceptable": [
-          "regional",
-          "local_center"
+          "local_center",
+          "local_institution",
+          "regional"
         ],
-        "source": "grade_fallback"
+        "source": "v031_conservative_abdpain_mass"
       },
       "questions": [],
       "rationale": "no specific feature matched",

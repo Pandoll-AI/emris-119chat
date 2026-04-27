@@ -244,12 +244,19 @@ function ruleGi(entry, text) {
   const triggered = new Set();
   const questions = [];
   const reasons = [];
+  const confidenceOverrides = {};
 
   if (hematemesis) {
     const yCode = entry.group === 'pediatric' ? 'Y0082' : 'Y0081';
     triggered.add(yCode);
     questions.push(QUESTIONS.bleeding_site.id);
-    reasons.push('토혈/흑색변 → ·' + (entry.group === 'pediatric' ? '영유아' : '성인') + ' 위장관 내시경· confident');
+    // v0.3.1: 영유아 + grade≥3 (mild 흑색변) → candidate로 demote (자문자 VIG-18 의견)
+    if (entry.group === 'pediatric' && entry.grade >= 3) {
+      confidenceOverrides[yCode] = 'candidate';
+      reasons.push('영유아 mild 흑색변 (grade ' + entry.grade + ') → ·영유아 위장관 내시경· candidate (entry-level demote)');
+    } else {
+      reasons.push('토혈/흑색변 → ·' + (entry.group === 'pediatric' ? '영유아' : '성인') + ' 위장관 내시경· confident');
+    }
   }
   if (foreignBody && entry.group === 'pediatric') {
     triggered.add('Y0082');
@@ -278,7 +285,7 @@ function ruleGi(entry, text) {
   }
 
   if (triggered.size === 0) return null;
-  return { triggered_y: triggered, questions, rationale: reasons.join('; ') };
+  return { triggered_y: triggered, questions, rationale: reasons.join('; '), confidenceOverrides };
 }
 
 function ruleAmputation(entry, text) {
@@ -457,6 +464,7 @@ function classify(entry) {
   const reasons = [];
   let conditionalPromote = false;
   let cprSpecial = false;
+  const confidenceOverrides = {};
 
   for (const rule of RULES) {
     const result = rule(entry, text);
@@ -466,22 +474,28 @@ function classify(entry) {
     if (result.rationale) reasons.push(result.rationale);
     if (result.conditional_promote_to_A) conditionalPromote = true;
     if (result.cpr_special) cprSpecial = true;
+    if (result.confidenceOverrides) Object.assign(confidenceOverrides, result.confidenceOverrides);
   }
 
-  // y_candidates 빌드 (매트릭스 group → confidence)
+  // y_candidates 빌드 (매트릭스 group → confidence, v0.3.1 entry-level override 적용)
   const y_candidates = [];
   let cTierCandidates = [];
   for (const yCode of allTriggered) {
-    const grp = ycodeGroup(yCode);
-    if (grp === 'A') {
+    const matrixGrp = ycodeGroup(yCode);
+    const override = confidenceOverrides[yCode];
+    // v0.3.1: override='candidate' && matrix='A' → effectively B (entry-level demote)
+    const effectiveGrp = (override === 'candidate' && matrixGrp === 'A') ? 'B' : matrixGrp;
+    if (effectiveGrp === 'A') {
       y_candidates.push({ code: yCode, confidence: 'confident' });
-    } else if (grp === 'B') {
+    } else if (effectiveGrp === 'B') {
       if (yCode === 'Y0160' && conditionalPromote) {
         y_candidates.push({ code: yCode, confidence: 'confident', promoted: true });
       } else {
-        y_candidates.push({ code: yCode, confidence: 'candidate' });
+        const candObj = { code: yCode, confidence: 'candidate' };
+        if (override === 'candidate' && matrixGrp === 'A') candObj.entry_demoted = true;
+        y_candidates.push(candObj);
       }
-    } else if (grp === 'C') {
+    } else if (effectiveGrp === 'C') {
       cTierCandidates.push(yCode);
     }
   }
@@ -527,6 +541,20 @@ function computeTier(entry, y_candidates, cTierCandidates, cprSpecial) {
     };
   }
 
+  // v0.3.1: 복통/복부종괴 + 쇼크/혈역학 grade 1+2 — c_tier-only일 때 local_center 우선 (자문자 VIG-25 의견)
+  if (cTierCandidates.length > 0 && y_candidates.length === 0) {
+    const isAbdL3 = entry.level2.name === '소화기계' &&
+      (entry.level3.name === '복통' || entry.level3.name === '복부종괴/팽만');
+    const isShockL4 = /쇼크|혈역학/.test(entry.level4.name);
+    if (isAbdL3 && isShockL4 && (entry.grade === 1 || entry.grade === 2)) {
+      return {
+        preferred: 'local_center',
+        acceptable: ['local_center', 'regional'],
+        source: 'v031_abd_shock_grade12_conservative',
+      };
+    }
+  }
+
   // Y코드 후보 있음 → y_tier 룩업
   const allYCodes = y_candidates.map(c => c.code).concat(cTierCandidates);
   if (allYCodes.length > 0) {
@@ -557,9 +585,11 @@ function computeTier(entry, y_candidates, cTierCandidates, cprSpecial) {
     }
   }
 
-  // v0.3 conservative shift — grade 2 복통류는 local_center 우선
-  if (entry.level2.name === '소화기계' && entry.level3.name === '복통' && entry.grade === 2) {
-    return { preferred: 'local_center', acceptable: ['local_center', 'local_institution', 'regional'], source: 'v03_conservative_abdpain' };
+  // v0.3.1 conservative shift — grade 2 복통/복부종괴는 local_center 우선 (자문자 의견: VIG-14)
+  if (entry.level2.name === '소화기계' &&
+      (entry.level3.name === '복통' || entry.level3.name === '복부종괴/팽만') &&
+      entry.grade === 2) {
+    return { preferred: 'local_center', acceptable: ['local_center', 'local_institution', 'regional'], source: 'v031_conservative_abdpain_mass' };
   }
   // 분만 임박은 산과 가능 지역센터로
   if (entry.level2.name === '임신/여성생식계' && entry.level3.name === '20주 이상의 임신' &&
@@ -615,14 +645,15 @@ function main() {
   const summary = summarize(codebook.entries, mappings);
 
   const output = {
-    version: '0.3.0',
-    algorithm: 'v0.3 — vignette validation feedback applied',
+    version: '0.3.1',
+    algorithm: 'v0.3.1 — 잔여 3건 패치 (VIG-14·18·25)',
     generated_at: new Date().toISOString(),
     inputs: {
       codebook: 'data/prektas-codebook.json',
       mappability_matrix: 'research/y-code-mappability-matrix.json v' + matrix.version,
       vignette_review: 'research/vignette-review-2026-04-26-mofq7k1h.json',
       analysis: 'research/vignette-review-analysis.md',
+      v03_review: 'research/vignette-review-v0_3-2026-04-27-mogf0py8.json',
     },
     changes_from_v02: [
       'fp over-trigger 좁히기: ·심근경색 재관류·(흉통 character 명시), ·정신과 응급입원·(level4 자살시도/급성정신증), ·안과 응급수술·(시력저하/외상 명시)',
@@ -632,6 +663,11 @@ function main() {
       '임신 응급 강화: 양수누출+임신주수 → 분만/저체중/산과수술 모두 trigger; 무통성 출혈/태반 → 산과수술 confident',
       'tier conservative shift: grade 2 복통류 → local_center, 분만 임박 → local_center',
       '신규 질문 catalog: dyspnea_history, dyspnea_severity, rosc_status, neonatal_assessment, pregnancy_emergency, airway_burn',
+    ],
+    changes_from_v03: [
+      'VIG-14: tier conservative shift L3 확장 — 복통 → 복통/복부종괴/팽만 grade 2 모두 local_center 우선',
+      'VIG-18: 영유아 + grade≥3 + hematemesis trigger → Y0082 confidence demote (entry-level, matrix 변경 X)',
+      'VIG-25: 복통/복부종괴 + 쇼크/혈역학 grade 1+2 c_tier-only → local_center 우선',
     ],
     question_catalog: QUESTIONS,
     summary,
