@@ -66,9 +66,9 @@ data/prektas-codebook.json                                │
 | `research/prektas-tier-recommendation-report.md` | 권역 세이브율·분포 분석 서술 | tier-recommendation.json |
 | `scripts/build-hospital-recommender.mjs` | 정본 JSON embed → recommender HTML | 4개 JSON |
 | `scripts/build-research-page.mjs` | 연구 설명 standalone HTML 생성 | codebook.json, tier·mapping |
-| `index.html` | EMRIS 챗봇 통합 페이지 (Phase 6+7): 자유 채팅 + Pre-KTAS 평가 + LLM 4임무 + CaseStore + drawer + 폴백 제거·재시도(Phase 7) + follow-up 컨텍스트 + 리본 화살표·드래그 | `api/llm.js`, `lib/chatbot-payload.js`, EMRIS API |
-| `lib/chatbot-payload.js` | 정본 코드북·매핑·tier·question effects 합본 (671KB) | `data/`, `research/` JSON |
-| `scripts/build-chatbot-payload.mjs` | 페이로드 빌드 스크립트 | 정본 JSON 4개 |
+| `index.html` | EMRIS 챗봇 통합 페이지 (Phase 6+7+11f): 자유 채팅 + Pre-KTAS 평가 + LLM 4임무 + CaseStore + drawer + 폴백 제거·재시도(Phase 7) + follow-up 컨텍스트 + 리본 화살표·드래그 + v0.3 schema (mappability + confidence + multi_select 질문 + equipment_dimensions + cpr_special) + HARNESS prompt mappability 해석 + npir 라벨 fix | `api/llm.js`, `lib/chatbot-payload.js`, EMRIS API |
+| `lib/chatbot-payload.js` | **Phase 11f v0.3.1 schema** — 정본 코드북·v0.3.1 매핑·tier·question effects(15+6 신규)·equipment_dimensions metadata 합본. mapping_version 0.3.1 (1.38MB). rec[code]에 y/m/yc/t/qs/ct/cpr 모두 포함. | v0.3.1 mapping + matrix v1.0 + codebook + y-code tier + diseases |
+| `scripts/build-chatbot-payload.mjs` | **Phase 11f v0.3 fork** — 입력 prektas-to-y-mapping-v0.3.json. rec[code] 확장 + multi_select questionEffects + equipment dimensions metadata. | 정본 JSON 5개 (codebook + v0.3 mapping + tier-recommendation + diseases + matrix) |
 | `prektas-hospital-recommender.html` | 약 900KB 모바일 스텝 마법사 (교육·연구용, 빌드 산출) | build script |
 | `prektas-research.html` | Phase 8 validation protocol 요약·시각화 페이지 (빌드 산출, 매거진 레이아웃, 10 chapters) | build script + protocol markdown |
 | `research/prektas-validation-protocol.md` | **Phase 8 source of truth** — 사전 등록(preregistered) 분석 계획 v1.0. STARD 2015 준수. 4 가설, 11 sub-phases, threats to validity, ethics, reproducibility. | 정본 codebook + 1차 prevalence 스캔 |
@@ -93,10 +93,17 @@ data/prektas-codebook.json                                │
 | `prektas-vignette-review.html` | **Phase 10b 자문 검토 도구** — 38.8KB SPA. 30개 vignette 평가 + JSON export. Tailscale + Vercel host. | vignettes-v1.0-draft + v0.2 출력 |
 | `research/vignette-review-2026-04-26-mofq7k1h.json` | **Phase 10c 자문 원본** — 14 appropriate / 10 partial / 6 inappropriate | vignette-review.html export |
 | `research/vignette-review-analysis.md` | **Phase 10c-1 분석** — 6 섹션 + v0.3 변경 권고 | 자문 원본 + maintainer 분석 |
-| `scripts/research/build-prektas-to-y-mapping-v0.3.mjs` | **Phase 11 v0.3 알고리즘** — vignette feedback 적용. ~480 lines, v0.2 fork. fp 좁히기 + over-firing 정리 + 임신 응급 강화 + 신규 질문 catalog 6개. | matrix v1.0 + codebook + y-code tier + vignette analysis |
-| `research/prektas-to-y-mapping-v0.3.json` | **Phase 11 v0.3 출력** — 4,689 entries. A:332/B:266/C:64/unmapped:4,027 | v0.3 알고리즘 |
+| `scripts/research/build-prektas-to-y-mapping-v0.3.mjs` | **Phase 11+11g v0.3.1 알고리즘** — vignette feedback 적용 + 잔여 3건 패치. ~500 lines, v0.2 fork. fp 좁히기 + over-firing 정리 + 임신 응급 강화 + 신규 질문 catalog 6개 + entry-level confidence override + 복부종괴/팽만 + 복통+쇼크 conservative shift. | matrix v1.0 + codebook + y-code tier + vignette analysis + v0.3 review |
+| `research/prektas-to-y-mapping-v0.3.json` | **Phase 11g v0.3.1 출력** — 4,689 entries. A:316/B:282/C:64/unmapped:4,027. mapping_version 0.3.1. | v0.3.1 알고리즘 |
 | `scripts/research/validate-v0_3.py` | **Phase 11d v0.2 vs v0.3 directional** — 광주·전라 CSV 단일 패스. v0.2 + v0.3 동시 평가. informational only. | v0.2 + v0.3 mapping + frozen ICD-10 cluster |
 | `research/validation-results-v0.3.json` | **Phase 11d 통계** — spec +0.029, F1 +0.008, tier +0.011 directional. 결정 X. | validate-v0_3.py |
+| `research/validation-results-v0.3.1.json` | **Phase 11g 통계** — v0.3 → v0.3.1 spec +0.0007, F1 -0.0087, tier 그대로. directional only. | validate-v0_3_1.py |
+| `scripts/research/validate-v0_3_1.py` | **Phase 11g v0.3.1 directional** — v0.3 fork. 같은 입력으로 v0.3.1 mapping 평가. | v0.3.1 mapping + frozen ICD-10 cluster |
+| `research/vignette-review-v0_3-2026-04-27-mogf0py8.json` | **Phase 11f v0.3 자문자 재평가** — 27/30 적절 (90%). v0.2 14/30 (47%) 대비 +13건. 잔여 3건 (VIG-14·18·25). | vignette-review-v0_3.html export |
+| `prektas-vignette-review-v0_3.html` | **Phase 11f-prep v0.3 자문 재평가 도구** — 38.8KB SPA. v0.3 출력 primary + v0.2 → v0.3 변경 배지 + 지난번 본인 평가. | vignettes-with-v0_3-output 데이터 |
+| `research/vignettes-with-v0_3-output.json` | **Phase 11f-prep enrichment** — 30 vignette × v0.3 + v0.2 + 지난번 자문 결과 합본. | v0.3 mapping + v0.2 mapping + 지난번 자문 |
+| `scripts/research/attach-vignette-v0_3-output.mjs` | **Phase 11f-prep enrichment 스크립트** — 30 vignette에 v0.3 + v0.2 + v02_review 첨부. | vignettes-v1.0-draft + v0.2 + v0.3 mappings + 자문 원본 |
+| `scripts/research/build-vignette-review-v0_3-page.mjs` | **Phase 11f-prep 페이지 빌드** — VIGNETTES_DATA 블록 v0.3 enriched로 교체. | template + enriched JSON |
 | `run.sh` | 포트 3489 로컬 서버 제어 (`start\|stop\|restart`) | python3, public/ |
 | `public/index.html` (심볼릭) | → `../prektas-hospital-recommender.html` | 루트 HTML |
 | `public/research.html` (심볼릭) | → `../prektas-research.html` | 루트 HTML |

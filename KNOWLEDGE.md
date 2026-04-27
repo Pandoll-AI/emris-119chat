@@ -447,15 +447,56 @@ Pre-KTAS → EMRIS Y코드 매핑 연구 phase (2026-04-24) 시점의 entities/r
 | 화상 | airway_burn 질문 + Y0091 추가 candidate | VIG-09 |
 | 신생아 | neonatal_assessment 질문 | VIG-29 |
 
-## Next Phase Candidates
+## Phase 11f–11g Actions (2026-04-27) — production 통합 + v0.3.1 잔여 패치
 
-1. **v0.4 vignette 재검토** (최우선) — v0.3 출력을 30개 vignette에 대해 자문자 재평가. 25/30 추정치 confirm. 1시간 검토 추정.
-2. **v0.3 332 A 코드 audit** — 확정 매핑된 entries 임상 적절성 검토.
-3. **외부 cohort** — 광주·전라 외 (특히 수도권). cohort representativeness 확보.
-4. **Reference standard agreement** — 응급의학 전문의 1 → 2명 (Y → ICD-10 cluster + vignette 평가).
-5. **vignette 30 → 100** — 응급의학 케이스 다양성 확보 (현재 5 카테고리 외 — 외상·중독·소아·고령자 등).
-6. **EMRIS 실시간 병상 데이터 통합** — `acceptable_tiers`의 "여유시 권역" 판정을 실제 `emris-data/devdocs/{hospitals,beds,messages}.json`로 구체화.
-7. **지역별 병원 capability 매트릭스** — 행정 등급(권역/지역센터/지역기관) 대신 실제 Y코드 커버 능력 기반 추천.
+| Date | Action | Actor | Target | Detail |
+|---|---|---|---|---|
+| 2026-04-27 | rebuild | claude | `lib/chatbot-payload.js` | v0.1 → v0.3 schema. rec[code]에 mappability + confidence map + tier + per-entry questions + c_tier_codes + cpr_special. questionEffects 신규 6개 (multi_select 지원). 671KB → 1.38MB. |
+| 2026-04-27 | rewrite | claude | `index.html` 챗봇 wizard | findQuestionIds rec.qs 우선, currentCandidates multi_select 처리, computeTier conservative shift 반영, collectEquipmentTags 신규, assessment payload에 mappability + confident/candidate 분리 + equipment_dimensions + cpr_special. |
+| 2026-04-27 | rewrite | claude | HARNESS_INTERPRET_PROMPT | mappability A/B/C/unmapped 표현 분기 + 9개 equipment tag → EMRIS 필드 매핑 + cpr_special ROSC 분기. |
+| 2026-04-27 | bug fix | claude | npir 라벨 | "중환자" → "음압격리" 정정. equipment_dimensions의 isolation_required tag 있을 때만 npir/general/cohort 3종 표시. |
+| 2026-04-27 | build | claude | `prektas-vignette-review-v0_3.html` | 38.8KB SPA. v0.3 출력 primary + v0.2 → v0.3 변경 배지 + v0.2 collapsed 비교 + 지난번 본인 평가 box. |
+| 2026-04-27 | review | consultant | 30 vignettes (v0.3 재평가) | **27 appropriate / 2 partial / 1 inappropriate (90%)**. v0.2 47% → v0.3 90%. |
+| 2026-04-27 | deploy | claude | Vercel production v0.3.0 | mapping_version 0.3.0 배포 완료. https://119chat.emergency-info.com/ |
+| 2026-04-27 | patch | claude | v0.3.1 잔여 3건 | VIG-14 복부종괴 conservative shift / VIG-18 영유아 흑색변 entry-level demote / VIG-25 복통+쇼크 보수적 shift + UI 명확화. matrix 변경 X. |
+| 2026-04-27 | validate | claude | v0.3.1 검증 | smoke test 5/5, 30 vignette 자동 평가 회귀 없음, directional spec +0.0007 / F1 -0.0087 (의도) / tier 그대로. |
+| 2026-04-27 | redeploy | claude | Vercel production v0.3.1 | mapping_version 0.3.1 배포. 예상 자문자 평가 30/30 (자체 검증 기반). |
+
+## Phase 11f v0.3 자문자 재평가 결과
+
+| 카테고리 | 케이스 수 | appropriate | partial | inappropriate |
+|---|---|---|---|---|
+| textbook | 12 | 12 | 0 | 0 |
+| fn_pattern | 8 | 6 | 2 | 0 |
+| fp_pattern | 5 | 5 | 0 | 0 |
+| consultant_change | 5 | 4 | 0 | 1 |
+| **총합** | **30** | **27 (90%)** | **2** | **1** |
+
+v0.2 → v0.3 평가 변화: 14건 ↑ appropriate, 1건 ↓ inappropriate (VIG-25, 자문자 자기 정정), 잔여 partial 2건 (VIG-14·18).
+
+## Phase 11g v0.3.1 잔여 3건 패치 변경
+
+| Patch | vignette | 변경 위치 | 영향 entries |
+|---|---|---|---|
+| 1 | VIG-14 복부종괴 | computeTier 라인 561 — L3 조건 확장 | 13 |
+| 2 | VIG-18 영유아 흑색변 | ruleGi+classify confidenceOverrides | 16 |
+| 3a | VIG-25 복통+쇼크 | computeTier 새 c_tier-only 보수적 shift | 5 |
+| 3b | VIG-25 UI | HARNESS_INTERPRET_PROMPT mappability="C" 표현 강화 | n/a |
+
+매트릭스(`y-code-mappability-matrix.json` v1.0 frozen) 변경 X. 모든 패치는 algorithm entry-level.
+
+## Next Phase Candidates (v0.4)
+
+1. **자문자 v0.3.1 재평가** — 자체 검증 기반 30/30 추정치 confirm. 1시간 추정.
+2. **Equipment dimensions 룰 기반 매칭** — 격리병상·인공호흡기·NICU 자동 체크. 현재는 LLM 해석 의존.
+3. **recommender HTML 마이그레이션** — `prektas-hospital-recommender.html` (educational) v0.1 → v0.3.1.
+4. **payload 압축** — 1.58MB → 더 작게. v0.3 추가 필드 정규화 검토.
+5. **외부 cohort** — 광주·전라 외 (수도권 등). cohort representativeness.
+6. **Reference standard agreement** — 응급의학 전문의 1 → 2명.
+7. **vignette 30 → 100** — 응급의학 케이스 다양성 (외상·중독·고령자·소아 등).
+8. **v0.3 316 A 코드 audit** — 확정 매핑 entries 임상 적절성 검토.
+9. **EMRIS 실시간 병상 데이터 통합 강화** — equipment_dimensions를 `emris-data/devdocs` 구조와 직접 매칭.
+10. **지역별 병원 capability 매트릭스** — 행정 등급 대신 실제 Y코드 커버 능력 기반 추천.
 
 ### 운영 action items
 
