@@ -567,6 +567,12 @@
   }
   .wiz-q-opt:hover { background: var(--t-bg); }
   .wiz-q-opt.selected { background: var(--t-ink); color: #ffffff; border-color: var(--t-ink); font-weight: 700; }
+  .wiz-q-next {
+    margin-top: 8px; padding: 6px 10px; border: 1px solid var(--t-ink); background: var(--t-surface);
+    font-size: var(--fs-sm); cursor: pointer; font-family: inherit; font-weight: 600;
+    border-radius: var(--r-0);
+  }
+  .wiz-q-next:hover { background: var(--t-ink); color: #ffffff; }
 
   .wiz-live { border-top: 1px solid var(--t-line); padding-top: 10px; margin-top: 8px; }
   .wiz-live-lbl { font-size: var(--fs-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--t-dim); font-weight: 700; }
@@ -1482,7 +1488,11 @@
 
     function findQuestionIds(code) {
       if (!code || !window.PrektasData.rec[code]) return [];
-      const cands = new Set(window.PrektasData.rec[code].y);
+      const rec = window.PrektasData.rec[code];
+      // v0.3: rec.qs는 알고리즘이 직접 부여한 질문 ID 리스트 (per-entry).
+      // fallback: 기존 Y코드 기반 추론 (v0.1 schema와 호환).
+      if (rec.qs && rec.qs.length > 0) return rec.qs.slice(0, 4);
+      const cands = new Set(rec.y);
       if (cands.size === 0) return [];
       const qids = new Set();
       if (cands.has('Y0010') || cands.has('Y0041')) { qids.add('chest_pain_character'); qids.add('aortic_location'); }
@@ -1494,7 +1504,7 @@
       if (cands.has('Y0141') || cands.has('Y0142')) qids.add('dialysis_indication');
       if (cands.has('Y0150')) qids.add('psychiatric_risk');
       if (cands.has('Y0160')) qids.add('eye_emergency_kind');
-      return Array.from(qids).slice(0, 3);
+      return Array.from(qids).slice(0, 4);
     }
 
     function currentCandidates() {
@@ -1504,14 +1514,22 @@
       const kept = new Set(baseline);
       const removed = new Set();
       for (const qid of Object.keys(state.answers)) {
-        const eff = window.PrektasData.questionEffects[qid] && window.PrektasData.questionEffects[qid].options[state.answers[qid]];
-        if (!eff) continue;
-        if (eff.y_keep) {
-          const keepSet = new Set(eff.y_keep);
-          for (const y of Array.from(kept)) if (!keepSet.has(y)) { kept.delete(y); removed.add(y); }
-        }
-        if (eff.y_remove) {
-          for (const y of eff.y_remove) if (kept.has(y)) { kept.delete(y); removed.add(y); }
+        const eff = window.PrektasData.questionEffects[qid];
+        if (!eff || !eff.options) continue;
+        const ans = state.answers[qid];
+        // v0.3 multi_select: ans는 배열. 단일은 number.
+        const optIndices = eff.multi_select && Array.isArray(ans) ? ans
+          : (typeof ans === 'number' ? [ans] : []);
+        for (const idx of optIndices) {
+          const opt = eff.options[idx];
+          if (!opt) continue;
+          if (opt.y_keep) {
+            const keepSet = new Set(opt.y_keep);
+            for (const y of Array.from(kept)) if (!keepSet.has(y)) { kept.delete(y); removed.add(y); }
+          }
+          if (opt.y_remove) {
+            for (const y of opt.y_remove) if (kept.has(y)) { kept.delete(y); removed.add(y); }
+          }
         }
       }
       return { kept: Array.from(kept), removed };
@@ -1529,9 +1547,34 @@
         const ordered = firstOrder.filter(x => accept.has(x));
         return { acceptable: ordered, preferred: ordered[0] };
       }
+      // v0.3: Y후보 비어있을 때 rec[code].t (conservative shift 반영)을 우선
+      if (state && state.code && D.rec[state.code] && D.rec[state.code].t) {
+        const t = D.rec[state.code].t;
+        return { acceptable: t.acceptable || [], preferred: t.preferred };
+      }
       if (grade === 1 || grade === 2) return { acceptable: ['regional','local_center'], preferred: 'regional' };
       if (grade === 3) return { acceptable: ['local_center','local_institution'], preferred: 'local_center' };
       return { acceptable: ['local_institution','local_center'], preferred: 'local_institution' };
+    }
+
+    // v0.3 신규: question 답변에서 equipment_dimensions tags 수집
+    function collectEquipmentTags() {
+      const D = window.PrektasData;
+      const tags = new Set();
+      let tierOverride = null;
+      for (const qid of Object.keys(state.answers || {})) {
+        const eff = D.questionEffects[qid];
+        if (!eff || !eff.options) continue;
+        const ans = state.answers[qid];
+        const optList = eff.multi_select && Array.isArray(ans) ? ans : (ans !== undefined && ans !== null ? [ans] : []);
+        for (const idx of optList) {
+          const opt = eff.options[idx];
+          if (!opt) continue;
+          if (opt.tags) opt.tags.forEach(t => tags.add(t));
+          if (opt.tier_override) tierOverride = opt.tier_override;
+        }
+      }
+      return { tags: Array.from(tags), tierOverride };
     }
 
     function makeBtn(opts) {
@@ -1681,23 +1724,44 @@
       const shown = Math.min(state.qIndex + 1, state.qids.length);
       for (let i = 0; i < shown; i += 1) {
         const qid = state.qids[i]; const q = D.questions[qid]; if (!q) continue;
+        const eff = D.questionEffects[qid] || {};
+        const isMulti = !!eff.multi_select;
         const card = document.createElement('div'); card.className = 'wiz-q';
         const pp = document.createElement('div'); pp.className = 'wiz-q-prompt';
-        pp.textContent = '질문 ' + (i+1) + '/' + state.qids.length + ' · ' + q.prompt; card.appendChild(pp);
+        pp.textContent = '질문 ' + (i+1) + '/' + state.qids.length + ' · ' + q.prompt + (isMulti ? ' (해당 모두 선택)' : '');
+        card.appendChild(pp);
         const pu = document.createElement('div'); pu.className = 'wiz-q-purpose'; pu.textContent = q.purpose; card.appendChild(pu);
         const opts = document.createElement('div'); opts.className = 'wiz-q-opts';
+        const ans = state.answers[qid];
+        const selectedSet = isMulti && Array.isArray(ans) ? new Set(ans) : null;
         q.options.forEach((opt, idx) => {
           const btn = document.createElement('button'); btn.type = 'button';
-          btn.className = 'wiz-q-opt' + (state.answers[qid] === idx ? ' selected' : '');
+          const isSel = isMulti ? (selectedSet && selectedSet.has(idx)) : (ans === idx);
+          btn.className = 'wiz-q-opt' + (isSel ? ' selected' : '');
           btn.textContent = opt;
           btn.addEventListener('click', () => {
-            state.answers[qid] = idx;
-            if (i === state.qIndex && state.qIndex < state.qids.length - 1) state.qIndex += 1;
-            render();
+            if (isMulti) {
+              const cur = Array.isArray(state.answers[qid]) ? state.answers[qid].slice() : [];
+              const at = cur.indexOf(idx);
+              if (at >= 0) cur.splice(at, 1); else cur.push(idx);
+              state.answers[qid] = cur;
+              render();
+            } else {
+              state.answers[qid] = idx;
+              if (i === state.qIndex && state.qIndex < state.qids.length - 1) state.qIndex += 1;
+              render();
+            }
           });
           opts.appendChild(btn);
         });
         card.appendChild(opts);
+        if (isMulti && i === state.qIndex && i < state.qids.length - 1) {
+          const nextBtn = document.createElement('button'); nextBtn.type = 'button';
+          nextBtn.className = 'wiz-q-next';
+          nextBtn.textContent = '다음 질문 →';
+          nextBtn.addEventListener('click', () => { state.qIndex += 1; render(); });
+          card.appendChild(nextBtn);
+        }
         panel.appendChild(card);
       }
 
@@ -1775,18 +1839,35 @@
     function buildSubmitPayload() {
       const D = window.PrektasData;
       const e = D.entries.find(x => x.c === state.code);
-      const baseline = D.rec[state.code] ? D.rec[state.code].y : [];
+      const rec = D.rec[state.code] || { y: [], m: 'unmapped', yc: {}, t: null, qs: [], ct: [] };
+      const baseline = rec.y;
       const { kept, removed } = currentCandidates();
-      const tier = computeTier(kept, e.gr);
+      let tier = computeTier(kept, e.gr);
+      const equip = collectEquipmentTags();
+      // rosc_status 같은 tier_override가 있으면 우선 적용
+      if (equip.tierOverride) {
+        tier = {
+          preferred: equip.tierOverride,
+          acceptable: tier.acceptable.includes(equip.tierOverride) ? tier.acceptable : [equip.tierOverride, ...tier.acceptable],
+        };
+      }
+      const formatAnswer = (qid, ans) => {
+        const q = D.questions[qid]; if (!q) return String(ans);
+        const isMulti = D.questionEffects[qid] && D.questionEffects[qid].multi_select;
+        if (isMulti && Array.isArray(ans)) return ans.map(i => q.options[i]).join(' / ');
+        if (typeof ans === 'number') return q.options[ans];
+        return String(ans);
+      };
       const additional_qa = Object.keys(state.answers).map(qid => ({
-        question: D.questions[qid].prompt,
-        answer: D.questions[qid].options[state.answers[qid]],
+        question: D.questions[qid] ? D.questions[qid].prompt : qid,
+        answer: formatAnswer(qid, state.answers[qid]),
       }));
-      const y_excluded_with_reason = Array.from(removed).map(y => {
-        // 어느 답변이 제외했는지
-        const trace = Object.keys(state.answers).map(qid => ({ qid, opt: state.answers[qid] })).find(_ => true);
-        return { code: y, reason: trace ? '답변 narrowing으로 제외' : '제외됨' };
-      });
+      const y_excluded_with_reason = Array.from(removed).map(y => ({
+        code: y, reason: '추가 질문 답변에 따라 제외',
+      }));
+      // v0.3: confident vs candidate 분리
+      const confident_y = kept.filter(y => rec.yc && rec.yc[y] === 'confident');
+      const candidate_y = kept.filter(y => rec.yc && rec.yc[y] === 'candidate');
       return {
         mode: 'wizard',
         region: state.region,
@@ -1802,13 +1883,20 @@
           },
           additional_qa,
           rule_based: {
+            mappability: rec.m,
             initial_y_candidates: baseline,
             narrowed_y_candidates: kept,
+            confident_y_candidates: confident_y,
+            candidate_y_candidates: candidate_y,
+            c_tier_codes: rec.ct || [],
             y_excluded_with_reason,
             tier_recommendation: {
               preferred: tier.preferred,
               acceptable: tier.acceptable,
+              source: rec.t ? rec.t.source : 'computed',
             },
+            equipment_dimensions: equip.tags,
+            cpr_special: !!rec.cpr,
           },
         },
       };
@@ -2513,7 +2601,30 @@ conditions에 "21시~5시 불가", "야간불가" 등 → 현재 시각과 비�
 prektas_context는 Pre-KTAS에서 결정된 환자 정보다:
 - patient: { group(성인/소아), level2(대분류), level3(중분류), level4(고려사항), pre_code, grade(중증도 1~5) }
 - additional_qa: [{question, answer}] — 사용자가 답한 추가 질문
-- rule_based: { initial_y_candidates, narrowed_y_candidates, y_excluded_with_reason, tier_recommendation } — 규칙 기반 중증응급질환 판정 결과 (내부 식별용)
+- rule_based: { mappability, initial_y_candidates, narrowed_y_candidates, confident_y_candidates, candidate_y_candidates, c_tier_codes, y_excluded_with_reason, tier_recommendation, equipment_dimensions, cpr_special } — 규칙 기반 중증응급질환 판정 결과 (내부 식별용)
+
+### mappability 해석 (v0.3)
+- "A" — 코드와 답변만으로 시술 적응이 명확. confident_y_candidates를 그대로 신뢰하고 "확정 시술" 표현.
+- "B" — 후보로 좁혔으나 단정 불가. candidate_y_candidates를 "가능성 있는 시술 후보"로 표현. 병원 검사 후 결정 명시.
+- "C" — 현장 정보로 Y코드 단정 무리. c_tier_codes는 "단정 X, 등급 권고용". 사용자에게는 시술명 단정 없이 "응급도와 등급만" 표현. (예: 담낭/담도 환자는 영상 검사 전 단정 불가)
+- "unmapped" — 27개 시술 외. grade 기반 등급 권고만.
+
+### equipment_dimensions 해석 (v0.3)
+환자 답변에서 추출된 장비/병상 차원 태그. 다음 매핑으로 EMRIS 병상 정보와 연결:
+- "isolation_required" → 음압격리(npirAvailable) / 일반격리(generalAvailable) / 코호트격리(cohortAvailable) 가용성 확인 필요
+- "ventilator_likely" → 기계호흡 가능 시설 확인 (EMRIS API 별도 필드 없음. erMessages "장비 부족" 단서)
+- "nicu_required" → NICU 가용 (childEmergencyAvailable로 부분 추정)
+- "delivery_room_required" → deliveryRoomAvailable 가용성 필수
+- "icu_required" → 중환자실 카테고리 (EP-06/EP-07)
+- "hypothermia_treatment" → 권역응급의료센터 직송 권고
+- "nearest_facility" → ROSC 미달성: 가장 가까운 병원 (등급 무관)
+- "bronchoscopy_required" → ·성인 기관지 내시경· 가능 병원 (Y0091 EP-08)
+- "obstetric_surgery" → ·산과 응급수술· 가능 병원 (Y0112 EP-08)
+
+### cpr_special
+true이면 ROSC 분기. additional_qa의 rosc_status 응답에 따라 등급 추천 변경:
+- ROSC 달성 → 권역(저체온치료) 직송
+- ROSC 미달성 → 가장 가까운 병원 (등급 무관)
 
 prektas_context 가 있으면 다음 두 임무를 추가 수행하고 출력 JSON에 prektas_review 필드를 채워라.
 
@@ -3024,6 +3135,8 @@ JSON만 반환. 마크다운/설명 금지.`;
           assessment: prektasContext ? prektasContext.rule_based : null, region,
         });
       }
+      // v0.3: equipment_dimensions tags를 병상 표시 함수에서 참조하도록 노출
+      window.__lastAssessment = prektasContext ? prektasContext.rule_based : null;
 
       // 챗봇 화면으로 전환 + 사용자 입력 표시
       document.getElementById('mode-chat-btn').click();
@@ -3492,8 +3605,14 @@ JSON만 반환. 마크다운/설명 금지.`;
     if (hasCode(/^Y007[02]$|^Y008[02]$|^Y009[02]$|^Y0100$/)) {
       bedItem('소아', beds.childEmergencyAvailable, beds.childEmergencyTotal);
     }
-    if (hasCode(/^Y014[12]$/)) {
-      bedItem('중환자', beds.npirAvailable, beds.npirTotal);
+    // v0.3: equipment_dimensions tags 기반 격리병상 표시
+    // assessment.equipment_dimensions에 isolation_required가 있으면 음압/일반/코호트 격리 가용 표시
+    const tags = (window.__lastAssessment && window.__lastAssessment.equipment_dimensions) || [];
+    const tagSet = new Set(tags);
+    if (tagSet.has('isolation_required')) {
+      bedItem('음압격리', beds.npirAvailable, beds.npirTotal);
+      if (beds.generalAvailable !== undefined) bedItem('일반격리', beds.generalAvailable, beds.generalTotal);
+      if (beds.cohortAvailable !== undefined) bedItem('코호트격리', beds.cohortAvailable, beds.cohortTotal);
     }
 
     return parts;

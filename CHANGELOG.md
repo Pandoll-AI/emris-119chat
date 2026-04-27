@@ -1,5 +1,48 @@
 # Changelog
 
+## [2026-04-27] Phase 11f: v0.3 production 통합
+
+> 챗봇·마법사가 v0.3 매핑 출력(mappability + confidence + 신규 질문 catalog 6개)을 직접 사용. lib/chatbot-payload.js v0.1 → v0.3 schema. HARNESS 프롬프트가 mappability·equipment_dimensions 해석 추가. npir 라벨 버그 fix.
+
+### 변경
+- `scripts/build-chatbot-payload.mjs` v0.3 schema fork
+  - 입력: `research/prektas-to-y-mapping-v0.3.json` + matrix v1.0
+  - rec[code] 필드 확장: y(flat) + m(mappability) + yc(confidence map) + t(tier) + qs(per-entry questions) + ct(c_tier_codes) + cpr(cpr_special)
+  - questionEffects 신규 6개: dyspnea_history, dyspnea_severity, rosc_status, neonatal_assessment, pregnancy_emergency, airway_burn (multi_select 지원)
+  - equipmentDimensions metadata 추가 (LLM이 tags 해석 시 참조)
+- `lib/chatbot-payload.js` 671KB → 1.38MB (v0.3 추가 필드)
+- `index.html` 챗봇 변경
+  - findQuestionIds: rec.qs 우선 사용 (v0.3 entry별 질문), 기존 Y코드 추론 fallback
+  - currentCandidates: multi_select 답변(배열) 처리
+  - computeTier: rec.t 우선 (conservative shift 반영), 기존 yTier intersection fallback
+  - collectEquipmentTags 신규 함수: tier_override + tags 수집
+  - buildSubmitPayload: assessment에 mappability + confident_y_candidates + candidate_y_candidates + c_tier_codes + equipment_dimensions + cpr_special 추가
+  - renderStageQuestions: multi_select 토글 + "다음 질문 →" 버튼
+  - HARNESS_INTERPRET_PROMPT: mappability 해석 (A/B/C/unmapped 표현 분기) + equipment_dimensions 9개 tag → EMRIS 필드 매핑 + cpr_special ROSC 분기 명시
+  - npir 라벨 버그 fix: "중환자" → "음압격리"로 정정. equipment_dimensions에 isolation_required tag가 있을 때만 격리 병상 표시 (npir/general/cohort 3종)
+- `prektas-research.html`, `prektas-vignette-review-v0_3.html` 등 다른 페이지는 영향 없음
+
+### 검증
+- chatbot-payload.js 빌드: A:332/B:266/C:64/unmapped:4027 (v0.3 분포)
+- JS 문법 OK
+- Smoke test 5 케이스: CICCA, CHAAA, CKHCB, CIACB, CMCCC 모두 의도대로 작동
+  - CICCA → Y0010 confident, `chest_pain_character` 질문
+  - CHAAA → 숨참, `dyspnea_history+severity` 신규 질문 노출
+  - CKHCB → 양수누출, Y0111+Y0100+Y0112 모두 trigger
+  - CIACB → CPR special, `rosc_status` 질문, cpr_rosc_dependent tier source
+  - CMCCC → 절단, `replantation_part` 답변으로 Y0132 제외
+
+### 의도된 trade-off
+- payload 크기 +700KB. 모바일 첫 로드 ~1초 더 소요 가능. v0.4에서 schema 압축 검토.
+- 자문자 v0.3 vignette 재평가 (Phase 11f-prep)는 별도 진행 — 통합과 병행 가능.
+
+### Out of scope (v0.4 후보)
+- prektas-hospital-recommender.html (educational 도구) v0.3 마이그레이션
+- equipment_dimensions matrix를 EMRIS 병상 정보와 자동 매칭하는 추천 로직 (현재는 LLM 해석 의존)
+- payload 크기 압축
+
+---
+
 ## [2026-04-26] Phase 10–11 완료: vignette 기반 v0.3 + research page v3 reframe
 
 > 자문자가 30개 임상 시나리오로 v0.2 출력을 평가했다 (47% 적절, 33% partial, 20% 부적절). 그 피드백을 바탕으로 v0.3 알고리즘을 구현했다 — false positive 좁히기 + Y코드 over-firing 정리 + 임신 응급 강화 + 신규 질문 catalog 6개. v0.2 vs v0.3 광주·전라 directional 검증 완료. research.html v3 reframe.
