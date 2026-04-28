@@ -1734,7 +1734,19 @@
         const opts = document.createElement('div'); opts.className = 'wiz-q-opts';
         const ans = state.answers[qid];
         const selectedSet = isMulti && Array.isArray(ans) ? new Set(ans) : null;
-        q.options.forEach((opt, idx) => {
+        // catalog options가 누락된 경우 effects 옵션 개수만큼 fallback 라벨 사용
+        // 정상 데이터에서는 절대 발생하면 안 되므로 console에 경고를 남겨 빌드 정합성 회귀를 즉시 감지
+        let optionLabels;
+        if (Array.isArray(q.options) && q.options.length > 0) {
+          optionLabels = q.options;
+        } else if (Array.isArray(eff.options)) {
+          optionLabels = eff.options.map((_, k) => '옵션 ' + (k + 1));
+          console.warn('[wizard] question', qid, 'has no catalog options — falling back to generic labels. Check chatbot-payload regeneration.');
+        } else {
+          optionLabels = [];
+          console.warn('[wizard] question', qid, 'has no options in catalog or effects.');
+        }
+        optionLabels.forEach((opt, idx) => {
           const btn = document.createElement('button'); btn.type = 'button';
           const isSel = isMulti ? (selectedSet && selectedSet.has(idx)) : (ans === idx);
           btn.className = 'wiz-q-opt' + (isSel ? ' selected' : '');
@@ -1853,9 +1865,16 @@
       }
       const formatAnswer = (qid, ans) => {
         const q = D.questions[qid]; if (!q) return String(ans);
-        const isMulti = D.questionEffects[qid] && D.questionEffects[qid].multi_select;
-        if (isMulti && Array.isArray(ans)) return ans.map(i => q.options[i]).join(' / ');
-        if (typeof ans === 'number') return q.options[ans];
+        const eff = D.questionEffects[qid] || {};
+        const isMulti = !!eff.multi_select;
+        const optionLabels = (Array.isArray(q.options) && q.options.length > 0)
+          ? q.options
+          : Array.isArray(eff.options)
+            ? eff.options.map((_, k) => '옵션 ' + (k + 1))
+            : [];
+        const labelOf = (i) => (typeof i === 'number' && optionLabels[i] != null) ? optionLabels[i] : ('옵션 ' + ((i|0) + 1));
+        if (isMulti && Array.isArray(ans)) return ans.map(labelOf).join(' / ');
+        if (typeof ans === 'number') return labelOf(ans);
         return String(ans);
       };
       const additional_qa = Object.keys(state.answers).map(qid => ({
@@ -1916,6 +1935,10 @@
       else if (state.stage === 'l4') renderStageL4(body);
       else if (state.stage === 'questions') renderStageQuestions(body);
       else if (state.stage === 'submit') renderStageSubmit(body);
+      // 추가질문 단계: 새 질문/제출 버튼이 max-height 너머에 가려지지 않도록 끝까지 스크롤
+      if (state.stage === 'questions' || state.stage === 'submit') {
+        requestAnimationFrame(() => { panel.scrollTop = panel.scrollHeight; });
+      }
     }
 
     function mount() {

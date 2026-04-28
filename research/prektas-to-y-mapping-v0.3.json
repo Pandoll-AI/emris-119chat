@@ -27,56 +27,107 @@
     "onset_time_stroke": {
       "id": "onset_time_stroke",
       "prompt": "증상 발생 후 경과 시간은?",
+      "options": [
+        "< 4.5시간",
+        "4.5–24시간",
+        "> 24시간 또는 미상"
+      ],
       "purpose": "뇌경색 재관류중재 적응"
     },
     "trauma_or_spontaneous": {
       "id": "trauma_or_spontaneous",
       "prompt": "외상 여부?",
+      "options": [
+        "외상성",
+        "비외상성/자발성"
+      ],
       "purpose": "외상성/자발성 뇌출혈 구분"
     },
     "pregnancy_status": {
       "id": "pregnancy_status",
       "prompt": "임신 상태는?",
+      "options": [
+        "임신 20주 미만",
+        "임신 20주 이상",
+        "비임신",
+        "미상"
+      ],
       "purpose": "산과/부인과 분기"
     },
     "burn_severity": {
       "id": "burn_severity",
       "prompt": "화상 중증도(BSA)?",
+      "options": [
+        "중증(TBSA ≥ 20% 또는 얼굴/기도/회음부)",
+        "중등도",
+        "경증"
+      ],
       "purpose": "·중증 화상· 적응 판정"
     },
     "airway_burn": {
       "id": "airway_burn",
       "prompt": "기도 화상·연기 흡입 의심?",
+      "options": [
+        "의심됨",
+        "없음"
+      ],
       "purpose": "·성인 기관지 내시경· 추가 candidate"
     },
     "bleeding_site": {
       "id": "bleeding_site",
       "prompt": "출혈 부위는?",
+      "options": [
+        "상부 위장관(토혈/흑색변)",
+        "하부 위장관(혈변)",
+        "불명"
+      ],
       "purpose": "상부/하부 위장관 분기"
     },
     "foreign_body_site": {
       "id": "foreign_body_site",
       "prompt": "이물 부위?",
+      "options": [
+        "위장관(삼킴)",
+        "기도(흡인/숨막힘)"
+      ],
       "purpose": "위장관/기도 분기"
     },
     "chest_pain_character": {
       "id": "chest_pain_character",
       "prompt": "흉통 양상 + 활력 변화?",
+      "options": [
+        "조이듯이 압박성(심인성 의심)",
+        "찢어지듯 이동성(대동맥 의심)",
+        "비특이적"
+      ],
       "purpose": "·심근경색 재관류· 적응"
     },
     "replantation_part": {
       "id": "replantation_part",
       "prompt": "절단 부위 (손가락·발가락 vs 팔·다리)?",
+      "options": [
+        "수지(손가락/발가락)",
+        "사지(손·발·팔·다리)"
+      ],
       "purpose": "·수지 접합· vs ·사지 접합· 분기"
     },
     "psychiatric_intent": {
       "id": "psychiatric_intent",
       "prompt": "자살시도/자해 의도/급성 정신증 명시?",
+      "options": [
+        "예 (명시됨)",
+        "아니오 / 미상"
+      ],
       "purpose": "·정신과 응급입원· 적응"
     },
     "eye_severity": {
       "id": "eye_severity",
       "prompt": "안구 외상·시력 저하·천공 여부?",
+      "options": [
+        "안구 천공/관통상",
+        "급성 시력 저하·안구 외상",
+        "경증/비응급"
+      ],
       "purpose": "·안과 응급수술· 적응"
     },
     "dyspnea_history": {
