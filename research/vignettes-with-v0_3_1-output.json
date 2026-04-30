@@ -1,0 +1,2262 @@
+{
+  "version": "1.0-draft",
+  "drafted_at": "2026-04-26",
+  "drafter": "maintainer (Claude Opus 4.7)",
+  "purpose": "v0.2 알고리즘의 case-level qualitative validation. 응급의학 표준 케이스 + v0.1 FN/FP 패턴 + 자문자 변경 5건 검증 케이스로 30개 구성.",
+  "framing": "자문자(응급의학 전문의 1인)가 각 vignette을 보고 v0.2 시스템 출력의 임상 적절성을 평가. 통계가 아닌 logical chain validation.",
+  "categories": {
+    "textbook": "응급의학 표준 케이스 (전형적, A 그룹 confident 검증)",
+    "fn_pattern": "v0.1 false negative top 패턴 (놓친 ground truth)",
+    "fp_pattern": "v0.1 false positive top 패턴 (over-trigger)",
+    "consultant_change": "자문자 5건 변경의 v0.2 동작 검증 (Y0041·Y0042·Y0100·Y0112·Y0113)"
+  },
+  "evaluation_options": [
+    "appropriate — 시스템 출력이 임상적으로 적절. 그대로 활용 가능.",
+    "partial — 일부 적절하나 부족·과잉. 메모로 보강 필요 사항 명시.",
+    "inappropriate — 임상적으로 부적절. 시스템이 잘못된 방향을 제시.",
+    "unable_to_evaluate — vignette 정보 부족 또는 평가 불가."
+  ],
+  "vignettes": [
+    {
+      "id": "VIG-01",
+      "category": "textbook",
+      "scenario": "65세 남성. 30분 전부터 갑자기 시작된 가슴 중앙의 짓누르는 통증. 식은땀, 호흡곤란 동반. 의식 명료, 활력징후 정상. 발병 시점 명확.",
+      "estimated_pre_code": "CICCA",
+      "key_features": [
+        "압박성 흉통",
+        "성인",
+        "발병 30분",
+        "식은땀"
+      ],
+      "test_intent": "전형적 STEMI 의심 케이스 — A 그룹 ·심근경색 재관류· confident 매핑이 작동하는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)",
+        "level4": "심장성 통증"
+      },
+      "v031_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0010",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "chest_pain_character"
+        ],
+        "rationale": "흉통(심장성) + 심장성 features → ·심근경색 재관류· confident",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0010",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "chest_pain_character"
+        ],
+        "rationale": "흉통(심장성) + 심장성 features → ·심근경색 재관류· confident",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "textbook",
+        "pre_code": "CICCA",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-02",
+      "category": "textbook",
+      "scenario": "72세 여성. 1시간 전부터 우측 편마비 + 구음장애. FAST 양성. 가족이 마지막으로 정상 본 시각이 오늘 아침 8시.",
+      "estimated_pre_code": "CCGCC",
+      "key_features": [
+        "편마비",
+        "구음장애",
+        "발병시각 명확",
+        "성인"
+      ],
+      "test_intent": "전형적 뇌경색 재관류 시간창 케이스 — B 그룹 ·뇌경색 재관류· 후보군 + 영상 후 결정 framing이 적절한가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "신경계",
+        "level3": "사지약화/뇌졸중 증상",
+        "level4": "발병시간 24시간 이내"
+      },
+      "v031_output": {
+        "mappability": "B",
+        "y_candidates": [
+          {
+            "code": "Y0020",
+            "confidence": "candidate"
+          },
+          {
+            "code": "Y0032",
+            "confidence": "candidate"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "onset_time_stroke",
+          "trauma_or_spontaneous"
+        ],
+        "rationale": "국소 신경결손 → ·뇌경색 재관류·/·뇌출혈 수술· 후보",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "B",
+        "y_candidates": [
+          {
+            "code": "Y0020",
+            "confidence": "candidate"
+          },
+          {
+            "code": "Y0032",
+            "confidence": "candidate"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "onset_time_stroke",
+          "trauma_or_spontaneous"
+        ],
+        "rationale": "국소 신경결손 → ·뇌경색 재관류·/·뇌출혈 수술· 후보",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "textbook",
+        "pre_code": "CCGCC",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-03",
+      "category": "textbook",
+      "scenario": "28세 남성. 2시간 전부터 점차 심해진 우하복부 통증. 발열 38.5°C, 식욕 없음, 구토 1회. 압박 시 rebound tenderness.",
+      "estimated_pre_code": "CJABA",
+      "key_features": [
+        "우하복부 통증",
+        "발열",
+        "복막자극"
+      ],
+      "test_intent": "전형적 충수염 의심 — C 그룹 ·복부 응급수술· tier 권고만 적절한가 (단정 회피)",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "소화기계",
+        "level3": "복통",
+        "level4": "급성 통증(8-10)"
+      },
+      "v031_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "v031_conservative_abdpain_mass"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "v03_conservative_abdpain"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": true,
+        "questions_changed": false,
+        "any_change": true
+      },
+      "v03_review": {
+        "category": "textbook",
+        "pre_code": "CJABA",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-04",
+      "category": "textbook",
+      "scenario": "임신 38주 35세 여성. 30분 전부터 규칙적 진통, 양막 파열. 자궁수축 5분 간격. 자궁구 5cm 개대.",
+      "estimated_pre_code": "CKHCM",
+      "key_features": [
+        "임신 38주",
+        "분만 진행",
+        "자궁수축 5분 이내",
+        "성인"
+      ],
+      "test_intent": "전형적 분만 임박 — A 그룹 ·분만· confident + Y0100·Y0112 co-trigger 작동하는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "임신/여성생식계",
+        "level3": "20주 이상의 임신",
+        "level4": "진통(자궁수축 ≤5분)"
+      },
+      "v031_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0111",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "regional"
+          ],
+          "source": "v03_labor_local_center"
+        },
+        "questions": [],
+        "rationale": "분만 임박 → ·분만· confident",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0111",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "regional"
+          ],
+          "source": "v03_labor_local_center"
+        },
+        "questions": [],
+        "rationale": "분만 임박 → ·분만· confident",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "textbook",
+        "pre_code": "CKHCM",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-05",
+      "category": "textbook",
+      "scenario": "45세 남성. 작업장에서 절단기에 우측 검지·중지 완전 절단. 출혈 활동성. 절단된 손가락은 따로 보관.",
+      "estimated_pre_code": "CMCCC",
+      "key_features": [
+        "손가락 절단",
+        "성인"
+      ],
+      "test_intent": "전형적 ·수지 접합· 케이스 — A confident 매핑 작동 확인",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "근골격계",
+        "level3": "절단",
+        "level4": "손가락의 외상성 절단"
+      },
+      "v031_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0131",
+            "confidence": "confident"
+          },
+          {
+            "code": "Y0132",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "replantation_part"
+        ],
+        "rationale": "절단 → ·수지 접합·/·사지 접합· 후보 (부위 질문으로 분기)",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0131",
+            "confidence": "confident"
+          },
+          {
+            "code": "Y0132",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "replantation_part"
+        ],
+        "rationale": "절단 → ·수지 접합·/·사지 접합· 후보 (부위 질문으로 분기)",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "textbook",
+        "pre_code": "CMCCC",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-06",
+      "category": "textbook",
+      "scenario": "23세 여성. 약물 과다복용 후 발견. 1시간 전 자살시도 메모 발견. GCS 12. 본인 자해 의도 명시.",
+      "estimated_pre_code": "CBECE",
+      "key_features": [
+        "자살시도",
+        "약물 과다복용",
+        "자해 의도 명시"
+      ],
+      "test_intent": "전형적 ·정신과 응급입원· — A 그룹 confident 작동 (Y0150 specific feature)",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "정신건강",
+        "level3": "우울증/자살/자해",
+        "level4": "계획적인 자살시도"
+      },
+      "v031_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0150",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "psychiatric_intent"
+        ],
+        "rationale": "자해/명시적 자살시도/급성 정신증 → ·정신과 응급입원· confident (v0.3: level4 specific feature 명시 시만)",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0150",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "psychiatric_intent"
+        ],
+        "rationale": "자해/명시적 자살시도/급성 정신증 → ·정신과 응급입원· confident (v0.3: level4 specific feature 명시 시만)",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "textbook",
+        "pre_code": "CBECE",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-07",
+      "category": "textbook",
+      "scenario": "55세 남성. 거실에서 갑작스런 의식소실 후 발견. 1시간 후 발견 시 맥박 없음, 자발 호흡 없음. 가족 CPR 시행 중. AED 적용.",
+      "estimated_pre_code": "CIACB",
+      "key_features": [
+        "심정지",
+        "CPR 진행중",
+        "성인"
+      ],
+      "test_intent": "심정지는 27 Y코드 외. unmapped 처리 + grade 1 권역 fallback이 적절한가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 1,
+        "level2": "심혈관계",
+        "level3": "심정지(비외상성)",
+        "level4": "심정지(비외상성)"
+      },
+      "v031_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center",
+            "local_institution"
+          ],
+          "source": "cpr_rosc_dependent",
+          "note": "ROSC 미달성 → preferred=local_institution (가장 가까운). 달성 → preferred=regional (저체온치료)."
+        },
+        "questions": [
+          "rosc_status"
+        ],
+        "rationale": "심정지 → ROSC 상태 질문으로 tier 결정 (ROSC 미달성 → 가장 가까운, 달성 → 권역)",
+        "cpr_special": true
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center",
+            "local_institution"
+          ],
+          "source": "cpr_rosc_dependent",
+          "note": "ROSC 미달성 → preferred=local_institution (가장 가까운). 달성 → preferred=regional (저체온치료)."
+        },
+        "questions": [
+          "rosc_status"
+        ],
+        "rationale": "심정지 → ROSC 상태 질문으로 tier 결정 (ROSC 미달성 → 가장 가까운, 달성 → 권역)",
+        "cpr_special": true
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "textbook",
+        "pre_code": "CIACB",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-08",
+      "category": "textbook",
+      "scenario": "3세 남아. 식사 중 갑자기 사례 들리며 심한 기침. 청색증 발생. 호흡 곤란.",
+      "estimated_pre_code": "DHFAA",
+      "key_features": [
+        "영유아 기도 이물",
+        "청색증"
+      ],
+      "test_intent": "전형적 ·영유아 기관지 내시경· — A 그룹 confident 작동",
+      "codebook_info": {
+        "group": "pediatric",
+        "grade": 1,
+        "level2": "호흡기계",
+        "level3": "호흡기 이물질",
+        "level4": "중증 호흡곤란"
+      },
+      "v031_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0092",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "foreign_body_site"
+        ],
+        "rationale": "기도 이물 → ·영유아 기관지 내시경· confident",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0092",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "foreign_body_site"
+        ],
+        "rationale": "기도 이물 → ·영유아 기관지 내시경· confident",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "textbook",
+        "pre_code": "DHFAA",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-09",
+      "category": "textbook",
+      "scenario": "40세 남성. 화재 현장에서 구조. 안면 + 양측 상지 화상. BSA 약 30% 추정. 그을음 흡입 의심.",
+      "estimated_pre_code": "CPECE",
+      "key_features": [
+        "BSA 25%+ 화상",
+        "호흡기 화상 의심",
+        "성인"
+      ],
+      "test_intent": "전형적 ·중증 화상· — A 그룹 confident, BSA 임계 + 호흡기 화상 처리",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 1,
+        "level2": "피부",
+        "level3": "화상",
+        "level4": "체표면적 25% 이상의 화상"
+      },
+      "v031_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0120",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "burn_severity",
+          "airway_burn"
+        ],
+        "rationale": "화상 → ·중증 화상· (BSA 분기) + 기도 화상 의심 시 ·성인 기관지 내시경· 추가",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0120",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "burn_severity",
+          "airway_burn"
+        ],
+        "rationale": "화상 → ·중증 화상· (BSA 분기) + 기도 화상 의심 시 ·성인 기관지 내시경· 추가",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "textbook",
+        "pre_code": "CPECE",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-10",
+      "category": "textbook",
+      "scenario": "60세 남성. 흑색변 2회 + 토혈 1회. 평소 NSAID 복용. 혈압 90/60 (저하), 맥박 110.",
+      "estimated_pre_code": "CJICC",
+      "key_features": [
+        "토혈",
+        "흑색변",
+        "성인",
+        "혈역학 불안정"
+      ],
+      "test_intent": "전형적 ·성인 위장관 내시경· — A 그룹 confident 작동",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "소화기계",
+        "level3": "토혈",
+        "level4": "활동성 또는 증상을 동반한 토혈"
+      },
+      "v031_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0081",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "bleeding_site"
+        ],
+        "rationale": "토혈/흑색변 → ·성인 위장관 내시경· confident",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0081",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "bleeding_site"
+        ],
+        "rationale": "토혈/흑색변 → ·성인 위장관 내시경· confident",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "textbook",
+        "pre_code": "CJICC",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-11",
+      "category": "fn_pattern",
+      "scenario": "70세 여성. 오심·구토 + 황달 + 우상복부 통증. 발열 38°C. 의식 명료.",
+      "estimated_pre_code": "CJKAI",
+      "key_features": [
+        "황달",
+        "우상복부 통증",
+        "발열"
+      ],
+      "test_intent": "v0.1에서 Y0051·Y0052 recall 0% — v0.2 C 그룹 처리. 후보 단정 없이 tier 권고만 임상적으로 적절한가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "소화기계",
+        "level3": "황달",
+        "level4": "열, 면역저하 상태"
+      },
+      "v031_output": {
+        "mappability": "C",
+        "y_candidates": [],
+        "c_tier_codes": [
+          "Y0051",
+          "Y0052"
+        ],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "담낭/담도 의심 → tier만 (영상 전 구별 불가)",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "C",
+        "y_candidates": [],
+        "c_tier_codes": [
+          "Y0051",
+          "Y0052"
+        ],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "담낭/담도 의심 → tier만 (영상 전 구별 불가)",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "fn_pattern",
+        "pre_code": "CJKAI",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-12",
+      "category": "fn_pattern",
+      "scenario": "60세 남성. 만성 신부전 환자. 4일째 투석 미시행. 호흡곤란 + 다리 부종. 의식 변화 없음. 칼륨 6.8 의심.",
+      "estimated_pre_code": "CHAAA",
+      "key_features": [
+        "만성 신부전",
+        "투석 지연",
+        "고칼륨 의심"
+      ],
+      "test_intent": "v0.1에서 Y0141 recall 0% — v0.2 C 그룹. dialysis-specific Pre-KTAS code 부재 framing이 적절한가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 1,
+        "level2": "호흡기계",
+        "level3": "숨참",
+        "level4": "중증 호흡곤란"
+      },
+      "v031_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "dyspnea_history",
+          "dyspnea_severity"
+        ],
+        "rationale": "호흡곤란 → 과거력·중증도 질문 (Y코드 단정 X, tier 결정용)",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "dyspnea_history",
+          "dyspnea_severity"
+        ],
+        "rationale": "호흡곤란 → 과거력·중증도 질문 (Y코드 단정 X, tier 결정용)",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "fn_pattern",
+        "pre_code": "CHAAA",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-13",
+      "category": "fn_pattern",
+      "scenario": "55세 남성. 패혈증 의심 (체온 39.5°C, 빈맥, 저혈압). 의식 변화 V. 다발 장기 부전 의심. 신기능 급격 저하 의심.",
+      "estimated_pre_code": "CQBAJ",
+      "key_features": [
+        "패혈증",
+        "혈역학 불안정",
+        "급성 신부전"
+      ],
+      "test_intent": "v0.1에서 Y0142 recall 0% — v0.2 C 그룹 처리 + tier 권고만. 임상적으로 적절한가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "일반",
+        "level3": "열",
+        "level4": "패혈증 의증(3개 이상의 SIRS 기준 만족)"
+      },
+      "v031_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "fn_pattern",
+        "pre_code": "CQBAJ",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": "신기능 급격 저하 의심이 구급단계에서 밝혀지는 일이 아니다. 저 pre-ktas로 봤을 때 그냥 55세 패혈증, 의식저하이므로 큰병원.(현재 적절)"
+      }
+    },
+    {
+      "id": "VIG-14",
+      "category": "fn_pattern",
+      "scenario": "50세 남성. 전반적 복통 + 복부 팽만 + 4시간째 가스·대변 배출 없음. 의식 명료, 활력징후 안정.",
+      "estimated_pre_code": "CJMBA",
+      "key_features": [
+        "전반적 복통",
+        "장폐색 의심",
+        "성인"
+      ],
+      "test_intent": "v0.1에서 Y0060 recall 0% — v0.2 C 그룹 tier 권고. 시술 단정 회피가 적절한가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "소화기계",
+        "level3": "복부종괴/팽만",
+        "level4": "급성 통증(8-10)"
+      },
+      "v031_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "v031_conservative_abdpain_mass"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": true,
+        "questions_changed": false,
+        "any_change": true
+      },
+      "v03_review": {
+        "category": "fn_pattern",
+        "pre_code": "CJMBA",
+        "mappability": null,
+        "evaluation": "partial",
+        "notes": "50세 남성, 저 pre-ktas는 여전히 지역센터/지역기관이 맞다. 지난번 나의 평가를 그대로 유지한다."
+      }
+    },
+    {
+      "id": "VIG-15",
+      "category": "fn_pattern",
+      "scenario": "35세 여성. 가슴 두근거림 + 갑작스러운 호흡곤란 + 한쪽 다리 부종. 최근 장거리 비행 후. 산소포화도 89%.",
+      "estimated_pre_code": "CHAAB",
+      "key_features": [
+        "호흡곤란",
+        "단측 다리 부종",
+        "PE 의심"
+      ],
+      "test_intent": "v0.1에서 Y0171(혈관중재) 평가 외. v0.2에서 어떻게 처리되는가 — IR 시술 적응 결정은 병원 영역",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "호흡기계",
+        "level3": "숨참",
+        "level4": "중등도 호흡곤란"
+      },
+      "v031_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "dyspnea_history",
+          "dyspnea_severity"
+        ],
+        "rationale": "호흡곤란 → 과거력·중증도 질문 (Y코드 단정 X, tier 결정용)",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "dyspnea_history",
+          "dyspnea_severity"
+        ],
+        "rationale": "호흡곤란 → 과거력·중증도 질문 (Y코드 단정 X, tier 결정용)",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "fn_pattern",
+        "pre_code": "CHAAB",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-16",
+      "category": "fn_pattern",
+      "scenario": "62세 남성. 갑자기 시작된 좌측 하지 통증 + 창백 + 차가움 + 맥박 없음. 의식 명료.",
+      "estimated_pre_code": "CIKCB",
+      "key_features": [
+        "급성 동맥 폐색",
+        "사지 허혈"
+      ],
+      "test_intent": "Y0171 ·성인 혈관중재· 적응 의심 — v0.2 C 그룹 tier 권고. IR 가능 권역 직송 framing 적절한가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "심혈관계",
+        "level3": "맥박이 없거나 차가운 사지",
+        "level4": "사지 말단에 맥박이 없음"
+      },
+      "v031_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "fn_pattern",
+        "pre_code": "CIKCB",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-17",
+      "category": "fn_pattern",
+      "scenario": "45세 여성. 갑작스런 우상복부 통증 + 황달 + 발열 + 혼돈. Charcot triad 의심.",
+      "estimated_pre_code": "CJKAH",
+      "key_features": [
+        "담관염 의심",
+        "Charcot triad"
+      ],
+      "test_intent": "v0.1에서 Y0052 recall 0.3% — v0.2 C 그룹. ·담도 응급· tier 권고만이 적절한가 (영상 전 단정 불가)",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "소화기계",
+        "level3": "황달",
+        "level4": "의식변화(V/P, GCS 9-13)"
+      },
+      "v031_output": {
+        "mappability": "C",
+        "y_candidates": [],
+        "c_tier_codes": [
+          "Y0051",
+          "Y0052"
+        ],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "담낭/담도 의심 → tier만 (영상 전 구별 불가)",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "C",
+        "y_candidates": [],
+        "c_tier_codes": [
+          "Y0051",
+          "Y0052"
+        ],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "담낭/담도 의심 → tier만 (영상 전 구별 불가)",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "fn_pattern",
+        "pre_code": "CJKAH",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-18",
+      "category": "fn_pattern",
+      "scenario": "8세 남아. 6시간 전부터 간헐적 복통 + 구토. 1시간 전 currant jelly 양상 혈변 1회. 의식 명료.",
+      "estimated_pre_code": "DJJCB",
+      "key_features": [
+        "영유아 복통",
+        "currant jelly 혈변",
+        "장중첩 의심"
+      ],
+      "test_intent": "자문자 결정 — Y0070 영유아 장중첩은 currant jelly로도 단정 안 함, C 그룹 유지. v0.2 출력이 그렇게 작동하는가",
+      "codebook_info": {
+        "group": "pediatric",
+        "grade": 3,
+        "level2": "소화기계",
+        "level3": "혈변/흑색변",
+        "level4": "중등도 양의 흑색변 또는 직장출혈"
+      },
+      "v031_output": {
+        "mappability": "B",
+        "y_candidates": [
+          {
+            "code": "Y0082",
+            "confidence": "candidate",
+            "entry_demoted": true
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "bleeding_site"
+        ],
+        "rationale": "영유아 mild 흑색변 (grade 3) → ·영유아 위장관 내시경· candidate (entry-level demote)",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0082",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "bleeding_site"
+        ],
+        "rationale": "토혈/흑색변 → ·영유아 위장관 내시경· confident",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": true,
+        "mappability_changed": true,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": true
+      },
+      "v03_review": {
+        "category": "fn_pattern",
+        "pre_code": "DJJCB",
+        "mappability": null,
+        "evaluation": "partial",
+        "notes": "확정매핑은 조금 곤란하다. B로 가고, 시술 후보는 적절하다."
+      }
+    },
+    {
+      "id": "VIG-19",
+      "category": "fp_pattern",
+      "scenario": "50세 남성. 하루 전부터 시작된 둔한 두통. 의식 명료, 신경학적 결손 없음. 활력징후 정상. CT 정상.",
+      "estimated_pre_code": "CCDBC",
+      "key_features": [
+        "단순 두통",
+        "신경학적 결손 없음",
+        "활력징후 정상"
+      ],
+      "test_intent": "v0.1에서 Y0032 over-trigger 13,929 FP — v0.2 specific feature only로 unmapped 또는 등급만 처리되는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 4,
+        "level2": "신경계",
+        "level3": "두통",
+        "level4": "급성 통증(<4)"
+      },
+      "v031_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_institution",
+          "acceptable": [
+            "local_institution",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_institution",
+          "acceptable": [
+            "local_institution",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "fp_pattern",
+        "pre_code": "CCDBC",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-20",
+      "category": "fp_pattern",
+      "scenario": "30세 여성. 어제부터 가벼운 가슴 답답함 + 가끔 두근거림. 활력징후 정상. ECG 정상. 기립성 저혈압 없음.",
+      "estimated_pre_code": "CIDBC",
+      "key_features": [
+        "비특이적 흉부 불편감",
+        "활력징후 정상"
+      ],
+      "test_intent": "v0.1에서 Y0010 over-trigger — v0.2 압박성/찢어지는 character 명시 없으면 trigger 안 함이 적절한가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 4,
+        "level2": "심혈관계",
+        "level3": "흉통(비심장성)",
+        "level4": "급성 통증(<4)"
+      },
+      "v031_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_institution",
+          "acceptable": [
+            "local_institution",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_institution",
+          "acceptable": [
+            "local_institution",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "fp_pattern",
+        "pre_code": "CIDBC",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-21",
+      "category": "fp_pattern",
+      "scenario": "25세 남성. 만성 우울증 외래 진료 중. 1주일째 식욕 저하 + 수면 장애. 자살·자해 의도 부인. 활력징후 정상.",
+      "estimated_pre_code": "CBECA",
+      "key_features": [
+        "만성 우울증",
+        "자해 의도 없음"
+      ],
+      "test_intent": "v0.1에서 Y0150 over-trigger 929 FP — v0.2 specific feature only (자해·정신증 명시 시만)로 unmapped 처리되는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 4,
+        "level2": "정신건강",
+        "level3": "우울증/자살/자해",
+        "level4": "우울함, 자살 생각은 없음"
+      },
+      "v031_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_institution",
+          "acceptable": [
+            "local_institution",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_institution",
+          "acceptable": [
+            "local_institution",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "fp_pattern",
+        "pre_code": "CBECA",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-22",
+      "category": "fp_pattern",
+      "scenario": "40세 여성. 아침부터 결막 충혈 + 가벼운 통증. 시력 저하 없음. 분비물 약간. 외상력 없음.",
+      "estimated_pre_code": "CDECB",
+      "key_features": [
+        "결막 충혈",
+        "시력 정상",
+        "외상 없음"
+      ],
+      "test_intent": "v0.1 Y0160 over-trigger — v0.2에서 단순 눈병 제외 키워드로 unmapped 처리되는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 4,
+        "level2": "눈",
+        "level3": "눈충혈,분비물",
+        "level4": "눈충혈/분비물, 급성"
+      },
+      "v031_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_institution",
+          "acceptable": [
+            "local_institution",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_institution",
+          "acceptable": [
+            "local_institution",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "fp_pattern",
+        "pre_code": "CDECB",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-23",
+      "category": "fp_pattern",
+      "scenario": "70세 남성. 가벼운 어지러움 + 무기력. 의식 명료. 사지 마비 없음, 구음장애 없음, FAST 음성. 활력징후 안정.",
+      "estimated_pre_code": "CCCCB",
+      "key_features": [
+        "비특이적 의식변화",
+        "FAST 음성"
+      ],
+      "test_intent": "v0.1 신경계 의식변화 광범위 trigger — v0.2 Y0032 specific feature only로 좁혀져 unmapped 또는 후보 적게 처리되는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 3,
+        "level2": "신경계",
+        "level3": "현훈",
+        "level4": "자세변화에 의해 발생, 다른 신경학적 증상 없음"
+      },
+      "v031_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "fp_pattern",
+        "pre_code": "CCCCB",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-24",
+      "category": "consultant_change",
+      "scenario": "55세 남성. 갑작스러운 등으로 방사되는 찢어지는 듯한 흉통. 발병 1시간. 양쪽 팔 혈압 차이 의심. 활력징후 빈맥.",
+      "estimated_pre_code": "CICCA",
+      "key_features": [
+        "찢어지는 흉통",
+        "등 방사",
+        "AAA·박리 의심"
+      ],
+      "test_intent": "자문자 변경 — Y0041 흉부 대동맥은 B→C로 옮김. v0.2가 ·심근경색 재관류· 후보 + 권역/지역센터 tier만 출력하는가 (대동맥 단정 X)",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "심혈관계",
+        "level3": "흉통(심장성)",
+        "level4": "심장성 통증"
+      },
+      "v031_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0010",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "chest_pain_character"
+        ],
+        "rationale": "흉통(심장성) + 심장성 features → ·심근경색 재관류· confident",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0010",
+            "confidence": "confident"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "chest_pain_character"
+        ],
+        "rationale": "흉통(심장성) + 심장성 features → ·심근경색 재관류· confident",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "consultant_change",
+        "pre_code": "CICCA",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-25",
+      "category": "consultant_change",
+      "scenario": "78세 남성. 갑작스러운 박동성 복통 + 좌측 측복부 통증. 혈압 80/50, 식은땀, 의식 변화 없음.",
+      "estimated_pre_code": "CJAAD",
+      "key_features": [
+        "박동성 복통",
+        "쇼크",
+        "고령",
+        "AAA rupture 의심"
+      ],
+      "test_intent": "자문자 변경 — Y0042 복부 대동맥은 B→C로 옮김. v0.2가 단정 없이 권역 tier만 권고하는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 1,
+        "level2": "소화기계",
+        "level3": "복통",
+        "level4": "쇼크"
+      },
+      "v031_output": {
+        "mappability": "C",
+        "y_candidates": [],
+        "c_tier_codes": [
+          "Y0060",
+          "Y0042"
+        ],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "regional"
+          ],
+          "source": "v031_abd_shock_grade12_conservative"
+        },
+        "questions": [],
+        "rationale": "복부 응급 → tier만",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "C",
+        "y_candidates": [],
+        "c_tier_codes": [
+          "Y0060",
+          "Y0042"
+        ],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [],
+        "rationale": "복부 응급 → tier만",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": true,
+        "questions_changed": false,
+        "any_change": true
+      },
+      "v03_review": {
+        "category": "consultant_change",
+        "pre_code": "CJAAD",
+        "mappability": null,
+        "evaluation": "inappropriate",
+        "notes": "다시 보니 \"소화기계 / 복통 / 쇼크\" 만으로 시술을 권고하는 것은 부담스럽다. 일단 쇼크이고 고령이므로 권역센터/지역센터 급으로 가는게 맞겠다.(지역센터 우선)"
+      }
+    },
+    {
+      "id": "VIG-26",
+      "category": "consultant_change",
+      "scenario": "임신 32주 30세 여성. 갑자기 시작된 양막 파열. 진통 없음. 자궁수축 시작. 산소포화도 정상.",
+      "estimated_pre_code": "CKHCB",
+      "key_features": [
+        "임신 32주",
+        "PROM",
+        "조기진통 시작"
+      ],
+      "test_intent": "자문자 변경 — Y0100·Y0111·Y0112 co-trigger. v0.2가 ·분만· confident + ·저체중 출생·, ·산과 응급수술·을 후보로 함께 출력하는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 3,
+        "level2": "임신/여성생식계",
+        "level3": "20주 이상의 임신",
+        "level4": "양수누출"
+      },
+      "v031_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0111",
+            "confidence": "confident"
+          },
+          {
+            "code": "Y0100",
+            "confidence": "candidate"
+          },
+          {
+            "code": "Y0112",
+            "confidence": "candidate"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "pregnancy_emergency",
+          "neonatal_assessment"
+        ],
+        "rationale": "양수누출 + 임신 20주+ → ·분만·/·저체중 출생·/·산과 응급수술· 모두 후보",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0111",
+            "confidence": "confident"
+          },
+          {
+            "code": "Y0100",
+            "confidence": "candidate"
+          },
+          {
+            "code": "Y0112",
+            "confidence": "candidate"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "pregnancy_emergency",
+          "neonatal_assessment"
+        ],
+        "rationale": "양수누출 + 임신 20주+ → ·분만·/·저체중 출생·/·산과 응급수술· 모두 후보",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "consultant_change",
+        "pre_code": "CKHCB",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-27",
+      "category": "consultant_change",
+      "scenario": "임신 28주 32세 여성. 갑작스러운 다량 질출혈. 통증 없음. 혈압 안정. 태아 심박 정상.",
+      "estimated_pre_code": "CKHCQ",
+      "key_features": [
+        "임신 28주",
+        "무통성 다량 출혈",
+        "전치태반 의심"
+      ],
+      "test_intent": "자문자 변경 — Y0112 산과수술은 A→B. v0.2가 confident가 아닌 후보로 출력하는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 1,
+        "level2": "임신/여성생식계",
+        "level3": "20주 이상의 임신",
+        "level4": "지속되는 질 출혈"
+      },
+      "v031_output": {
+        "mappability": "B",
+        "y_candidates": [
+          {
+            "code": "Y0112",
+            "confidence": "candidate"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "pregnancy_emergency"
+        ],
+        "rationale": "임신 응급 출혈/태반/자간 → ·산과 응급수술· confident",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "B",
+        "y_candidates": [
+          {
+            "code": "Y0112",
+            "confidence": "candidate"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "pregnancy_emergency"
+        ],
+        "rationale": "임신 응급 출혈/태반/자간 → ·산과 응급수술· confident",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "consultant_change",
+        "pre_code": "CKHCQ",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-28",
+      "category": "consultant_change",
+      "scenario": "25세 여성. 우하복부 통증 6시간 + 미열 + 오심. 마지막 월경 4주 전. 임신반응 미상. 압통 + rebound.",
+      "estimated_pre_code": "CJABA",
+      "key_features": [
+        "우하복부 통증",
+        "복막자극",
+        "여성 가임기"
+      ],
+      "test_intent": "자문자 변경 — Y0113 부인과 응급은 B→C. v0.2가 부인과 후보 단정 X, ·복부 응급수술· tier만 권고하는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "소화기계",
+        "level3": "복통",
+        "level4": "급성 통증(8-10)"
+      },
+      "v031_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "v031_conservative_abdpain_mass"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "unmapped",
+        "y_candidates": [],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "local_center",
+          "acceptable": [
+            "local_center",
+            "local_institution",
+            "regional"
+          ],
+          "source": "v03_conservative_abdpain"
+        },
+        "questions": [],
+        "rationale": "no specific feature matched",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": true,
+        "questions_changed": false,
+        "any_change": true
+      },
+      "v03_review": {
+        "category": "consultant_change",
+        "pre_code": "CJABA",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-29",
+      "category": "textbook",
+      "scenario": "신생아 (임신 30주 출생, 출생체중 1,400g). 출생 5분 후 호흡 부전 + 청색증. 보온 + 산소 적용. 출생 15분 후 구급 호출.",
+      "estimated_pre_code": "DQQAA",
+      "key_features": [
+        "미숙아 30주",
+        "초저체중 1400g",
+        "신생아 호흡부전"
+      ],
+      "test_intent": "·저체중 출생· 단독 trigger 케이스 — 자문자 의견 따라 분만 임박 trigger와 동시 발화 안 되는 시나리오. 시스템 출력 확인.",
+      "codebook_info": {
+        "group": "pediatric",
+        "grade": 1,
+        "level2": "일반",
+        "level3": "방금 태어난 신생아",
+        "level4": "중증 호흡곤란"
+      },
+      "v031_output": {
+        "mappability": "B",
+        "y_candidates": [
+          {
+            "code": "Y0100",
+            "confidence": "candidate"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "neonatal_assessment"
+        ],
+        "rationale": "신생아 평가 → ·저체중 출생· candidate (질문으로 정밀화)",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "B",
+        "y_candidates": [
+          {
+            "code": "Y0100",
+            "confidence": "candidate"
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "neonatal_assessment"
+        ],
+        "rationale": "신생아 평가 → ·저체중 출생· candidate (질문으로 정밀화)",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "textbook",
+        "pre_code": "DQQAA",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    },
+    {
+      "id": "VIG-30",
+      "category": "textbook",
+      "scenario": "33세 남성. 작업 중 직접 안구 외상 (날카로운 금속 파편). 우안 통증 + 시력 급격 저하 + 안내 출혈 의심. 안구 천공 의심.",
+      "estimated_pre_code": "CDBCB",
+      "key_features": [
+        "안구 천공 명시",
+        "시력 저하",
+        "외상"
+      ],
+      "test_intent": "Y0160 conditional A 승격 — 안구 천공 명시 시 confident로 출력되는가",
+      "codebook_info": {
+        "group": "adult",
+        "grade": 2,
+        "level2": "눈",
+        "level3": "눈의 이물질",
+        "level4": "이물질의 안구 관통"
+      },
+      "v031_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0160",
+            "confidence": "confident",
+            "promoted": true
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "eye_severity"
+        ],
+        "rationale": "안구 천공/관통 → ·안과 응급수술· confident",
+        "cpr_special": false
+      },
+      "v03_output": {
+        "mappability": "A",
+        "y_candidates": [
+          {
+            "code": "Y0160",
+            "confidence": "confident",
+            "promoted": true
+          }
+        ],
+        "c_tier_codes": [],
+        "tier_recommendation": {
+          "preferred": "regional",
+          "acceptable": [
+            "regional",
+            "local_center"
+          ],
+          "source": "grade_fallback"
+        },
+        "questions": [
+          "eye_severity"
+        ],
+        "rationale": "안구 천공/관통 → ·안과 응급수술· confident",
+        "cpr_special": false
+      },
+      "v03_to_v031_changes": {
+        "y_candidates_changed": false,
+        "mappability_changed": false,
+        "tier_changed": false,
+        "questions_changed": false,
+        "any_change": false
+      },
+      "v03_review": {
+        "category": "textbook",
+        "pre_code": "CDBCB",
+        "mappability": null,
+        "evaluation": "appropriate",
+        "notes": ""
+      }
+    }
+  ],
+  "consultant_review_questions": [
+    "전체 30개 중 시스템 출력이 임상적으로 적절한 비율은?",
+    "v0.2가 가장 잘 작동한 카테고리는? 가장 취약한 카테고리는?",
+    "자문자 본인 결정 (B→C 5건, A→B 2건)이 vignette 검증으로 임상적으로 정당화되는가?",
+    "추가로 vignette을 만들어야 할 시나리오가 있는가?",
+    "v0.2 알고리즘에 대한 전반적 평가 — 임상 활용을 위한 다음 단계?"
+  ],
+  "status": "enriched_with_v0_3_1_output_and_v0_3_comparison",
+  "enriched_at": "2026-04-30T13:20:44.313Z",
+  "source_v03_review": "research/vignette-review-v0_3-2026-04-27-mogf0py8.json",
+  "v031_target": "v0.3.1 잔여 3건 패치 후 자문자 confirm. 30/30 추정 → 명시 확정."
+}
