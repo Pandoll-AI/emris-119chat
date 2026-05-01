@@ -104,14 +104,19 @@ function readNumberEnv(name, fallback) {
 }
 
 function normalizeBaseUrl(url) {
-  return String(url || '').replace(/\/+$/, '');
+  return String(url || '').trim().replace(/\/+$/, '');
+}
+
+function cleanEnv(value) {
+  return String(value || '').trim();
 }
 
 function collectGeminiKeys() {
   const keys = [];
-  if (process.env.GEMINI_API_KEY) keys.push(process.env.GEMINI_API_KEY);
+  const primary = cleanEnv(process.env.GEMINI_API_KEY);
+  if (primary) keys.push(primary);
   for (let i = 1; i <= 10; i++) {
-    const k = process.env[`GEMINI_API_KEY_${i}`];
+    const k = cleanEnv(process.env[`GEMINI_API_KEY_${i}`]);
     if (k) keys.push(k);
   }
   return keys;
@@ -196,20 +201,20 @@ function providerConfig(provider) {
     if (!keys.length) return { error: 'Gemini API key not configured' };
     return {
       kind: 'gemini',
-      model: process.env.GEMINI_API_MODEL || process.env.LLM_API_MODEL || 'gemini-2.5-flash-lite',
+      model: cleanEnv(process.env.GEMINI_API_MODEL || process.env.LLM_API_MODEL) || 'gemini-2.5-flash-lite',
       key: keys[Math.floor(Math.random() * keys.length)],
       baseUrl: normalizeBaseUrl(process.env.GEMINI_API_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta'),
     };
   }
 
   const apiKey =
-    process.env[envName(prefix, 'API_KEY')] ||
-    process.env.LLM_API_KEY ||
+    cleanEnv(process.env[envName(prefix, 'API_KEY')]) ||
+    cleanEnv(process.env.LLM_API_KEY) ||
     (prefix === 'LMSTUDIO' ? 'lm-studio' : '');
-  const model = process.env[envName(prefix, 'API_MODEL')] || process.env.LLM_API_MODEL;
+  const model = cleanEnv(process.env[envName(prefix, 'API_MODEL')] || process.env.LLM_API_MODEL);
   const baseUrl = normalizeBaseUrl(
-    process.env[envName(prefix, 'API_BASE_URL')] ||
-    process.env.LLM_API_BASE_URL ||
+    cleanEnv(process.env[envName(prefix, 'API_BASE_URL')]) ||
+    cleanEnv(process.env.LLM_API_BASE_URL) ||
     OPENAI_COMPAT_DEFAULT_BASE_URL[prefix]
   );
 
@@ -224,7 +229,7 @@ function providerConfig(provider) {
     model,
     apiKey,
     baseUrl,
-    maxTokensParam: process.env[envName(prefix, 'MAX_TOKENS_PARAM')] || process.env.LLM_MAX_TOKENS_PARAM || 'max_tokens',
+    maxTokensParam: cleanEnv(process.env[envName(prefix, 'MAX_TOKENS_PARAM')] || process.env.LLM_MAX_TOKENS_PARAM) || 'max_tokens',
   };
 }
 
