@@ -2091,12 +2091,6 @@
     });
 
     newBtn.addEventListener('click', () => {
-      const active = window.CaseStore && window.CaseStore.getActive();
-      const hasMessages = active && Array.isArray(active.messages) && active.messages.length > 0;
-      if (hasMessages) {
-        const ok = confirm('현재 케이스를 마감하고 새 케이스를 시작합니다.\n기록은 자동 보관됩니다. 계속할까요?');
-        if (!ok) return;
-      }
       if (window.CaseStore) {
         window.CaseStore.closeActive();
       }
