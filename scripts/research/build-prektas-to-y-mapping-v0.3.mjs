@@ -37,18 +37,105 @@ const yTierPath = path.join(repoRoot, 'data/y-code-to-center-tier.json');
 const outputPath = path.join(repoRoot, 'research/prektas-to-y-mapping-v0.3.json');
 
 // ────────── Question catalog (v0.3 확장) ──────────
+// 모든 question은 options 라벨을 가져야 함 (build-chatbot-payload.mjs 정합성 검증).
+// options 길이는 questionEffects.options 길이와 일치해야 한다.
 const QUESTIONS = {
-  onset_time_stroke: { id: 'onset_time_stroke', prompt: '증상 발생 후 경과 시간은?', purpose: '뇌경색 재관류중재 적응' },
-  trauma_or_spontaneous: { id: 'trauma_or_spontaneous', prompt: '외상 여부?', purpose: '외상성/자발성 뇌출혈 구분' },
-  pregnancy_status: { id: 'pregnancy_status', prompt: '임신 상태는?', purpose: '산과/부인과 분기' },
-  burn_severity: { id: 'burn_severity', prompt: '화상 중증도(BSA)?', purpose: '·중증 화상· 적응 판정' },
-  airway_burn: { id: 'airway_burn', prompt: '기도 화상·연기 흡입 의심?', purpose: '·성인 기관지 내시경· 추가 candidate' },
-  bleeding_site: { id: 'bleeding_site', prompt: '출혈 부위는?', purpose: '상부/하부 위장관 분기' },
-  foreign_body_site: { id: 'foreign_body_site', prompt: '이물 부위?', purpose: '위장관/기도 분기' },
-  chest_pain_character: { id: 'chest_pain_character', prompt: '흉통 양상 + 활력 변화?', purpose: '·심근경색 재관류· 적응' },
-  replantation_part: { id: 'replantation_part', prompt: '절단 부위 (손가락·발가락 vs 팔·다리)?', purpose: '·수지 접합· vs ·사지 접합· 분기' },
-  psychiatric_intent: { id: 'psychiatric_intent', prompt: '자살시도/자해 의도/급성 정신증 명시?', purpose: '·정신과 응급입원· 적응' },
-  eye_severity: { id: 'eye_severity', prompt: '안구 외상·시력 저하·천공 여부?', purpose: '·안과 응급수술· 적응' },
+  onset_time_stroke: {
+    id: 'onset_time_stroke',
+    prompt: '증상 발생 후 경과 시간은?',
+    options: ['4.5시간 이내', '4.5–24시간', '24시간 초과 또는 미상'],
+    purpose: '뇌경색 재관류중재 적응',
+  },
+  trauma_or_spontaneous: {
+    id: 'trauma_or_spontaneous',
+    prompt: '외상 여부?',
+    options: ['외상 있음 (사고·낙상 등)', '자발성 (특별한 외상 없음)'],
+    purpose: '외상성/자발성 뇌출혈 구분',
+  },
+  pregnancy_status: {
+    id: 'pregnancy_status',
+    prompt: '임신 상태는?',
+    options: ['임신 20주 이상', '임신 20주 미만', '비임신 (부인과 응급)', '임신 X'],
+    purpose: '산과/부인과 분기',
+  },
+  burn_severity: {
+    id: 'burn_severity',
+    prompt: '화상 중증도(BSA)?',
+    options: ['BSA ≥20% 또는 호흡기 화상', 'BSA 10–19%', 'BSA <10%'],
+    purpose: '·중증 화상· 적응 판정',
+  },
+  airway_burn: {
+    id: 'airway_burn',
+    prompt: '기도 화상·연기 흡입 의심?',
+    options: ['의심 (안면 화상·그을음·연기 흡입)', '없음'],
+    purpose: '·성인 기관지 내시경· 추가 candidate',
+  },
+  bleeding_site: {
+    id: 'bleeding_site',
+    prompt: '출혈 부위는?',
+    options: ['상부 위장관 (토혈)', '하부 위장관 (혈변)', '미상'],
+    purpose: '상부/하부 위장관 분기',
+  },
+  foreign_body_site: {
+    id: 'foreign_body_site',
+    prompt: '이물 부위?',
+    options: ['위장관 (삼킴)', '기도 (흡인)'],
+    purpose: '위장관/기도 분기',
+  },
+  chest_pain_character: {
+    id: 'chest_pain_character',
+    prompt: '흉통 양상 + 활력 변화?',
+    options: ['압박/조이는 양상', '찢어지는 양상', '비특이적'],
+    purpose: '·심근경색 재관류· 적응',
+  },
+  aortic_location: {
+    id: 'aortic_location',
+    prompt: '대동맥 의심 부위?',
+    options: ['흉부', '복부'],
+    purpose: '·흉부 대동맥 응급· vs ·복부 대동맥 응급· 분기',
+  },
+  replantation_part: {
+    id: 'replantation_part',
+    prompt: '절단 부위 (손가락·발가락 vs 팔·다리)?',
+    options: ['손가락/발가락', '팔/다리/사지'],
+    purpose: '·수지 접합· vs ·사지 접합· 분기',
+  },
+  psychiatric_intent: {
+    id: 'psychiatric_intent',
+    prompt: '자살시도/자해 의도/급성 정신증 명시?',
+    options: ['있음', '없음'],
+    purpose: '·정신과 응급입원· 적응',
+  },
+  psychiatric_risk: {
+    id: 'psychiatric_risk',
+    prompt: '정신과 응급 위험 신호?',
+    options: ['있음', '없음'],
+    purpose: '·정신과 응급입원· 적응',
+  },
+  eye_severity: {
+    id: 'eye_severity',
+    prompt: '안구 외상·시력 저하·천공 여부?',
+    options: ['천공/관통', '시력 저하·외상', '단순 충혈/이물'],
+    purpose: '·안과 응급수술· 적응',
+  },
+  eye_emergency_kind: {
+    id: 'eye_emergency_kind',
+    prompt: '안과 응급 종류?',
+    options: ['응급수술 적응', '단순 외래 처치'],
+    purpose: '·안과 응급수술· vs 일반',
+  },
+  dialysis_indication: {
+    id: 'dialysis_indication',
+    prompt: '투석 적응?',
+    options: ['혈역학 안정 (HD 적응)', '혈역학 불안정 (CRRT 적응)', '없음'],
+    purpose: '·응급 혈액투석· vs ·응급 CRRT· 분기',
+  },
+  onset_acute_or_chronic: {
+    id: 'onset_acute_or_chronic',
+    prompt: '급성/만성 발병?',
+    options: ['급성', '만성'],
+    purpose: 'tier 결정 보강',
+  },
   // v0.3 신규
   dyspnea_history: {
     id: 'dyspnea_history',
@@ -289,25 +376,36 @@ function ruleGi(entry, text) {
 }
 
 function ruleAmputation(entry, text) {
-  // v0.3: 절단 키워드가 명시된 경우만 trigger. 신경계 "사지약화" 같은 limbs 키워드는 제외.
-  // L3 = "절단" 또는 L4에 "절단" 명시 → 부위 분기 후보
+  // v0.3.2: L4 텍스트로 부위 분기. 손가락/발가락 명시 → Y0131 only, 사지/팔/다리 → Y0132 only.
+  // L4="절단" 같은 부위 미상에만 둘 다 후보 + 질문.
   const isAmputationL3 = entry.level3.name === '절단';
   const amputationKeyword = hasAny(entry.level4.name, ['절단', '접합']);
   const earAmputation = entry.level2.name === '입,목/얼굴' || /귀의 손상/.test(entry.level3.name);
 
   if (!isAmputationL3 && !amputationKeyword) return null;
-  // 귀 절단(CFFCE 등)은 수지/사지 접합 적응 X
   if (earAmputation) return null;
 
   const triggered = new Set();
   const questions = [];
   const reasons = [];
 
-  // 부위 미상 — 코드만으로는 손가락/발가락 vs 팔/다리 구별 불가, 둘 다 후보
-  triggered.add('Y0131');
-  triggered.add('Y0132');
-  questions.push(QUESTIONS.replantation_part.id);
-  reasons.push('절단 → ·수지 접합·/·사지 접합· 후보 (부위 질문으로 분기)');
+  const l4 = entry.level4.name;
+  const fingers = /손가락|발가락|수지/.test(l4);
+  const limbs = /사지|상지|하지|^팔|^다리/.test(l4);
+
+  if (fingers && !limbs) {
+    triggered.add('Y0131');
+    reasons.push('손가락/발가락 명시(L4) → ·수지 접합· confident');
+  } else if (limbs && !fingers) {
+    triggered.add('Y0132');
+    reasons.push('사지/팔/다리 명시(L4) → ·사지 접합· confident');
+  } else {
+    // 부위 미상 (L4="절단" 등) — 둘 다 후보 + 질문으로 분기
+    triggered.add('Y0131');
+    triggered.add('Y0132');
+    questions.push(QUESTIONS.replantation_part.id);
+    reasons.push('절단 부위 미상(L4) → ·수지 접합·/·사지 접합· 후보 (질문으로 분기)');
+  }
 
   return { triggered_y: triggered, questions, rationale: reasons.join('; ') };
 }
@@ -645,8 +743,8 @@ function main() {
   const summary = summarize(codebook.entries, mappings);
 
   const output = {
-    version: '0.3.1',
-    algorithm: 'v0.3.1 — 잔여 3건 패치 (VIG-14·18·25)',
+    version: '0.3.2',
+    algorithm: 'v0.3.2 — 절단 부위 분기 hotfix (VIG-05)',
     generated_at: new Date().toISOString(),
     inputs: {
       codebook: 'data/prektas-codebook.json',
@@ -668,6 +766,9 @@ function main() {
       'VIG-14: tier conservative shift L3 확장 — 복통 → 복통/복부종괴/팽만 grade 2 모두 local_center 우선',
       'VIG-18: 영유아 + grade≥3 + hematemesis trigger → Y0082 confidence demote (entry-level, matrix 변경 X)',
       'VIG-25: 복통/복부종괴 + 쇼크/혈역학 grade 1+2 c_tier-only → local_center 우선',
+    ],
+    changes_from_v031: [
+      'VIG-05 hotfix: ruleAmputation L4 텍스트 분기 — 손가락/발가락 → Y0131 only, 사지/팔/다리 → Y0132 only, 부위 미상만 둘 다 후보 + 질문',
     ],
     question_catalog: QUESTIONS,
     summary,

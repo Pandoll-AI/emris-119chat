@@ -1,5 +1,51 @@
 # Changelog
 
+## [2026-05-01] v0.3.2 절단 부위 분기 hotfix + v0.3.1 자문 confirm
+
+### 자문자 v0.3.1 재평가 결과
+- review_id: `VIGNETTE-REVIEW-V031-molitb69`
+- 27/30 적절 (90%, v0.3과 동일 비율). 잔여 3건(VIG-14·18·25)은 모두 fix 확인.
+- 새 issue 3건 발견:
+  - **VIG-05 CMCCC inappropriate** — 절단 L4 부위 분기 누락 (코드 버그)
+  - **VIG-13 CQBAJ partial** — 패혈증 의증 → ICU 자원 명시 필요 (v0.4 equipment dimensions 영역)
+  - **VIG-29 DQQAA inappropriate** — 신생아 Y0100 candidate 부적절 (자문자 의견 변화, v0.4 검토)
+
+### v0.3.2 hotfix (VIG-05 only)
+**파일**: `scripts/research/build-prektas-to-y-mapping-v0.3.mjs` `ruleAmputation()`
+
+자문자가 v0.2 평가 메모(2026-04-26)에서 이미 짚은 의견:
+> "손가락의 외상성 절단이 골라졌다면 수지접합만 Y코드로 호출되어도 된다."
+
+v0.3에서 maintainer가 잘못 해석해 "부위 미상 → 둘 다 후보"로 처리. v0.3.2에서 L4 텍스트 분기 추가:
+
+| L4 패턴 | trigger |
+|---|---|
+| 손가락/발가락/수지 명시 | Y0131 only (수지접합) |
+| 사지/상지/하지/팔/다리 명시 | Y0132 only (사지접합) |
+| L4="절단" 부위 미상 | Y0131 + Y0132 둘 다 후보 + replantation_part 질문 |
+
+**영향**: CMCCC·DMCCC·CMCCB·DMCCB → Y0131 only / CMCCD·DMCCD → Y0132 only / CMCCA·DMCCA → 둘 다 (이전과 동일).
+
+### 부수 fix
+- `scripts/research/build-prektas-to-y-mapping-v0.3.mjs` `QUESTIONS` catalog: 모든 질문에 `options` 라벨 채움 (v0.1 9개 질문이 누락됐던 것). build-chatbot-payload 정합성 검증 통과.
+
+### 검증
+- Smoke test 7/7 통과: 손가락/발가락/사지 분기 + 부위 미상 모두 정확.
+- mappability 분포 변경 없음 (A:316/B:282/C:64/unmapped:4,027).
+- Vercel production 재배포: mapping_version 0.3.2.
+
+### 미해결 (v0.4 후보)
+- VIG-13 패혈증 ICU → equipment dimensions 룰 기반 매칭 (인공호흡기·격리·ICU 차원)
+- VIG-29 신생아 Y0100 → mappability=C demote + neonatal_assessment 답변 시 promote
+- 자문자 의견 변화·재현성 — v0.4 vignette 100 확장 시 같은 자문자 일관성 모니터링
+
+### Commits
+| # | 작업 | Commit |
+|---|---|---|
+| 1 | v0.3.1 자문 결과 + v0.3.2 hotfix | (이번 commit) |
+
+---
+
 ## [2026-04-27] v0.3.1 잔여 3건 패치 + production 재배포
 
 > 자문자 90% 통과(VIGNETTE-REVIEW-V03-mogf0py8) 후 잔여 3건(VIG-14·18·25)을 빠르게 follow-up. matrix 변경 없이 알고리즘 entry-level 패치 + UI 명확화. production 재배포 완료.
