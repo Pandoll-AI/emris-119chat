@@ -317,9 +317,29 @@
   }
   .chip:hover { background: var(--t-bg); border-color: var(--t-ink); }
 
-  .result-wrap { display: flex; flex-direction: column; gap: 10px; }
+  .result-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-right: 58px;
+  }
   .result-header { font-size: 14px; color: var(--muted); }
   .result-header strong { color: var(--text); font-size: 16px; }
+  .result-latency {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-family: var(--t-font-mono);
+    font-size: 11px;
+    line-height: 1;
+    color: var(--t-dim);
+    background: var(--t-bg);
+    border: 1px solid var(--t-line);
+    padding: 4px 6px;
+    white-space: nowrap;
+    pointer-events: none;
+  }
   .hospital-section { margin-bottom: 6px; }
   .section-title {
     font-size: 13px;
@@ -3186,6 +3206,7 @@ JSON만 반환. 마크다운/설명 금지.`;
   }
 
   async function searchAndShow(queryText, region, diseases, prektasContext) {
+    const requestStartedAt = performance.now();
     collapseChips();
     userCollapsedChips = false;
     const myGenId = ++searchGenId;
@@ -3239,7 +3260,7 @@ JSON만 반환. 마크다운/설명 금지.`;
             },
           }));
         } else if (llmResult) {
-          appendBotNode(renderAdaptiveResult(llmResult));
+          appendBotNode(renderAdaptiveResult(llmResult, { responseTimeMs: performance.now() - requestStartedAt }));
         } else {
           // 방어적: _llmError도 _rateLimit도 아닌 falsy → 동일 에러 카드 처리
           appendBotNode(renderLLMError({
@@ -3254,7 +3275,7 @@ JSON만 반환. 마크다운/설명 금지.`;
       else {
         loadingEl.remove();
         const analysis = analyzeResults(data, diseases || '', queryText, new Date());
-        appendBotNode(renderSmartResult(data, analysis));
+        appendBotNode(renderSmartResult(data, analysis, { responseTimeMs: performance.now() - requestStartedAt }));
       }
     } catch (e) {
       loadingEl.remove();
@@ -3272,7 +3293,21 @@ JSON만 반환. 마크다운/설명 금지.`;
 
   // ── 스마트 결과 렌더링 (HARNESS 분석 기반) ──────────────────────────────────
 
-  function renderSmartResult(data, analysis) {
+  function formatResponseTime(ms) {
+    const seconds = Math.max(0, Number(ms) || 0) / 1000;
+    if (seconds < 10) return seconds.toFixed(1) + 's';
+    return Math.round(seconds) + 's';
+  }
+
+  function appendResponseTimeBadge(wrap, responseTimeMs) {
+    if (!wrap || responseTimeMs == null) return;
+    const badge = el('div', { className: 'result-latency' });
+    badge.textContent = formatResponseTime(responseTimeMs);
+    badge.setAttribute('aria-label', '응답 시간 ' + badge.textContent);
+    wrap.appendChild(badge);
+  }
+
+  function renderSmartResult(data, analysis, opts) {
     const { meta, hospitals } = data;
     const regionName = meta.regionName || '';
     const diseaseNames = (meta.diseaseNames || []).join(', ');
@@ -3281,6 +3316,7 @@ JSON만 반환. 마크다운/설명 금지.`;
     const diseases = meta.diseases || [];
 
     const wrap = el('div', { className: 'result-wrap bubble' });
+    appendResponseTimeBadge(wrap, opts && opts.responseTimeMs);
 
     const header = el('div', { className: 'result-header' });
     header.appendChild(document.createTextNode('📍 '));
@@ -3522,7 +3558,7 @@ JSON만 반환. 마크다운/설명 금지.`;
 
   // ── 기존 결과 렌더링 (fallback) ──────────────────────────────────
 
-  function renderResult(data) {
+  function renderResult(data, opts) {
     const { meta, hospitals } = data;
     const regionName = meta.regionName || '';
     const diseaseNames = (meta.diseaseNames || []).join(', ');
@@ -3530,6 +3566,7 @@ JSON만 반환. 마크다운/설명 금지.`;
     const total = meta.totalHospitals || 0;
 
     const wrap = el('div', { className: 'result-wrap bubble' });
+    appendResponseTimeBadge(wrap, opts && opts.responseTimeMs);
 
     const header = el('div', { className: 'result-header' });
     header.appendChild(document.createTextNode('📍 '));
@@ -3976,8 +4013,9 @@ JSON만 반환. 마크다운/설명 금지.`;
     appendBotNode(wrap);
   }
 
-  function renderAdaptiveResult(result) {
+  function renderAdaptiveResult(result, opts) {
     const wrap = el('div', { className: 'result-wrap bubble' });
+    appendResponseTimeBadge(wrap, opts && opts.responseTimeMs);
 
     // 제목
     if (result.title) {

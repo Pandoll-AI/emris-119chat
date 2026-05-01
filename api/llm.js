@@ -158,6 +158,33 @@ function extractGeminiText(data) {
     .trim();
 }
 
+function tokenUsage(kind, data) {
+  if (!data || typeof data !== 'object') return null;
+  if (kind === 'gemini') {
+    const usage = data.usageMetadata;
+    if (!usage) return null;
+    return {
+      inputTokens: usage.promptTokenCount ?? null,
+      outputTokens: usage.candidatesTokenCount ?? null,
+      totalTokens: usage.totalTokenCount ?? null,
+    };
+  }
+
+  const usage = data.usage;
+  if (!usage) return null;
+  return {
+    inputTokens: usage.prompt_tokens ?? usage.input_tokens ?? null,
+    outputTokens: usage.completion_tokens ?? usage.output_tokens ?? null,
+    totalTokens: usage.total_tokens ?? null,
+  };
+}
+
+function messagesCharCount(messages, system) {
+  let n = system ? String(system).length : 0;
+  for (const m of messages || []) n += String(m?.content || '').length;
+  return n;
+}
+
 function providerConfig(provider) {
   const prefix = PROVIDER_PREFIX[provider];
   if (!prefix) {
@@ -259,7 +286,7 @@ async function callGemini(config, messages, system, maxTokens, timeoutMs) {
   if (!result.ok) return result;
 
   const text = extractGeminiText(result.data);
-  if (text !== undefined && text !== '') return { ok: true, text };
+  if (text !== undefined && text !== '') return { ok: true, text, usage: tokenUsage('gemini', result.data) };
 
   const blockReason = result.data?.candidates?.[0]?.finishReason;
   if (blockReason === 'SAFETY') {
@@ -294,7 +321,7 @@ async function callOpenAICompatible(config, messages, system, maxTokens, timeout
   if (!result.ok) return result;
 
   const text = extractOpenAIText(result.data);
-  if (text !== undefined && text !== '') return { ok: true, text };
+  if (text !== undefined && text !== '') return { ok: true, text, usage: tokenUsage('openai-compatible', result.data) };
   return { ok: false, status: 502, error: 'Unexpected upstream response format' };
 }
 
@@ -349,6 +376,7 @@ export default async function handler(req, res) {
     kind: config.kind,
     type: type || 'default',
     messageCount: messages.length,
+    inputChars: messagesCharCount(messages, system),
     maxTokens,
     timeoutMs,
     payload: logPayloads ? { system: system || null, messages } : undefined,
@@ -358,6 +386,8 @@ export default async function handler(req, res) {
     ? await callGemini(config, messages, system, maxTokens, timeoutMs)
     : await callOpenAICompatible(config, messages, system, maxTokens, timeoutMs);
 
+  const durationMs = Date.now() - startedAt;
+  const outputText = result.text || '';
   writeLlmLog({
     id: rid,
     phase: 'response',
@@ -365,11 +395,15 @@ export default async function handler(req, res) {
     model: config.model,
     status: result.status || 200,
     ok: !!result.ok,
-    durationMs: Date.now() - startedAt,
+    durationMs,
+    durationSec: Number((durationMs / 1000).toFixed(1)),
+    durationLabel: `${(durationMs / 1000).toFixed(1)}s`,
+    tokenUsage: result.usage || tokenUsage(config.kind, result.data),
+    outputChars: outputText.length,
     error: result.ok ? undefined : (result.error || result.data?.error?.message || result.data?.error || 'LLM request failed'),
     reason: result.reason,
     payload: logPayloads ? {
-      text: result.text || null,
+      text: outputText || null,
       upstream: result.ok ? undefined : (result.data || null),
     } : undefined,
   });
