@@ -1209,6 +1209,7 @@
   const API_BASE = 'https://emris-crawler.pandoll-ai.workers.dev';
   const EMRIS_API_KEY = 'emris_c6cafe1e05002a01ad8c6c3d';
   const LLM_PROXY = '/api/llm';
+  const CLIENT_LOG = '/api/client-log';
   const ACCESS_PW = 'nemc';
   const AUTH_KEY = 'emris_auth_expires';
   const AUTH_TTL_MS = 24 * 60 * 60 * 1000; // 24시간
@@ -3210,6 +3211,9 @@ JSON만 반환. 마크다운/설명 금지.`;
 
   async function searchAndShow(queryText, region, diseases, prektasContext) {
     const requestStartedAt = performance.now();
+    const timingRequestId = makeClientRequestId();
+    const diseaseList = String(diseases || '').split(',').map(s => s.trim()).filter(Boolean);
+    const timings = { emrisMs: null, llmMs: null, renderMs: null, totalMs: null };
     collapseChips();
     userCollapsedChips = false;
     const myGenId = ++searchGenId;
@@ -3221,14 +3225,30 @@ JSON만 반환. 마크다운/설명 금지.`;
       if (diseases) params.set('disease', diseases);
       const url = API_BASE + '/query?' + params.toString();
 
+      const emrisStartedAt = performance.now();
       const resp = await fetch(url, { headers: { 'x-api-key': apiKey } });
       const data = await resp.json();
+      timings.emrisMs = performance.now() - emrisStartedAt;
 
       if (!resp.ok) {
         loadingEl.remove();
         const wrap = el('div', { className: 'bubble' });
         wrap.textContent = resp.status === 401 ? 'API 인증 오류입니다.' : '오류: ' + (data.error || '알 수 없는 오류');
         appendBotNode(wrap);
+        timings.totalMs = performance.now() - requestStartedAt;
+        logClientTiming({
+          event: 'search_timing',
+          requestId: timingRequestId,
+          mode: prektasContext ? 'prektas' : 'chat',
+          region,
+          diseases: diseaseList,
+          useLLM: false,
+          ok: false,
+          status: resp.status,
+          hospitals: data && data.hospitals ? data.hospitals.length : null,
+          timings,
+          error: data && data.error ? data.error : 'EMRIS request failed',
+        });
         return;
       }
 
@@ -3246,14 +3266,32 @@ JSON만 반환. 마크다운/설명 금지.`;
       if (useLLM) {
         loadingEl.remove();
         const aiLoading = appendLoadingBubble();
+        const llmStartedAt = performance.now();
         const llmResult = await interpretWithHarness(data, queryText, prektasContext);
+        timings.llmMs = performance.now() - llmStartedAt;
         aiLoading.remove();
 
         if (myGenId !== searchGenId) return; // stale
 
+        const renderStartedAt = performance.now();
         if (llmResult && llmResult._rateLimit) {
           // 429 rate limit → 사용자 선택 (재시도)
           renderRateLimitChoice(data, diseases || '', queryText, prektasContext);
+          timings.renderMs = performance.now() - renderStartedAt;
+          timings.totalMs = performance.now() - requestStartedAt;
+          logClientTiming({
+            event: 'search_timing',
+            requestId: timingRequestId,
+            mode: prektasContext ? 'prektas' : 'chat',
+            region,
+            diseases: diseaseList,
+            useLLM: true,
+            ok: false,
+            status: 429,
+            hospitals: data.hospitals.length,
+            timings,
+            error: 'rate_limit',
+          });
         } else if (llmResult && llmResult._llmError) {
           // Phase 7 — LLM 실패 시 폴백 없이 에러 카드 + 재시도 버튼
           appendBotNode(renderLLMError({
@@ -3262,8 +3300,37 @@ JSON만 반환. 마크다운/설명 금지.`;
               searchAndShow(queryText, region, diseases, prektasContext);
             },
           }));
+          timings.renderMs = performance.now() - renderStartedAt;
+          timings.totalMs = performance.now() - requestStartedAt;
+          logClientTiming({
+            event: 'search_timing',
+            requestId: timingRequestId,
+            mode: prektasContext ? 'prektas' : 'chat',
+            region,
+            diseases: diseaseList,
+            useLLM: true,
+            ok: false,
+            status: llmResult.status || null,
+            hospitals: data.hospitals.length,
+            timings,
+            error: llmResult.message || llmResult.kind || 'llm_error',
+          });
         } else if (llmResult) {
           appendBotNode(renderAdaptiveResult(llmResult, { responseTimeMs: performance.now() - requestStartedAt }));
+          timings.renderMs = performance.now() - renderStartedAt;
+          timings.totalMs = performance.now() - requestStartedAt;
+          logClientTiming({
+            event: 'search_timing',
+            requestId: timingRequestId,
+            mode: prektasContext ? 'prektas' : 'chat',
+            region,
+            diseases: diseaseList,
+            useLLM: true,
+            ok: true,
+            status: 200,
+            hospitals: data.hospitals.length,
+            timings,
+          });
         } else {
           // 방어적: _llmError도 _rateLimit도 아닌 falsy → 동일 에러 카드 처리
           appendBotNode(renderLLMError({
@@ -3272,13 +3339,43 @@ JSON만 반환. 마크다운/설명 금지.`;
               searchAndShow(queryText, region, diseases, prektasContext);
             },
           }));
+          timings.renderMs = performance.now() - renderStartedAt;
+          timings.totalMs = performance.now() - requestStartedAt;
+          logClientTiming({
+            event: 'search_timing',
+            requestId: timingRequestId,
+            mode: prektasContext ? 'prektas' : 'chat',
+            region,
+            diseases: diseaseList,
+            useLLM: true,
+            ok: false,
+            status: null,
+            hospitals: data.hospitals.length,
+            timings,
+            error: 'unknown_llm_result',
+          });
         }
       }
       // AI OFF: 클라이언트 HARNESS (사용자 명시적 선택이므로 폴백 아님)
       else {
         loadingEl.remove();
+        const renderStartedAt = performance.now();
         const analysis = analyzeResults(data, diseases || '', queryText, new Date());
         appendBotNode(renderSmartResult(data, analysis, { responseTimeMs: performance.now() - requestStartedAt }));
+        timings.renderMs = performance.now() - renderStartedAt;
+        timings.totalMs = performance.now() - requestStartedAt;
+        logClientTiming({
+          event: 'search_timing',
+          requestId: timingRequestId,
+          mode: prektasContext ? 'prektas' : 'chat',
+          region,
+          diseases: diseaseList,
+          useLLM: false,
+          ok: true,
+          status: 200,
+          hospitals: data.hospitals ? data.hospitals.length : null,
+          timings,
+        });
       }
     } catch (e) {
       loadingEl.remove();
@@ -3286,6 +3383,19 @@ JSON만 반환. 마크다운/설명 금지.`;
       wrap.textContent = '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.';
       appendBotNode(wrap);
       console.error(e);
+      timings.totalMs = performance.now() - requestStartedAt;
+      logClientTiming({
+        event: 'search_timing',
+        requestId: timingRequestId,
+        mode: prektasContext ? 'prektas' : 'chat',
+        region,
+        diseases: diseaseList,
+        useLLM: false,
+        ok: false,
+        status: null,
+        timings,
+        error: e && e.message ? e.message : String(e),
+      });
     } finally {
       setLoading(false);
       // 추천 쿼리는 새 케이스 시작 화면에서만 펼쳐 둔다.
@@ -3298,6 +3408,21 @@ JSON만 반환. 마크다운/설명 금지.`;
     const seconds = Math.max(0, Number(ms) || 0) / 1000;
     if (seconds < 10) return seconds.toFixed(1) + 's';
     return Math.round(seconds) + 's';
+  }
+
+  function makeClientRequestId() {
+    return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+  }
+
+  function logClientTiming(payload) {
+    try {
+      fetch(CLIENT_LOG, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-emris-token': EMRIS_API_KEY },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      }).catch(() => {});
+    } catch (e) {}
   }
 
   function appendResponseTimeBadge(wrap, responseTimeMs) {
