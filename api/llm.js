@@ -1,3 +1,6 @@
+import { appendFileSync, mkdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+
 const PROVIDER_PREFIX = {
   gemini: 'GEMINI',
   openai: 'OPENAI',
@@ -16,6 +19,74 @@ const OPENAI_COMPAT_DEFAULT_BASE_URL = {
   ZAI: 'https://api.z.ai/api/paas/v4',
   LMSTUDIO: 'http://127.0.0.1:1234/v1',
 };
+
+function requestId() {
+  return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+}
+
+function shouldLogPayloads() {
+  const raw = process.env.LLM_LOG_PAYLOADS;
+  if (raw !== undefined) return raw === '1' || raw === 'true';
+  return !process.env.VERCEL;
+}
+
+function logFilePath() {
+  const configured = process.env.LLM_LOG_FILE;
+  if (configured) return resolve(process.cwd(), configured);
+  if (process.env.VERCEL) return null;
+  return resolve(process.cwd(), '.run/llm-proxy.jsonl');
+}
+
+function truncateForLog(value, maxLen = 40000) {
+  if (typeof value === 'string') {
+    return value.length > maxLen
+      ? value.slice(0, maxLen) + `... [truncated ${value.length - maxLen} chars]`
+      : value;
+  }
+  if (Array.isArray(value)) return value.map(v => truncateForLog(v, maxLen));
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      const lowerKey = k.toLowerCase();
+      const isSecretKey = lowerKey === 'authorization'
+        || lowerKey === 'secret'
+        || lowerKey.endsWith('_secret')
+        || lowerKey.endsWith('-secret')
+        || lowerKey === 'api_key'
+        || lowerKey === 'apikey'
+        || lowerKey.endsWith('_api_key')
+        || lowerKey.endsWith('-api-key')
+        || lowerKey === 'token'
+        || lowerKey.endsWith('_token')
+        || lowerKey.endsWith('-token');
+      if (isSecretKey) {
+        out[k] = '[redacted]';
+      } else {
+        out[k] = truncateForLog(v, maxLen);
+      }
+    }
+    return out;
+  }
+  return value;
+}
+
+function writeLlmLog(event) {
+  const record = {
+    ts: new Date().toISOString(),
+    ...event,
+  };
+  const line = JSON.stringify(truncateForLog(record));
+  console.log('[llm-proxy]', line);
+
+  const file = logFilePath();
+  if (!file) return;
+  try {
+    mkdirSync(dirname(file), { recursive: true });
+    appendFileSync(file, line + '\n');
+  } catch (e) {
+    console.warn('[llm-proxy] failed to write log file:', e?.message || e);
+  }
+}
 
 function readProvider() {
   return String(process.env.LLM_PROVIDER || 'gemini').trim().toLowerCase();
@@ -228,7 +299,9 @@ async function callOpenAICompatible(config, messages, system, maxTokens, timeout
 }
 
 export default async function handler(req, res) {
+  const rid = requestId();
   if (req.method !== 'POST') {
+    writeLlmLog({ id: rid, phase: 'reject', status: 405, error: 'Method not allowed' });
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -236,34 +309,70 @@ export default async function handler(req, res) {
   const expectedToken = process.env.EMRIS_API_KEY;
   const clientToken = req.headers['x-emris-token'];
   if (!expectedToken || clientToken !== expectedToken) {
+    writeLlmLog({ id: rid, phase: 'reject', status: 401, error: 'Unauthorized' });
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const { messages, system, type } = req.body ?? {};
   if (!messages || !Array.isArray(messages)) {
+    writeLlmLog({ id: rid, phase: 'reject', status: 400, error: 'messages array required' });
     return res.status(400).json({ error: 'messages array required' });
   }
 
   const bodyStr = JSON.stringify(messages);
   if (messages.length > 20 || Buffer.byteLength(bodyStr, 'utf8') > 32000) {
+    writeLlmLog({ id: rid, phase: 'reject', status: 400, error: 'Request too large', messageCount: messages.length });
     return res.status(400).json({ error: 'Request too large' });
   }
   if (system && Buffer.byteLength(system, 'utf8') > 16000) {
+    writeLlmLog({ id: rid, phase: 'reject', status: 400, error: 'System prompt too large' });
     return res.status(400).json({ error: 'System prompt too large' });
   }
 
   const provider = readProvider();
   const config = providerConfig(provider);
   if (config.error) {
+    writeLlmLog({ id: rid, phase: 'config_error', provider, status: 500, error: config.error });
     return res.status(500).json({ error: 'LLM service not configured', detail: config.error });
   }
 
   const maxTokens = type === 'recommend' ? 3000 : 1500;
   const timeoutMs = readNumberEnv('LLM_TIMEOUT_MS', 30000);
+  const startedAt = Date.now();
+  const logPayloads = shouldLogPayloads();
+
+  writeLlmLog({
+    id: rid,
+    phase: 'request',
+    provider,
+    model: config.model,
+    kind: config.kind,
+    type: type || 'default',
+    messageCount: messages.length,
+    maxTokens,
+    timeoutMs,
+    payload: logPayloads ? { system: system || null, messages } : undefined,
+  });
 
   const result = config.kind === 'gemini'
     ? await callGemini(config, messages, system, maxTokens, timeoutMs)
     : await callOpenAICompatible(config, messages, system, maxTokens, timeoutMs);
+
+  writeLlmLog({
+    id: rid,
+    phase: 'response',
+    provider,
+    model: config.model,
+    status: result.status || 200,
+    ok: !!result.ok,
+    durationMs: Date.now() - startedAt,
+    error: result.ok ? undefined : (result.error || result.data?.error?.message || result.data?.error || 'LLM request failed'),
+    reason: result.reason,
+    payload: logPayloads ? {
+      text: result.text || null,
+      upstream: result.ok ? undefined : (result.data || null),
+    } : undefined,
+  });
 
   if (!result.ok) {
     if (result.status === 429) {

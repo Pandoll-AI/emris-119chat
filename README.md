@@ -77,6 +77,8 @@ emris-119chat/
 | `OPENAI_API_KEY`, `OPENAI_API_MODEL` | chatgpt | OpenAI Chat Completions 설정 |
 | `LMSTUDIO_API_MODEL`, `LMSTUDIO_API_BASE_URL` | lm-studio | LM Studio 로컬 서버 설정 (`http://127.0.0.1:1234/v1`) |
 | `LLM_API_MODEL`, `LLM_API_BASE_URL` | | provider별 model/base URL 공통 override |
+| `LLM_LOG_FILE` | | LLM 프록시 JSONL 로그 파일 (로컬 기본: `.run/llm-proxy.jsonl`) |
+| `LLM_LOG_PAYLOADS` | | `1`이면 prompt/response 텍스트 포함. 로컬 기본 ON, Vercel 기본 OFF |
 | `EMRIS_API_KEY` | Y | 프록시 접근 토큰 (클라이언트 인증) |
 
 ---
