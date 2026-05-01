@@ -57,7 +57,7 @@ emris-119chat/
 │                     #   적응형 테이블 렌더링 (AI ON)
 │                     #   스마트 카드 렌더링 (AI OFF)
 ├── api/
-│   └── llm.js       # Vercel serverless — Gemini REST API 프록시
+│   └── llm.js       # Vercel serverless — 선택형 LLM 프록시
 ├── vercel.json      # SPA 라우팅 + maxDuration 30
 └── test-llm.mjs     # LLM 엔드포인트 테스트 스크립트
 ```
@@ -68,9 +68,15 @@ emris-119chat/
 
 | 변수 | 필수 | 설명 |
 |------|------|------|
-| `GEMINI_API_KEY` | Y | Google Gemini API 키 (기본) |
-| `GEMINI_API_KEY_1` ~ `_10` | | 추가 키 (랜덤 라우팅으로 rate limit 분산) |
-| `GEMINI_API_MODEL` | | 모델명 (기본: `gemini-2.5-flash-lite`) |
+| `LLM_PROVIDER` | | `gemini`(기본), `z.ai`, `x.ai`, `lm-studio`, `chatgpt` |
+| `GEMINI_API_KEY` | gemini | Google Gemini API 키 |
+| `GEMINI_API_KEY_1` ~ `_10` | | Gemini 추가 키 (랜덤 라우팅으로 rate limit 분산) |
+| `GEMINI_API_MODEL` | | Gemini 모델명 (기본: `gemini-2.5-flash-lite`) |
+| `ZAI_API_KEY`, `ZAI_API_MODEL` | z.ai | z.ai Chat Completions 설정 |
+| `XAI_API_KEY`, `XAI_API_MODEL` | x.ai | x.ai Chat Completions 설정 |
+| `OPENAI_API_KEY`, `OPENAI_API_MODEL` | chatgpt | OpenAI Chat Completions 설정 |
+| `LMSTUDIO_API_MODEL`, `LMSTUDIO_API_BASE_URL` | lm-studio | LM Studio 로컬 서버 설정 (`http://127.0.0.1:1234/v1`) |
+| `LLM_API_MODEL`, `LLM_API_BASE_URL` | | provider별 model/base URL 공통 override |
 | `EMRIS_API_KEY` | Y | 프록시 접근 토큰 (클라이언트 인증) |
 
 ---
@@ -81,7 +87,7 @@ Vercel CLI로 로컬에서 실행:
 
 ```bash
 # 환경 변수 설정
-cp .env.example .env  # GEMINI_API_KEY, EMRIS_API_KEY 입력
+cp .env.example .env  # LLM_PROVIDER, provider API key/model, EMRIS_API_KEY 입력
 
 # Vercel 로컬 개발 서버
 vercel dev
