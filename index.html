@@ -2713,6 +2713,7 @@ JSON만 반환. 마크다운/설명 금지.`;
 
 답변 가이드:
 - 평문 한국어로 간결하게 답하라 (대략 100~400자). JSON·마크다운 헤더 사용 금지.
+- 병원 목록을 길게 나열하지 마라. 병원명을 언급해야 하면 최대 5곳까지만 쓰고 나머지는 "추가 재조회 필요"로 요약하라.
 - 이전 환자 컨텍스트를 잊지 마라. region·증상·중증도는 그대로 유효하다.
 - "인근 시도/권역 찾아줘" 류 질문이면: 직전 환자 region을 기준으로 인접 광역(예: 대구→경북·경남·울산, 서울→경기·인천)을 짚고, 그 광역에서 동일 시술이 가능한 권역응급의료센터를 일반론적으로 안내하라. 단, 실제 가용 여부는 EMRIS 재조회가 필요하므로 "재조회 필요" 한 줄을 명시하라.
 - "지역센터로 가도 되나" 류면 직전 추천의 acceptable tier 안에서 답하라. 직전 추천이 권역 우선이었다면 지역센터의 trade-off(거리 vs 역량)를 짚어라.
@@ -3962,10 +3963,14 @@ JSON만 반환. 마크다운/설명 금지.`;
     aiLoading.remove();
 
     if (result.ok) {
+      const text = String(result.data || '');
+      const cappedText = text.length > 1600
+        ? text.slice(0, 1597) + '...'
+        : text;
       const wrap = el('div', { className: 'bubble' });
       wrap.style.whiteSpace = 'pre-wrap';
       wrap.style.lineHeight = '1.55';
-      wrap.textContent = result.data;
+      wrap.textContent = cappedText;
       appendBotNode(wrap);
     } else {
       appendBotNode(renderLLMError({
