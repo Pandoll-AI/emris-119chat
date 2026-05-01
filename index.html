@@ -2102,6 +2102,8 @@
       }
       // 챗봇 화면 초기화 (textContent 비우기는 innerHTML 대신 안전한 패턴)
       clearChildren(document.getElementById('chat'));
+      welcomeShown = false;
+      userCollapsedChips = false;
       showWelcome();
       // Pre-KTAS도 첫 단계로 reset
       try {
@@ -2402,6 +2404,8 @@
     const chat = document.getElementById('chat');
     chat.appendChild(wrap);
     buildChips();
+    const chipsBar = document.getElementById('chips-bar');
+    if (chipsBar) chipsBar.classList.remove('chips-collapsed');
   }
 
   function buildChips() {
@@ -3285,9 +3289,7 @@ JSON만 반환. 마크다운/설명 금지.`;
       console.error(e);
     } finally {
       setLoading(false);
-      // 검색 완료 후 chips 새로 섞어 표시
-      buildChips();
-      expandChips();
+      // 추천 쿼리는 새 케이스 시작 화면에서만 펼쳐 둔다.
     }
   }
 
