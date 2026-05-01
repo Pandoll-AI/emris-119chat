@@ -60,14 +60,18 @@ async function callHandler() {
 loadDotEnv();
 
 const provider = process.env.LLM_PROVIDER || 'gemini';
-const model =
-  process.env.LLM_API_MODEL ||
-  process.env.GEMINI_API_MODEL ||
-  process.env.ZAI_API_MODEL ||
-  process.env.XAI_API_MODEL ||
-  process.env.OPENAI_API_MODEL ||
-  process.env.LMSTUDIO_API_MODEL ||
-  '(provider default)';
+
+function selectedModelName(providerName) {
+  const p = String(providerName || '').trim().toLowerCase();
+  if (p === 'gemini') return process.env.GEMINI_API_MODEL || process.env.LLM_API_MODEL || '(gemini default)';
+  if (p === 'z.ai' || p === 'zai') return process.env.ZAI_API_MODEL || process.env.LLM_API_MODEL || '(missing ZAI_API_MODEL)';
+  if (p === 'x.ai' || p === 'xai') return process.env.XAI_API_MODEL || process.env.LLM_API_MODEL || '(missing XAI_API_MODEL)';
+  if (p === 'chatgpt' || p === 'openai') return process.env.OPENAI_API_MODEL || process.env.LLM_API_MODEL || '(missing OPENAI_API_MODEL)';
+  if (p === 'lm-studio' || p === 'lmstudio') return process.env.LMSTUDIO_API_MODEL || process.env.LLM_API_MODEL || '(missing LMSTUDIO_API_MODEL)';
+  return process.env.LLM_API_MODEL || '(unknown provider)';
+}
+
+const model = selectedModelName(provider);
 
 console.log(`LLM_PROVIDER=${provider}`);
 console.log(`MODEL=${model}`);
