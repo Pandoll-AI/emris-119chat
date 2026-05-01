@@ -2290,46 +2290,49 @@
     rowEl.addEventListener('scroll', updateArrows, { passive: true });
     window.addEventListener('resize', updateArrows);
 
-    // 마우스/포인터 드래그 스크롤
+    // 마우스/포인터 드래그 스크롤 — capture 미사용.
+    // setPointerCapture를 쓰면 자식 .ribbon-btn으로 click이 가지 않으므로
+    // window-level pointermove/pointerup으로 처리한다. 임계값(8px)을 넘기 전엔
+    // dragging 상태도 표시하지 않아 일반 클릭에 영향이 없다.
+    const DRAG_THRESHOLD = 8;
     let dragging = false;
     let startX = 0;
     let startScroll = 0;
     let moved = false;
     rowEl.addEventListener('pointerdown', (e) => {
-      // 좌클릭 또는 터치만
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       dragging = true;
       moved = false;
       startX = e.clientX;
       startScroll = rowEl.scrollLeft;
-      rowEl.classList.add('dragging');
-      try { rowEl.setPointerCapture(e.pointerId); } catch (_) {}
     });
-    rowEl.addEventListener('pointermove', (e) => {
+    function onMove(e) {
       if (!dragging) return;
       const dx = e.clientX - startX;
-      if (Math.abs(dx) > 5) moved = true;
-      rowEl.scrollLeft = startScroll - dx;
-    });
-    function endDrag(e) {
+      if (!moved && Math.abs(dx) > DRAG_THRESHOLD) {
+        moved = true;
+        rowEl.classList.add('dragging');
+      }
+      if (moved) rowEl.scrollLeft = startScroll - dx;
+    }
+    function onUp() {
       if (!dragging) return;
+      const wasMoved = moved;
       dragging = false;
+      moved = false;
       rowEl.classList.remove('dragging');
-      try { rowEl.releasePointerCapture(e.pointerId); } catch (_) {}
-      // 드래그 직후 한 번의 click 이벤트 억제 (튀는 클릭 방지)
-      if (moved) {
+      if (wasMoved) {
         const suppress = (ev) => {
           ev.stopPropagation();
           ev.preventDefault();
-          rowEl.removeEventListener('click', suppress, true);
         };
-        rowEl.addEventListener('click', suppress, true);
-        setTimeout(() => rowEl.removeEventListener('click', suppress, true), 50);
+        rowEl.addEventListener('click', suppress, { capture: true, once: true });
+        setTimeout(() => rowEl.removeEventListener('click', suppress, true), 80);
       }
     }
-    rowEl.addEventListener('pointerup', endDrag);
-    rowEl.addEventListener('pointercancel', endDrag);
-    rowEl.addEventListener('pointerleave', endDrag);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
 
     // 초기 화살표 상태
     setTimeout(updateArrows, 0);
